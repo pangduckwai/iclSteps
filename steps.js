@@ -1,23 +1,36 @@
 var bcNodes = [
-	{name : "node 0", addr : "127.0.0.1:7050"},
-	{name : "node 1", addr : "127.0.0.1:8050"},
-	{name : "node 2", addr : "127.0.0.1:9050"},
-	{name : "node 3", addr : "127.0.0.1:10050"},
+	{name : "Node 0", addr : "127.0.0.1:7050"},
+	{name : "Node 1", addr : "127.0.0.1:8050"},
+	{name : "Node 2", addr : "127.0.0.1:9050"},
+	{name : "Node 3", addr : "127.0.0.1:10050"},
 ];
 
-var buildUi = function(msg, user, yr, mn, dt, step, state) {
+var buildUi = function(msg, user, yr, mn, dt, step, node, state) {
 	var ro0 = (state != 1) ? 'readonly' : '';
 	var ro1 = ((state == 2) || (state == 3)) ? 'readonly' : '';
 	var fcs = (state == 0) ? "'step'" : "'user'";
 	var act = (state == 0) ? '/submit' : '/verify';
-	var mnu = (state == 0) ? 'Submit | <a href="/verify">Verify</a>' : ((state == 1) ? '<a href="/submit">Submit</a> | Verify' : 'Submit | Verify');
+
+	var hfs = '<a href="/submit?node=' + node + '">';
+	var hfv = '<a href="/verify?node=' + node + '">';
+	var mnu = (state == 0) ? 'Submit | ' + hfv + 'Verify</a>' : ((state == 1) ? hfs + 'Submit</a> | Verify' : 'Submit | Verify');
+
+	var sel = '';
+	if ((state != 2) && (state !=3)) {
+		sel = ' | Connect to <select name="node" value="' + node + '" style="font-size:0.7em;" onchange="this.form.submit()">'
+		for (var i = 0; i < bcNodes.length; i ++) {
+			sel += '<option ' + ((i == node) ? 'selected ' : '') + 'value="' + i + '">' + bcNodes[i].name + '</option>';
+		}
+		sel += '</select>';
+	}
+
 	var rtn = 
 '<html><head><title>HKICL STEPS Contest</title></head>' +
-'<body onload="document.getElementById(' + fcs + ').focus();">' +
+'<body style="font-family:sans-serif" onload="document.getElementById(' + fcs + ').focus();">' +
 '<h2>HKICL STEPS Contest</h2>' +
-'<div style="font-size:0.8em;">' + mnu + '</div><br/>' +
-'<div>' + ((msg == '') ? 'Welcome' : msg) + '</div>' +
-'<form action="' + act + '" method="post"><table>' +
+'<form action="' + act + '" method="get"><div style="font-size:0.9em;height:21px">' + mnu + sel + '</div></form>' +
+'<div style="font-size:1.1em;height:28px">' + ((msg == '') ? 'Welcome' : msg) + '</div>' +
+'<form action="' + act + '" method="post"><input type="hidden" name="node" value="' + node + '"/><table>' +
 '<tr><td>User: </td><td><input type="text" name="user" id="user" value="' + user + '" ' + ro0 + '/></td></tr>' +
 '<tr><td>Date: </td><td>' +
 '<input type="text" size="4" maxlength="4" name="year" value="' + yr + '" ' + ro1 + '/>' +
@@ -25,7 +38,7 @@ var buildUi = function(msg, user, yr, mn, dt, step, state) {
 '<input type="text" size="2" maxlength="2" name="date" value="' + dt + '" ' + ro1 + '/></td></tr>' +
 '<tr><td>Steps: </td><td>' +
 '<input type="text" size="7" name="step" id="step" value="' + step + '" onfocus="this.select();" ' + ro1 + '/></td></tr>' +
-'</table><br/>' + ((state == 2) ? '<a href="/submit">Return</a></div>' : ((state == 3) ? '<a href="/verify">Return</a></div>' : '<input type="submit" value="Send"/><input type="reset" value="Clear"/>')) +
+'</table><br/>' + ((state == 2) ? hfs + 'Return</a></div>' : ((state == 3) ? hfv + 'Return</a></div>' : '<input type="submit" value="Send"/><input type="reset" value="Clear"/>')) +
 '</form></body></html>';
 	return (rtn);
 };
@@ -43,114 +56,125 @@ http.createServer(function(req, res) {
 			console.error(err);
 	});
 
+	var url = require('url');
+	var rqst = url.parse(req.url, true);
+	var node = (rqst.query['node']) ? parseInt(rqst.query['node']) : -1;
+
 	var path = require('path');
 	var userName = process.env['USERPROFILE'].split(path.sep)[2];
-	var body = '';
 
-	var request = require('request');
+	var rspnStr = '';
 
-	switch (req.method) {
-	case 'GET':
-		var now = new Date();
+	req.on('data', function(chunk) {
+			rspnStr += chunk;
+			if (rspnStr.length > 1e6) req.connection.destroy(); // data larger than 1M
+			console.log("DATA: " + chunk); //TODO TEMP!!!
+	}).on('end', function() {
+			var request = require('request');
+			var qstring = require('querystring');
+			var param = qstring.parse(rspnStr);
 
-		switch (req.url) {
-		case '/':
-			// Main page listing data
-			break;
+			if (isNaN(node) || (node < 0)) {
+				node = (param['node']) ? parseInt(param['node']) : -1;
+				if (isNaN(node) || (node < 0)) {
+					console.log("Node!: " + node); //TODO TEMP!!!
+					node = Math.floor(Math.random() * bcNodes.length);
+				}
+			}
 
-		case '/init':
-			request({
-						uri: 'http://127.0.0.1:9050/registrar', 
-						method: 'POST', 
-						json: {"enrollId": "test_user3", "enrollSecret": "vWdLCE00vJy0"}
-					},
-					function (error, response, rspn) {
-						if (error) {
-							console.log(error);
-							res.statusCode = 500;
-							res.end();
-						} else {
-							switch (response.statusCode) {
-							case 200:
-								console.log(JSON.stringify(rspn));
-								res.end(buildUi(rspn['OK'], userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, 0));
-								break;
-							default:
-								console.log('Enrollment result in status ' + response.statusCode);
+			switch (req.method) {
+			case 'GET':
+				var now = new Date();
+
+				switch (rqst.pathname) {
+				case '/':
+					// Main page listing data
+					if (rqst.query['node']) {
+						res.end('Node is ' + rqst.query['node']);
+					} else {
+						res.end('Node is unspecified');
+					}
+					break;
+
+				case '/init':
+					request({
+							uri: 'http://' + bcNodes[node].addr + '/registrar', 
+							method: 'POST', 
+							json: {"enrollId": "test_user3", "enrollSecret": "vWdLCE00vJy0"}
+						},
+						function (error, response, rspn) {
+							if (error) {
+								console.log(error);
 								res.statusCode = 500;
 								res.end();
+							} else {
+								switch (response.statusCode) {
+								case 200:
+									res.end(buildUi(rspn['OK'], userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, 0));
+									break;
+								default:
+									console.log('Enrollment result in status ' + response.statusCode);
+									res.statusCode = 500;
+									res.end();
+								}
 							}
 						}
-					}
-			);
-			break;
+					);
+					break;
 
-		case '/submit':
-			res.end(buildUi('Please submit your record', userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, 0));
-			break;
+				case '/submit':
+					res.end(buildUi('Please submit your record', userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, 0));
+					break;
 
-		case '/verify':
-			res.end(buildUi('Submitting verification for:', '', now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, 1));
-			break;
+				case '/verify':
+					res.end(buildUi('Submitting verification for:', '', now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, 1));
+					break;
 
-		default:
-			res.statusCode = 404;
-			res.end();
-		}
-		break;
+				default:
+					res.statusCode = 404;
+					res.end();
+				}
+				break;
 
-	case 'POST':
-		var qs = require('querystring');
-
-		switch (req.url) {
-		case '/submit':
-			req.on('data', function(chunk) {
-					body += chunk;
-					if (body.length > 1e6) req.connection.destroy(); // data larger than 1M
-			}).on('end', function() {
-					var post = qs.parse(body);
+			case 'POST':
+				switch (rqst.pathname) {
+				case '/submit':
 					var mssg = 'Record submitted, thank you';
-					if (post['user'] != userName) {
-						mssg = 'Cannot submit records for another user ' + post['user'];
-					} else if (parseInt(post['step']) <= 0) {
-						mssg = post['step'] + ' is not a valid number of steps';
+					if (param['user'] != userName) {
+						mssg = 'Cannot submit records for another user ' + param['user'];
+					} else if (parseInt(param['step']) <= 0) {
+						mssg = param['step'] + ' is not a valid number of steps';
 					} else {
 						// TODO HERE!!! write values
-						console.error('Submitting new record');
+						console.error('Submitting new record to node ' + node);
 					}
-					res.end(buildUi(mssg, post['user'], post['year'], post['mnth'], post['date'], post['step'], 2));
-			});
-			break;
+					res.end(buildUi(mssg, param['user'], param['year'], param['mnth'], param['date'], param['step'], node, 2));
+					break;
 
-		case '/verify':
-			req.on('data', function(chunk) {
-					body += chunk;
-					if (body.length > 1e6) req.connection.destroy(); // data larger than 1M
-			}).on('end', function() {
-					var post = qs.parse(body);
+				case '/verify':
 					var mssg = 'Verification submitted, thank you';
-					if (post['user'] == userName) {
+					if (param['user'] == userName) {
 						mssg = 'Cannot verify your own record';
-					} else if (post['user'] == '') {
+					} else if (param['user'] == '') {
 						mssg = 'Please indicate the user being verified';
-					} else if (parseInt(post['step']) <= 0) {
-						mssg = post['step'] + ' is not a valid number of steps';
+					} else if (parseInt(param['step']) <= 0) {
+						mssg = param['step'] + ' is not a valid number of steps';
 					} else {
 						// TODO HERE!!! verify values
-						console.error('Submitting verification');
+						console.error('Submitting verification to node ' + node);
 					}
-					res.end(buildUi(mssg, post['user'], post['year'], post['mnth'], post['date'], post['step'], 3));
-			});
-			break;
+					res.end(buildUi(mssg, param['user'], param['year'], param['mnth'], param['date'], param['step'], node, 3));
+					break;
 
-		default:
-			res.statusCode = 404;
-			res.end();
-		}
-		break;
+				default:
+					res.statusCode = 404;
+					res.end();
+				}
+				break;
 
-	default:
-		res.statusCode = 405;
-		res.end();
-	}
+			default:
+				res.statusCode = 405;
+				res.end();
+			}
+	});
 }).listen(8080);
