@@ -25,9 +25,9 @@ var buildUi = function(msg, user, yr, mn, dt, step, node, state) {
 	}
 
 	var rtn = 
-'<html><head><title>HKICL STEPS Contest</title></head>' +
+'<html><head><title>HKICL Pedometer Contest</title></head>' +
 '<body style="font-family:sans-serif" onload="document.getElementById(' + fcs + ').focus();">' +
-'<h2>HKICL STEPS Contest</h2>' +
+'<h2>HKICL Pedometer Contest</h2>' +
 '<form action="' + act + '" method="get"><div style="font-size:0.9em;height:21px">' + mnu + sel + '</div></form>' +
 '<div style="font-size:1.1em;height:28px">' + ((msg == '') ? 'Welcome' : msg) + '</div>' +
 '<form action="' + act + '" method="post"><input type="hidden" name="node" value="' + node + '"/><table>' +
@@ -99,7 +99,7 @@ http.createServer(function(req, res) {
 				case '/init':
 					request({
 							uri: 'http://' + bcNodes[node].addr + '/registrar', 
-							method: 'POST', 
+							method: 'POST',
 							json: {"enrollId": "test_user3", "enrollSecret": "vWdLCE00vJy0"}
 						},
 						function (error, response, rspn) {
@@ -110,16 +110,48 @@ http.createServer(function(req, res) {
 							} else {
 								switch (response.statusCode) {
 								case 200:
-									res.end(buildUi(rspn['OK'], userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, 0));
+									//login successful, deploying chaincode
+									request({
+											uri: 'http://' + bcNodes[node].addr + '/registrar', 
+											method: 'POST',
+											json: {
+												"jsonrpc": "2.0",
+												"method": "deploy",
+												"params": {
+													"type": 1,
+													"chaincodeID": {"path": "https://github.com/pangduckwai/iclSteps/steps"},
+													"ctorMsg": {"function": "init", "args": ["1"]},
+													"secureContext": "test_user3"
+												},
+												"id": 1
+											}
+										},
+										function (error2, response2, rspn2) {
+											if (error2) {
+												console.log(error2);
+												res.statusCode = 500;
+												res.end();
+											} else {
+												switch (response2.statusCode) {
+												case 200:
+													res.end(buildUi(rspn['OK'], userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, 0));
+													break;
+												default:
+													console.log('Init result in status ' + response2.statusCode);
+													res.statusCode = 500;
+													res.end();
+												}
+											}
+									});
 									break;
+
 								default:
 									console.log('Enrollment result in status ' + response.statusCode);
 									res.statusCode = 500;
 									res.end();
 								}
 							}
-						}
-					);
+					});
 					break;
 
 				case '/submit':
