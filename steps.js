@@ -1,8 +1,10 @@
-var bcNodes = [
-	{name : "Node 0", addr : "127.0.0.1:7050"},
-	{name : "Node 1", addr : "127.0.0.1:8050"},
-	{name : "Node 2", addr : "127.0.0.1:9050"},
-	{name : "Node 3", addr : "127.0.0.1:10050"},
+// TODO!!! Learn where to put config params in node.js!!!
+const protocol = 'http';
+const bcNodes = [
+	{name : "Node 0", addr : "192.168.14.130", port : "7050",  user : "test_user0", scrt : "MS9qrN8hFjlE"}, //"127.0.0.1" 7050 8050 9050 10050
+	{name : "Node 1", addr : "192.168.14.130", port : "8050",  user : "test_user1", scrt : "jGlNl6ImkuDo"},
+	{name : "Node 2", addr : "192.168.14.130", port : "9050",  user : "test_user2", scrt : "zMflqOKezFiA"},
+	{name : "Node 3", addr : "192.168.14.130", port : "10050", user : "test_user3", scrt : "vWdLCE00vJy0"},
 ];
 
 var buildUi = function(msg, user, yr, mn, dt, step, node, state) {
@@ -43,13 +45,77 @@ var buildUi = function(msg, user, yr, mn, dt, step, node, state) {
 	return (rtn);
 };
 
+var rspnErr = function(response, status, message) {
+	console.log(message);
+	response.statusCode = status;
+	response.end(message);
+};
+
+var request = require('request');
+
+var enroll = function(node, succ, fail) {
+	console.log('Enrolling ' + bcNodes[node].user + ' (' + bcNodes[node].scrt + ')');
+	request({
+			uri: protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/registrar', 
+			method: 'POST',
+			json: {"enrollId": bcNodes[node].user, "enrollSecret": bcNodes[node].scrt}
+		},
+		function (error, response, body) {
+			if (error) {
+				fail('Enrollment failed', error);
+			} else {
+				switch (response.statusCode) {
+				case 200:
+					//enroll successful
+					succ(body);
+					break;
+
+				default:
+					fail('Enrollment result in status ' + response.statusCode, response);
+				}
+			}
+	});
+};
+
+var deploy = function(node, succ, fail) {
+	request({
+			uri: protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chaincode', 
+			method: 'POST',
+			json: {
+				"jsonrpc": "2.0",
+				"method": "deploy",
+				"params": {
+					"type": 1,
+					"chaincodeID": {"path": "https://github.com/pangduckwai/iclSteps/steps"},
+					"ctorMsg": {"function": "init", "args": ["1"]},
+					"secureContext": bcNodes[node].user
+				},
+				"id": 1
+			}
+		},
+		function (error, response, body) {
+			if (error) {
+				fail('Deployment failed', error);
+			} else {
+				switch (response.statusCode) {
+				case 200:
+					//deploy successful
+					succ(body);
+					break;
+				default:
+					fail('Deployment result in status ' + response.statusCode, response);
+				}
+			}
+	});
+};
+
 var http = require('http');
+var node = -1;
+var ccid = {};
 
 http.createServer(function(req, res) {
 	req.on('error', function(err) {
-			console.error(err);
-			res.statusCode = 500;
-			res.end();
+			rspnErr(res, 500, err);
 	});
 
 	res.on('error', function(err) {
@@ -58,100 +124,75 @@ http.createServer(function(req, res) {
 
 	var url = require('url');
 	var rqst = url.parse(req.url, true);
-	var node = (rqst.query['node']) ? parseInt(rqst.query['node']) : -1;
 
+	const os = require('os');
 	var path = require('path');
-	var userName = process.env['USERPROFILE'].split(path.sep)[2];
+	var userName = null;
+	switch (os.platform()) {
+	case 'win32':
+		userName = process.env['USERPROFILE'].split(path.sep)[2];
+		break;
+	case 'aix':
+	case 'darwin':
+	case 'freebsd':
+	case 'linux':
+	case 'openbsd':
+	case 'sunos':
+		userName = process.env['LOGNAME'];
+		break;
+	}
 
-	var rspnStr = '';
+	if (rqst.query['node']) node = parseInt(rqst.query['node']);
 
+	var buff = '';
 	req.on('data', function(chunk) {
-			rspnStr += chunk;
-			if (rspnStr.length > 1e6) req.connection.destroy(); // data larger than 1M
+			buff += chunk;
+			if (buff.length > 1e6) req.connection.destroy(); // data larger than 1M
 			console.log("DATA: " + chunk); //TODO TEMP!!!
 	}).on('end', function() {
-			var request = require('request');
 			var qstring = require('querystring');
-			var param = qstring.parse(rspnStr);
+			var param = qstring.parse(buff);
+			var now = new Date();
 
+			if (param['node']) node = parseInt(param['node']);
 			if (isNaN(node) || (node < 0)) {
-				node = (param['node']) ? parseInt(param['node']) : -1;
-				if (isNaN(node) || (node < 0)) {
-					console.log("Node!: " + node); //TODO TEMP!!!
-					node = Math.floor(Math.random() * bcNodes.length);
-				}
+				node = Math.floor(Math.random() * bcNodes.length);
+				console.log("Randomly choosing node " + node); //TODO TEMP!!!
+			}
+
+			if (!ccid[node]) {
+				enroll(node,
+					function(bdy) {
+						console.log(bdy.OK);
+						deploy(node,
+							function(body) {
+								console.log('Chaincode deployment: ' + body.result.status);
+								if (body.result.status == 'OK') {
+									ccid[node] = body.result.message;
+								}
+								res.end(buildUi("Deploy successful", userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, 0));
+							},
+							function(mssg, errr) {
+								rspnErr(res, 500, mssg);
+							});
+					},
+					function(msg, err) {
+						rspnErr(res, 500, msg);
+				});
+				return;
 			}
 
 			switch (req.method) {
 			case 'GET':
-				var now = new Date();
-
 				switch (rqst.pathname) {
 				case '/':
 					// Main page listing data
-					if (rqst.query['node']) {
-						res.end('Node is ' + rqst.query['node']);
+					if (ccid) {
+						res.end('CCID is ' + ccid);
 					} else {
-						res.end('Node is unspecified');
+						res.end('CCID is unspecified');
+						
 					}
-					break;
-
-				case '/init':
-					request({
-							uri: 'http://' + bcNodes[node].addr + '/registrar', 
-							method: 'POST',
-							json: {"enrollId": "test_user3", "enrollSecret": "vWdLCE00vJy0"}
-						},
-						function (error, response, rspn) {
-							if (error) {
-								console.log(error);
-								res.statusCode = 500;
-								res.end();
-							} else {
-								switch (response.statusCode) {
-								case 200:
-									//login successful, deploying chaincode
-									request({
-											uri: 'http://' + bcNodes[node].addr + '/registrar', 
-											method: 'POST',
-											json: {
-												"jsonrpc": "2.0",
-												"method": "deploy",
-												"params": {
-													"type": 1,
-													"chaincodeID": {"path": "https://github.com/pangduckwai/iclSteps/steps"},
-													"ctorMsg": {"function": "init", "args": ["1"]},
-													"secureContext": "test_user3"
-												},
-												"id": 1
-											}
-										},
-										function (error2, response2, rspn2) {
-											if (error2) {
-												console.log(error2);
-												res.statusCode = 500;
-												res.end();
-											} else {
-												switch (response2.statusCode) {
-												case 200:
-													res.end(buildUi(rspn['OK'], userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, 0));
-													break;
-												default:
-													console.log('Init result in status ' + response2.statusCode);
-													res.statusCode = 500;
-													res.end();
-												}
-											}
-									});
-									break;
-
-								default:
-									console.log('Enrollment result in status ' + response.statusCode);
-									res.statusCode = 500;
-									res.end();
-								}
-							}
-					});
 					break;
 
 				case '/submit':
@@ -163,8 +204,7 @@ http.createServer(function(req, res) {
 					break;
 
 				default:
-					res.statusCode = 404;
-					res.end();
+					rspnErr(res, 404, rqst.pathname + ' not found');
 				}
 				break;
 
@@ -199,14 +239,12 @@ http.createServer(function(req, res) {
 					break;
 
 				default:
-					res.statusCode = 404;
-					res.end();
+					rspnErr(res, 404, rqst.pathname + ' not found');
 				}
 				break;
 
 			default:
-				res.statusCode = 405;
-				res.end();
+				rspnErr(res, 405, req.method + ' not supported');
 			}
 	});
 }).listen(8080);
