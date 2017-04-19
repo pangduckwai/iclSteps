@@ -86,7 +86,7 @@ var deploy = function(node, succ, fail) {
 				"method": "deploy",
 				"params": {
 					"type": 1,
-					"chaincodeID": {"path": "https://github.com/pangduckwai/iclSteps/steps"},
+					"chaincodeID": {"path": "https://github.com/pangduckwai/iclSteps/chaincode"},
 					"ctorMsg": {"function": "init", "args": ["1"]},
 					"secureContext": bcNodes[node].user
 				},
@@ -99,8 +99,12 @@ var deploy = function(node, succ, fail) {
 			} else {
 				switch (response.statusCode) {
 				case 200:
-					//deploy successful
-					succ(body);
+					if (!body.error) {
+						//deploy successful
+						succ(body);
+					} else {
+						fail(body.error.message, body);
+					}
 					break;
 				default:
 					fail('Deployment result in status ' + response.statusCode, response);
