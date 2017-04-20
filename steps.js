@@ -8,10 +8,10 @@ const fs = require('fs');
 // TODO!!! Learn where to put config params in node.js!!!
 const protocol = 'http';
 const bcNodes = [
-	{name : "Node 0", addr : "127.0.0.1", port : "7050",  user : "test_user0", scrt : "MS9qrN8hFjlE"}, //127.0.0.1 7050 8050 9050 10050
-	{name : "Node 1", addr : "127.0.0.1", port : "8050",  user : "test_user1", scrt : "jGlNl6ImkuDo"}, //192.168.14.130
-	{name : "Node 2", addr : "127.0.0.1", port : "9050",  user : "test_user2", scrt : "zMflqOKezFiA"},
-	{name : "Node 3", addr : "127.0.0.1", port : "10050", user : "test_user3", scrt : "vWdLCE00vJy0"},
+	{name : "Node 0", addr : "192.168.14.130", port : "7050",  user : "test_user0", scrt : "MS9qrN8hFjlE"}, //127.0.0.1 7050 8050 9050 10050
+	{name : "Node 1", addr : "192.168.14.130", port : "8050",  user : "test_user1", scrt : "jGlNl6ImkuDo"}, //192.168.14.130
+	{name : "Node 2", addr : "192.168.14.130", port : "9050",  user : "test_user2", scrt : "zMflqOKezFiA"},
+	{name : "Node 3", addr : "192.168.14.130", port : "10050", user : "test_user3", scrt : "vWdLCE00vJy0"},
 ];
 const mimeMap = {
 	'.ico' : 'image/x-icon',
@@ -228,7 +228,7 @@ http.createServer(function(req, res) {
 								if (body.result.status == 'OK') {
 									ccid[node] = body.result.message;
 								}
-								res.end(buildUi("Deploy successful", userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1));
+								res.end(buildUi(bcNodes[node].name + " ready", userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1));
 							},
 							function(mssg, errr) {
 								rspnErr(res, 500, mssg);
