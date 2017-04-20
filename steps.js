@@ -56,8 +56,8 @@ var buildUi = function(msg, user, yr, mn, dt, step, node, state) {
 	var fcs = (state == 0) ? "'step'" : "'user'";
 	var act = (state == 0) ? '/submit' : ((state == 1) ? '/verify' : '/');
 
-	var hfs = '<a href="/submit?node=' + node + '">';
-	var hfv = '<a href="/verify?node=' + node + '">';
+	var hfs = '<a href="/submit">';
+	var hfv = '<a href="/verify">';
 	var mnu = (state == 0) ? 'Submit | ' + hfv + 'Verify</a>' : ((state == 1) ? hfs + 'Submit</a> | Verify' : ((state < 0) ? hfs + 'Submit</a> | ' + hfv + 'Verify</a>' : 'Submit | Verify'));
 	var rtn = (state == 2) ? hfs + 'Return</a></div>' : ((state == 3) ? hfv + 'Return</a></div>' : '<input type="submit" value="Send"/><input type="reset" value="Clear"/>');
 
@@ -80,7 +80,7 @@ var buildUi = function(msg, user, yr, mn, dt, step, node, state) {
 	var ctn = (state < 0) ?
 ('<h1>Draw some blockchains here!</1>')
 :
-('<form action="' + act + '" method="post"><input type="hidden" name="node" value="' + node + '"/><table>' +
+('<form action="' + act + '" method="post"><table>' +
  '<tr><td>User: </td><td><input type="text" name="user" id="user" value="' + user + '" ' + ro0 + '/></td></tr>' +
  '<tr><td>Date: </td><td>' +
  '<input type="text" size="4" maxlength="4" name="year" value="' + yr + '" ' + ro1 + '/>' +
