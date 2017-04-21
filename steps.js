@@ -8,10 +8,10 @@ const fs = require('fs');
 // TODO!!! Learn where to put config params in node.js!!!
 const protocol = 'http';
 const bcNodes = [
-	{name : "Node 0", addr : "192.168.14.130", port : "7050",  user : "test_user0", scrt : "MS9qrN8hFjlE"}, //127.0.0.1 7050 8050 9050 10050
-	{name : "Node 1", addr : "192.168.14.130", port : "8050",  user : "test_user1", scrt : "jGlNl6ImkuDo"}, //192.168.14.130
-	{name : "Node 2", addr : "192.168.14.130", port : "9050",  user : "test_user2", scrt : "zMflqOKezFiA"},
-	{name : "Node 3", addr : "192.168.14.130", port : "10050", user : "test_user3", scrt : "vWdLCE00vJy0"},
+	{name : "Node 0", addr : "127.0.0.1", port : "7050",  user : "test_user0", scrt : "MS9qrN8hFjlE"}, //127.0.0.1 7050 8050 9050 10050
+	{name : "Node 1", addr : "127.0.0.1", port : "8050",  user : "test_user1", scrt : "jGlNl6ImkuDo"}, //192.168.14.130
+	{name : "Node 2", addr : "127.0.0.1", port : "9050",  user : "test_user2", scrt : "zMflqOKezFiA"},
+	{name : "Node 3", addr : "127.0.0.1", port : "10050", user : "test_user3", scrt : "vWdLCE00vJy0"},
 ];
 const mimeMap = {
 	'.ico' : 'image/x-icon',
@@ -49,48 +49,55 @@ var serveFile = function(pathname, succ, fail) {
 	}
 };
 
-var buildUi = function(msg, user, yr, mn, dt, step, node, state) {
+var buildUi = function(msg, user, yr, mn, dt, step, node, state, succ, fail) {
 	var ro0 = (state != 1) ? 'readonly' : '';
 	var ro1 = ((state == 2) || (state == 3)) ? 'readonly' : '';
-	var fcs = (state == 0) ? "'step'" : "'user'";
-	var act = (state == 0) ? '/submit' : ((state == 1) ? '/verify' : '/');
-
-	var hfs = '<a href="/submit">';
-	var hfv = '<a href="/verify">';
-	var mnu = (state == 0) ? 'Submit | ' + hfv + 'Verify</a>' : ((state == 1) ? hfs + 'Submit</a> | Verify' : ((state < 0) ? hfs + 'Submit</a> | ' + hfv + 'Verify</a>' : 'Submit | Verify'));
-	var rtn = (state == 2) ? hfs + 'Return</a></div>' : ((state == 3) ? hfv + 'Return</a></div>' : '<input type="submit" value="Send"/><input type="reset" value="Clear"/>');
+	var fcs = (state == 0) ? "step" : "user";
+	var act = ((state == 0) || (state == 2)) ? '/submit' : (((state == 1) || (state == 3)) ? '/verify' : '/');
+	var canSwitch = (state <= 1) ? 'true' : 'false';
+	var mnuHome = (state <= 1) ? "enableAnchor" : "disableAnchor";
+	var mnuSbmt = ((state < 0) || (state == 1)) ? "enableAnchor" : "disableAnchor";
+	var mnuVrfy = ((state < 0) || (state == 0)) ? "enableAnchor" : "disableAnchor";
+	var vsbForm = (state < 0) ? "none" : "block";
+	var vsbLink = (state <= 1) ? "none" : "block";
+	var vsbBttn = (state <= 1) ? "block" : "none";
 
 	var slt = '';
-	if ((state >= 0) && (state != 2) && (state != 3)) {
-		slt = ' | Connect to <select name="node" value="' + node + '" style="font-size:0.7em;" onchange="this.form.submit()">'
-		for (var i = 0; i < bcNodes.length; i ++) {
-			slt += '<option ' + ((i == node) ? 'selected ' : '') + 'value="' + i + '">' + bcNodes[i].name + '</option>';
-		}
-		slt += '</select>';
+	for (var i = 0; i < bcNodes.length; i ++) {
+		slt += '<option ' + ((i == node) ? 'selected ' : '') + 'value="' + i + '">' + bcNodes[i].name + '</option>';
 	}
 
-	var hdr =
-'<html><head><title>HKICL Pedometer Contest</title></head>' +
-'<body style="font-family:sans-serif" onload="document.getElementById(' + fcs + ').focus();">' +
-'<h2><img src="logo.png" style="vertical-align:middle;width:72;height:72"/>HKICL Pedometer Contest</h2>' +
-'<form action="' + act + '" method="get"><div style="font-size:0.9em;height:21px"><a href="/">Home</a> | ' + mnu + slt + '</div></form>' +
-'<div style="font-size:1.1em;height:28px">' + ((msg == '') ? 'Welcome' : msg) + '</div>';
-
-	var ctn = (state < 0) ?
-('<h1>Draw some blockchains here!</1>')
-:
-('<form action="' + act + '" method="post"><table>' +
- '<tr><td>User: </td><td><input type="text" name="user" id="user" value="' + user + '" ' + ro0 + '/></td></tr>' +
- '<tr><td>Date: </td><td>' +
- '<input type="text" size="4" maxlength="4" name="year" value="' + yr + '" ' + ro1 + '/>' +
- '<input type="text" size="2" maxlength="2" name="mnth" value="' + mn + '" ' + ro1 + '/>' +
- '<input type="text" size="2" maxlength="2" name="date" value="' + dt + '" ' + ro1 + '/></td></tr>' +
- '<tr><td>Steps: </td><td>' + '<input type="text" size="7" name="step" id="step" value="' + step + '" onfocus="this.select();" ' + ro1 + '/></td></tr>' +
- '</table><br/>' + rtn + '</form>');
-
-	var ftr = '</body></html>';
-
-	return (hdr + ctn + ftr);
+	fs.readFile(path.join('.', '/steps.html'), 'utf8',
+		function(error, data) {
+				if (error) {
+					if (error.code === 'ENOENT') {
+						fail(404, 'File ' + pathname + ' not found');
+					} else {
+						throw err;
+					}
+				} else {
+					succ(data
+						.replace('%%%message%%%', msg)
+						.replace('%%%user%%%', user)
+						.replace('%%%year%%%', yr)
+						.replace('%%%mnth%%%', mn)
+						.replace('%%%date%%%', dt)
+						.replace('%%%step%%%', step)
+						.replace(/%%%form%%%/g, vsbForm)
+						.replace(/%%%focus%%%/g, fcs)
+						.replace(/%%%action%%%/g, act)
+						.replace(/%%%options%%%/g, slt)
+						.replace(/%%%enableNode%%%/g, canSwitch)
+						.replace(/%%%readOnlyUser%%%/g, ro0)
+						.replace(/%%%readOnlyDate%%%/g, ro1)
+						.replace(/%%%readOnlyStep%%%/g, ro1)
+						.replace(/%%%anchorHome%%%/g, mnuHome)
+						.replace(/%%%anchorSubmit%%%/g, mnuSbmt)
+						.replace(/%%%anchorVerify%%%/g, mnuVrfy)
+						.replace(/%%%returnLink%%%/g, vsbLink)
+						.replace(/%%%formButton%%%/g, vsbBttn));
+				}
+	});
 };
 
 // Webservices
@@ -227,7 +234,14 @@ http.createServer(function(req, res) {
 								if (body.result.status == 'OK') {
 									ccid[node] = body.result.message;
 								}
-								res.end(buildUi(bcNodes[node].name + " ready", userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1));
+								buildUi(bcNodes[node].name + " ready", userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1,
+									function(htmlBody) {
+										res.setHeader('Content-type', 'text/html');
+										res.end(htmlBody);
+									},
+									function(respStatus, errMsg) {
+										rspnErr(res, respStatus, errMsg);
+								});
 							},
 							function(mssg, errr) {
 								rspnErr(res, 500, mssg);
@@ -247,7 +261,14 @@ http.createServer(function(req, res) {
 					if (ccid) {
 						queryChain(node,
 							function(body) {
-								res.end(buildUi(body, userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1));
+								buildUi(body, userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1,
+									function(htmlBody) {
+										res.setHeader('Content-type', 'text/html');
+										res.end(htmlBody);
+									},
+									function(respStatus, errMsg) {
+										rspnErr(res, respStatus, errMsg);
+								});
 							},
 							function(mssg, errr) {
 								rspnErr(res, 500, mssg);
@@ -256,11 +277,25 @@ http.createServer(function(req, res) {
 					break;
 
 				case '/submit':
-					res.end(buildUi('Please submit your record', userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, 0));
+					buildUi('Please submit your record', userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, 0,
+						function(htmlBody) {
+							res.setHeader('Content-type', 'text/html');
+							res.end(htmlBody);
+						},
+						function(respStatus, errMsg) {
+							rspnErr(res, respStatus, errMsg);
+					});
 					break;
 
 				case '/verify':
-					res.end(buildUi('Submitting verification for:', '', now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, 1));
+					buildUi('Submitting verification for:', '', now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, 1,
+						function(htmlBody) {
+							res.setHeader('Content-type', 'text/html');
+							res.end(htmlBody);
+						},
+						function(respStatus, errMsg) {
+							rspnErr(res, respStatus, errMsg);
+					});
 					break;
 
 				default:
@@ -287,7 +322,14 @@ http.createServer(function(req, res) {
 						// TODO HERE!!! write values
 						console.error('Submitting new record to node ' + node);
 					}
-					res.end(buildUi(mssg, param['user'], param['year'], param['mnth'], param['date'], param['step'], node, 2));
+					buildUi(mssg, param['user'], param['year'], param['mnth'], param['date'], param['step'], node, 2,
+						function(htmlBody) {
+							res.setHeader('Content-type', 'text/html');
+							res.end(htmlBody);
+						},
+						function(respStatus, errMsg) {
+							rspnErr(res, respStatus, errMsg);
+					});
 					break;
 
 				case '/verify':
@@ -302,7 +344,14 @@ http.createServer(function(req, res) {
 						// TODO HERE!!! verify values
 						console.error('Submitting verification to node ' + node);
 					}
-					res.end(buildUi(mssg, param['user'], param['year'], param['mnth'], param['date'], param['step'], node, 3));
+					buildUi(mssg, param['user'], param['year'], param['mnth'], param['date'], param['step'], node, 3,
+						function(htmlBody) {
+							res.setHeader('Content-type', 'text/html');
+							res.end(htmlBody);
+						},
+						function(respStatus, errMsg) {
+							rspnErr(res, respStatus, errMsg);
+					});
 					break;
 
 				default:

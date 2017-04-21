@@ -1,0 +1,59 @@
+<html>
+	<head>
+		<title>HKICL Pedometer Contest</title>
+		<style>
+a:active, a:link, a:visited {
+	text-decoration: none;
+}
+.enableAnchor{
+	color: #0000ff;
+}
+.disableAnchor {
+    color: #000000;
+    pointer-events: none;
+}
+		</style>
+		<script type="text/javascript">
+function switchNode(selForm) {
+	if (%%%enableNode%%%) {
+		selForm.submit();
+	} else {
+		selForm.reset();
+	}
+}
+		</script>
+	</head>
+	<body style="font-family:sans-serif" onload="document.getElementById('%%%focus%%%').focus();">
+		<h2><img src="logo.png" style="vertical-align:middle;width:72;height:72">HKICL Pedometer Contest</h2>
+		<form action="%%%action%%%" method="get">
+			<div style="font-size:0.9em;height:21px">
+				<a href="/" class="%%%anchorHome%%%">Home</a> | 
+				<a href="/submit" class="%%%anchorSubmit%%%">Submit</a> | 
+				<a href="/verify" class="%%%anchorVerify%%%">Verify</a> | 
+				Connect to
+				<select name="node" value="2" style="font-size:0.7em;" onchange="switchNode(this.form);">%%%options%%%</select>
+			</div>
+		</form>
+		<div style="font-size:1.1em;height:28px">%%%message%%%</div>
+		<form action="%%%action%%%" method="post" style="display: %%%form%%%">
+			<table>
+				<tr><td>User: </td><td><input type="text" name="user" id="user" value="%%%user%%%" %%%readOnlyUser%%%></td></tr>
+				<tr>
+					<td>Date: </td>
+					<td>
+						<input type="text" size="4" maxlength="4" name="year" value="%%%year%%%" %%%readOnlyDate%%%>
+						<input type="text" size="2" maxlength="2" name="mnth" value="%%%mnth%%%" %%%readOnlyDate%%%>
+						<input type="text" size="2" maxlength="2" name="date" value="%%%date%%%" %%%readOnlyDate%%%>
+					</td>
+				</tr>
+				<tr>
+					<td>Steps: </td>
+					<td><input type="text" size="7" name="step" id="step" value="%%%step%%%" onfocus="this.select();" %%%readOnlyStep%%%></td>
+				</tr>
+			</table>
+			<br/>
+			<a href="%%%action%%%" style="display: %%%returnLink%%%">Return</a>
+			<span style="display: %%%formButton%%%"><input type="submit" value="Send"><input type="reset" value="Clear"></span>
+		</form>
+	</body>
+</html>
