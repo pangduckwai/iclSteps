@@ -31,8 +31,7 @@ var rspnErr = function(response, status, message) {
 	response.end(message);
 };
 
-var serveFile = function(jsonUrl, succ, fail) {
-	var pathname = jsonUrl.pathname;
+var serveFile = function(pathname, succ, fail) {
 	var extn = path.parse(pathname).ext;
 
 	if (extn) {
@@ -265,7 +264,7 @@ http.createServer(function(req, res) {
 					break;
 
 				default:
-					serveFile(rqst,
+					serveFile(rqst.pathname,
 						function(key, hdr, ctn) {
 							res.setHeader(key, hdr);
 							res.end(ctn);
