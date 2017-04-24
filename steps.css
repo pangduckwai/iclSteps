@@ -35,6 +35,8 @@ a:active, a:link, a:visited {
 .chart {
 	border: 1px solid #404040;
 	border-radius: 3px;
+	display: table-cell;
+	position: absolute;
 }
 .chart-ctnt {
 	text-align: center;
@@ -48,10 +50,10 @@ a:active, a:link, a:visited {
 
 .block-line {
 	stroke: black;
-	stroke-width: 1;
+	stroke-width: 3;
 }
 
 .block-text {
-	stroke: black;
-	font-size: .8em;
+	color: black;
+	font-size: .9em;
 }
