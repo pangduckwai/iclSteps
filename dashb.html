@@ -1,0 +1,26 @@
+<html>
+	<head>
+		<title>HKICL Pedometer Contest</title>
+		<meta charset="utf-8"/>
+		<!--meta http-equiv="refresh" content="1000"/-->
+		<script src="d3.min.js" type="text/javascript"></script>
+		<script src="dashb.js" type="text/javascript"></script>
+		<link type="text/css" rel="stylesheet" href="steps.css"/>
+	</head>
+	<body onLoad="init()">
+		<h2><img src="logo.png" style="vertical-align:middle;width:72;height:72">HKICL Pedometer Contest</h2>
+		<form action="%%%action%%%" method="get">
+			<div style="font-size:0.9em;height:21px">
+				<a href="/" class="%%%anchorHome%%%">Home</a> | 
+				<a href="/submit" class="%%%anchorSubmit%%%">Submit</a> | 
+				<a href="/verify" class="%%%anchorVerify%%%">Verify</a> | 
+				Connect to
+				<select name="node" value="2" style="font-size:0.7em;" onchange="switchNode(this.form);">%%%options%%%</select>
+			</div>
+		</form>
+		<div style="font-size:1.1em;height:28px">%%%message%%%</div>
+		<ul style="list-style:none;">
+			<li id="block-list" class="chart" style="top:0px;left:0px;width:50%;height:50%"></li>
+		</ul>
+	</body>
+</html>

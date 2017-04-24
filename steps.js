@@ -49,7 +49,7 @@ var serveFile = function(pathname, succ, fail) {
 	}
 };
 
-var buildUi = function(msg, user, yr, mn, dt, step, node, state, succ, fail) {
+var buildUi = function(html, msg, user, yr, mn, dt, step, node, state, succ, fail) {
 	var ro0 = (state != 1) ? 'readonly' : '';
 	var ro1 = ((state == 2) || (state == 3)) ? 'readonly' : '';
 	var fcs = (state == 0) ? "step" : "user";
@@ -67,7 +67,7 @@ var buildUi = function(msg, user, yr, mn, dt, step, node, state, succ, fail) {
 		slt += '<option ' + ((i == node) ? 'selected ' : '') + 'value="' + i + '">' + bcNodes[i].name + '</option>';
 	}
 
-	fs.readFile(path.join('.', '/steps.html'), 'utf8',
+	fs.readFile(path.join('.', html), 'utf8',
 		function(error, data) {
 				if (error) {
 					if (error.code === 'ENOENT') {
@@ -179,6 +179,12 @@ var deploy = function(node, succ, fail) {
 
 var node = -1;
 var ccid = {};
+//TEMP!!!!!!!!!!!
+ccid = {"0":"00000000000000000000000",
+		"1":"11111111111111111111111",
+		"2":"22222222222222222222222",
+		"3":"33333333333333333333333"}
+//!!!!!!!!!!!TEMP
 
 http.createServer(function(req, res) {
 	req.on('error', function(err) {
@@ -234,7 +240,7 @@ http.createServer(function(req, res) {
 								if (body.result.status == 'OK') {
 									ccid[node] = body.result.message;
 								}
-								buildUi(bcNodes[node].name + " ready", userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1,
+								buildUi('/dashb.html', bcNodes[node].name + " ready", userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1,
 									function(htmlBody) {
 										res.setHeader('Content-type', 'text/html');
 										res.end(htmlBody);
@@ -261,7 +267,7 @@ http.createServer(function(req, res) {
 					if (ccid) {
 						queryChain(node,
 							function(body) {
-								buildUi(body, userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1,
+								buildUi('/dashb.html', body, userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1,
 									function(htmlBody) {
 										res.setHeader('Content-type', 'text/html');
 										res.end(htmlBody);
@@ -277,7 +283,7 @@ http.createServer(function(req, res) {
 					break;
 
 				case '/submit':
-					buildUi('Please submit your record', userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, 0,
+					buildUi('/steps.html', 'Please submit your record', userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, 0,
 						function(htmlBody) {
 							res.setHeader('Content-type', 'text/html');
 							res.end(htmlBody);
@@ -288,7 +294,7 @@ http.createServer(function(req, res) {
 					break;
 
 				case '/verify':
-					buildUi('Submitting verification for:', '', now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, 1,
+					buildUi('/steps.html', 'Submitting verification for:', '', now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, 1,
 						function(htmlBody) {
 							res.setHeader('Content-type', 'text/html');
 							res.end(htmlBody);
@@ -322,7 +328,7 @@ http.createServer(function(req, res) {
 						// TODO HERE!!! write values
 						console.error('Submitting new record to node ' + node);
 					}
-					buildUi(mssg, param['user'], param['year'], param['mnth'], param['date'], param['step'], node, 2,
+					buildUi('/steps.html', mssg, param['user'], param['year'], param['mnth'], param['date'], param['step'], node, 2,
 						function(htmlBody) {
 							res.setHeader('Content-type', 'text/html');
 							res.end(htmlBody);
@@ -344,7 +350,7 @@ http.createServer(function(req, res) {
 						// TODO HERE!!! verify values
 						console.error('Submitting verification to node ' + node);
 					}
-					buildUi(mssg, param['user'], param['year'], param['mnth'], param['date'], param['step'], node, 3,
+					buildUi('/steps.html', mssg, param['user'], param['year'], param['mnth'], param['date'], param['step'], node, 3,
 						function(htmlBody) {
 							res.setHeader('Content-type', 'text/html');
 							res.end(htmlBody);

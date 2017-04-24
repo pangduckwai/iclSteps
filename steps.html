@@ -1,18 +1,6 @@
 <html>
 	<head>
 		<title>HKICL Pedometer Contest</title>
-		<style>
-a:active, a:link, a:visited {
-	text-decoration: none;
-}
-.enableAnchor{
-	color: #0000ff;
-}
-.disableAnchor {
-    color: #000000;
-    pointer-events: none;
-}
-		</style>
 		<script type="text/javascript">
 function switchNode(selForm) {
 	if (%%%enableNode%%%) {
@@ -22,12 +10,13 @@ function switchNode(selForm) {
 	}
 }
 		</script>
+		<link type="text/css" rel="stylesheet" href="steps.css"/>
 	</head>
 	<body style="font-family:sans-serif" onload="document.getElementById('%%%focus%%%').focus();">
 		<h2><img src="logo.png" style="vertical-align:middle;width:72;height:72">HKICL Pedometer Contest</h2>
 		<form action="%%%action%%%" method="get">
 			<div style="font-size:0.9em;height:21px">
-				<a href="/" class="%%%anchorHome%%%">Home</a> | 
+				<a href="/dashb.html" class="%%%anchorHome%%%">Home</a> | 
 				<a href="/submit" class="%%%anchorSubmit%%%">Submit</a> | 
 				<a href="/verify" class="%%%anchorVerify%%%">Verify</a> | 
 				Connect to
