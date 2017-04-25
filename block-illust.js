@@ -1,27 +1,63 @@
 
-var isIE = false;
-if ((/*@cc_on ! @*/ false) || navigator.userAgent.match(/Trident/g)) {
-	isIE = true;
-}
-
-const RUN_INTERVAL = 3000;
 const MAX_BLOCK_DSP = 10;
 const MARGIN_LEFT = 15;
 const BLOCK_SIDE_LEN = 40;
 
-var threadId = null;
+BlockIllustrator = function(chartId) {
+	this.id = "block-illust"; //Chart ID
+	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
+	this.name = "Blockchain illustrator";
+	this.url = "%%%urlChain%%%";
+	this.minGridWdth = 4;
+	this.minGridHght = 4;
+	this.updateInterval = 1000;
 
-function init() {
-	/*threadId = setInterval(function() {
-			render();
-	}, RUN_INTERVAL);*/
-	render();
-}
+	this.selected = -1; // Meaning always select the latest block
 
-function stop() {
-	clearInterval(threadId);
-	threadId = null;
-}
+	var timeFormat = d3.time.format("%H:%M:%S");
+	var paddTop = 15, paddLft = 45, paddRgt = 10, paddBtm = 70, txtHght = 15;
+	var durationX = 2000, durationY = 1000;
+
+	this.buildUi = function(func) {
+		func('<div class="chart-title"></div><svg class="chart-viz" />');
+	};
+
+	this.init = function() {
+		d3.select("#"+this.domId).select(".chart-title").html("Blockchain illustrator");
+	};
+
+	this.render = function() {
+		var obj = this;
+		accessData(this.url, function(rspn) {
+			if (!rspn || (rspn.length <= 0)) {
+				return;
+			}
+			console.log(rspn);
+		});
+	};
+
+	this.fromCookie = function(cook) {
+		if (cook) {
+			this.selected = parseInt(cook["selected"]);
+		}
+	};
+
+	this.toCookie = function(row, col, wdth, hght) {
+		var cook = {};
+		cook[KEY_CHART] = this.id;
+		cook[KEY_ROW] = row;
+		cook[KEY_COL] = col;
+		cook[KEY_WDTH] = wdth;
+		cook[KEY_HGHT] = hght;
+		cook["selected"] = this.selected;
+		return cook;
+	};
+};
+BlockIllustrator.prototype = new Chart();
+BlockIllustrator.prototype.constructor = BlockIllustrator;
+addAvailableCharts(new BlockIllustrator());
+
+
 
 function render() {
 	var uldim = d3.select(".charts").node().getBoundingClientRect();

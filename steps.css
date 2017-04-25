@@ -1,45 +1,9 @@
-body {
-	margin: 10px;
-	background-color: #ffffff;
-	color: #000000;
-	font-family: sans-serif;
-	font-weight: normal;
-}
-div {
-	margin: 0;
-}
-ul {
-	margin: 0;
-}
-li {
-	margin: 0;
-}
-
-a:active, a:link, a:visited {
-	text-decoration: none;
-}
-
 .enableAnchor{
 	color: blue;
 }
 .disableAnchor {
     color: black;
     pointer-events: none;
-}
-
-.overlay {
-	fill: none;
-	pointer-events: visible;
-}
-
-.chart {
-	border: 1px solid #404040;
-	border-radius: 3px;
-	display: table-cell;
-	position: absolute;
-}
-.chart-ctnt {
-	text-align: center;
 }
 
 .block-rect {

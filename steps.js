@@ -31,11 +31,11 @@ var rspnErr = function(response, status, message) {
 	response.end(message);
 };
 
-var serveFile = function(pathname, succ, fail) {
+var serveFile = function(pathname, encoding, succ, fail) {
 	var extn = path.parse(pathname).ext;
 
 	if (extn) {
-		fs.readFile(path.join('.', pathname), function(error, data) {
+		fs.readFile(path.join('.', pathname), encoding, function(error, data) {
 				if (error) {
 					if (error.code === 'ENOENT') {
 						fail(404, 'File ' + pathname + ' not found');
@@ -67,36 +67,32 @@ var buildUi = function(html, msg, user, yr, mn, dt, step, node, state, succ, fai
 		slt += '<option ' + ((i == node) ? 'selected ' : '') + 'value="' + i + '">' + bcNodes[i].name + '</option>';
 	}
 
-	fs.readFile(path.join('.', html), 'utf8',
-		function(error, data) {
-				if (error) {
-					if (error.code === 'ENOENT') {
-						fail(404, 'File ' + pathname + ' not found');
-					} else {
-						throw err;
-					}
-				} else {
-					succ(data
-						.replace('%%%message%%%', msg)
-						.replace('%%%user%%%', user)
-						.replace('%%%year%%%', yr)
-						.replace('%%%mnth%%%', mn)
-						.replace('%%%date%%%', dt)
-						.replace('%%%step%%%', step)
-						.replace(/%%%form%%%/g, vsbForm)
-						.replace(/%%%focus%%%/g, fcs)
-						.replace(/%%%action%%%/g, act)
-						.replace(/%%%options%%%/g, slt)
-						.replace(/%%%enableNode%%%/g, canSwitch)
-						.replace(/%%%readOnlyUser%%%/g, ro0)
-						.replace(/%%%readOnlyDate%%%/g, ro1)
-						.replace(/%%%readOnlyStep%%%/g, ro1)
-						.replace(/%%%anchorHome%%%/g, mnuHome)
-						.replace(/%%%anchorSubmit%%%/g, mnuSbmt)
-						.replace(/%%%anchorVerify%%%/g, mnuVrfy)
-						.replace(/%%%returnLink%%%/g, vsbLink)
-						.replace(/%%%formButton%%%/g, vsbBttn));
-				}
+	serveFile(html, 'utf8',
+		function(key, hdr, ctn) {
+			succ(ctn
+				.replace('%%%message%%%', msg)
+				.replace('%%%user%%%', user)
+				.replace('%%%year%%%', yr)
+				.replace('%%%mnth%%%', mn)
+				.replace('%%%date%%%', dt)
+				.replace('%%%step%%%', step)
+				.replace(/%%%form%%%/g, vsbForm)
+				.replace(/%%%focus%%%/g, fcs)
+				.replace(/%%%action%%%/g, act)
+				.replace(/%%%options%%%/g, slt)
+				.replace(/%%%enableNode%%%/g, canSwitch)
+				.replace(/%%%readOnlyUser%%%/g, ro0)
+				.replace(/%%%readOnlyDate%%%/g, ro1)
+				.replace(/%%%readOnlyStep%%%/g, ro1)
+				.replace(/%%%anchorHome%%%/g, mnuHome)
+				.replace(/%%%anchorSubmit%%%/g, mnuSbmt)
+				.replace(/%%%anchorVerify%%%/g, mnuVrfy)
+				.replace(/%%%returnLink%%%/g, vsbLink)
+				.replace(/%%%formButton%%%/g, vsbBttn)
+				.replace(/%%%urlChain%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain'));
+		},
+		function(sts, ctn) {
+			fail(sts, ctn);
 	});
 };
 
@@ -265,19 +261,13 @@ http.createServer(function(req, res) {
 				case '/':
 					// Main page listing data
 					if (ccid) {
-						queryChain(node,
-							function(body) {
-								buildUi('/dashb.html', body, userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1,
-									function(htmlBody) {
-										res.setHeader('Content-type', 'text/html');
-										res.end(htmlBody);
-									},
-									function(respStatus, errMsg) {
-										rspnErr(res, respStatus, errMsg);
-								});
+						buildUi('/dashb.html', 'Hello', userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1,
+							function(htmlBody) {
+								res.setHeader('Content-type', 'text/html');
+								res.end(htmlBody);
 							},
-							function(mssg, errr) {
-								rspnErr(res, 500, mssg);
+							function(respStatus, errMsg) {
+								rspnErr(res, respStatus, errMsg);
 						});
 					}
 					break;
@@ -305,14 +295,25 @@ http.createServer(function(req, res) {
 					break;
 
 				default:
-					serveFile(rqst.pathname,
-						function(key, hdr, ctn) {
-							res.setHeader(key, hdr);
-							res.end(ctn);
-						},
-						function(sts, ctn) {
-							rspnErr(res, sts, ctn);
-					});
+					if (rqst.pathname.endsWith('.js')) {
+						buildUi(rqst.pathname, '', '', 0, 0, 0, 0, node, 0,
+							function(htmlBody) {
+								res.setHeader('Content-type', 'text/javascript');
+								res.end(htmlBody);
+							},
+							function(respStatus, errMsg) {
+								rspnErr(res, respStatus, errMsg);
+						});
+					} else {
+						serveFile(rqst.pathname, null,
+							function(key, hdr, ctn) {
+								res.setHeader(key, hdr);
+								res.end(ctn);
+							},
+							function(sts, ctn) {
+								rspnErr(res, sts, ctn);
+						});
+					}
 				}
 				break;
 
