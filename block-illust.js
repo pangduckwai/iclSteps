@@ -8,11 +8,12 @@ BlockIllustrator = function(chartId) {
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Blockchain illustrator";
 	this.url = "%%%urlChain%%%";
-	this.minGridWdth = 4;
-	this.minGridHght = 4;
+	this.minGridWdth = 5;
+	this.minGridHght = 2;
 	this.updateInterval = 1000;
 
 	this.selected = -1; // Meaning always select the latest block
+	this.displayTo = 0;
 
 	var timeFormat = d3.time.format("%H:%M:%S");
 	var paddTop = 15, paddLft = 45, paddRgt = 10, paddBtm = 70, txtHght = 15;
@@ -28,11 +29,70 @@ BlockIllustrator = function(chartId) {
 
 	this.render = function() {
 		var obj = this;
-		accessData(this.url, function(rspn) {
+//		accessData(this.url, function(rspn) {
+		accessDummy(this.url, function(rspn) {
 			if (!rspn || (rspn.length <= 0)) {
 				return;
 			}
-			console.log(rspn);
+			var blockArray = [];
+			var valTo = (obj.selected < 0) ? rspn.height : obj.displayTo;
+			var valFm = valTo - MAX_BLOCK_DSP;
+			if (valFm < 0) valFm = 0;
+			var idx = 0;
+			while (valFm < valTo) {
+				blockArray[idx ++] = valFm ++;
+			}
+			console.log("Height: " + rspn.height + " -- " + JSON.stringify(blockArray)); //TODO TEMP
+
+			var grph = d3.select("#"+obj.domId).select(".chart-viz");
+
+			var blocksWidth = ((obj.chartWdth - MARGIN_LEFT) / MAX_BLOCK_DSP) * blockArray.length;
+			var scaleX = d3.scale.ordinal().domain(blockArray).rangeRoundPoints([0, blocksWidth]);
+			var tickDistance = MARGIN_LEFT; // Any value
+			if (blockArray.length > 1) {
+				tickDistance = scaleX(blockArray[blockArray.length - 1]) - scaleX(blockArray[blockArray.length - 2]);
+			}
+			console.log(obj.chartWdth, blocksWidth, tickDistance); //TODO TEMP
+
+			var BLOCK_SIDE_HLF = BLOCK_SIDE_LEN / 2;
+			var BLOCK_SIDE_X = 0.6 * BLOCK_SIDE_LEN;
+			var BLOCK_SIDE_Y = -0.4 * BLOCK_SIDE_LEN;
+			var BLOCK_LINE_Y = 0.3 * BLOCK_SIDE_LEN;
+
+			var blocks = grph.selectAll("block").data(blockArray, function(d) { return d; } );
+			var block = blocks.enter().append("g").attr("class", "block").attr("transform", "translate(0, " + (obj.chartHght / 2) + ")");
+
+			block.append("rect").attr("class", "block-rect")
+				.attr("x", function(d) { return scaleX(d) + MARGIN_LEFT; })
+				.attr("y", 0).attr("width", BLOCK_SIDE_LEN).attr("height", BLOCK_SIDE_LEN);
+			block.append("polygon").attr("class", "block-rect")
+				.attr("points", function(d) {
+						var p0 = [scaleX(d) + MARGIN_LEFT, 0];
+						var p1 = [p0[0] + BLOCK_SIDE_X, BLOCK_SIDE_Y];
+						var p2 = [p1[0] + BLOCK_SIDE_LEN, BLOCK_SIDE_Y];
+						var p3 = [p0[0] + BLOCK_SIDE_LEN,  0];
+						return [p0.join(","), p1.join(","), p2.join(","), p3.join(",")].join(" ");
+				});
+			block.append("polygon").attr("class", "block-rect")
+				.attr("points", function(d) {
+						var p0 = [scaleX(d) + MARGIN_LEFT + BLOCK_SIDE_LEN,  0];
+						var p1 = [p0[0] + BLOCK_SIDE_X, BLOCK_SIDE_Y];
+						var p2 = [p1[0], BLOCK_SIDE_X];
+						var p3 = [p0[0], BLOCK_SIDE_LEN];
+						return [p0.join(","), p1.join(","), p2.join(","), p3.join(",")].join(" ");
+				});
+			block.append("line").attr("class", "block-line")
+				.attr("x1", function(d) { return scaleX(d) + MARGIN_LEFT - tickDistance + BLOCK_SIDE_LEN + BLOCK_LINE_Y; }).attr("y1", BLOCK_LINE_Y)
+				.attr("x2", function(d) { return scaleX(d) + MARGIN_LEFT; }).attr("y2", BLOCK_LINE_Y);
+			block.append("line").attr("class", "block-line")
+				.attr("x1", function(d) { return scaleX(d) + MARGIN_LEFT + BLOCK_SIDE_LEN + BLOCK_LINE_Y; }).attr("y1", BLOCK_LINE_Y)
+				.attr("x2", function(d) { return scaleX(d) + MARGIN_LEFT + tickDistance; }).attr("y2", BLOCK_LINE_Y);
+			block.append("text").attr("class", "block-text")
+				.text(function(d) { return d; })
+				.attr("x", function(d) { return scaleX(d) + MARGIN_LEFT + BLOCK_SIDE_HLF; })
+				.attr("y", BLOCK_SIDE_HLF).attr("text-anchor", "middle").attr("dominant-baseline", "middle");
+
+			blocks.exit().remove();
 		});
 	};
 
@@ -57,7 +117,13 @@ BlockIllustrator.prototype = new Chart();
 BlockIllustrator.prototype.constructor = BlockIllustrator;
 addAvailableCharts(new BlockIllustrator());
 
-
+var dummy = 2;
+function accessDummy(url, callback) {
+	setTimeout(function() {
+			dummy ++;
+			callback({ "height" : dummy, "currentBlockHash" : ("RrndKwuojRMjOz/rdD7rJD/NUupiuBuCtQwnZG7Vdi/XXcTd2MDyAMsFAZ1ntZL2/IIcSUeatIZAKS6ss7fEvg" + dummy)});
+	}, 1000 * (Math.floor(Math.random() * 10) + 5));
+}
 
 function render() {
 	var uldim = d3.select(".charts").node().getBoundingClientRect();
