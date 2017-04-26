@@ -7,6 +7,19 @@ const BLOCK_SIDE_X = 0.6 * BLOCK_SIDE_LEN;
 const BLOCK_SIDE_Y = -0.4 * BLOCK_SIDE_LEN;
 const BLOCK_LINE_Y = 0.3 * BLOCK_SIDE_LEN;
 
+const poly1 =
+	 [[0, 0].join(",")
+	, [BLOCK_SIDE_X, BLOCK_SIDE_Y].join(",")
+	, [BLOCK_SIDE_LEN + BLOCK_SIDE_X, BLOCK_SIDE_Y].join(",")
+	, [BLOCK_SIDE_LEN, 0].join(",")].join(" ");
+const poly2 =
+	 [[BLOCK_SIDE_LEN, 0].join(",")
+	, [BLOCK_SIDE_LEN + BLOCK_SIDE_X, BLOCK_SIDE_Y].join(",")
+	, [BLOCK_SIDE_LEN + BLOCK_SIDE_X, BLOCK_SIDE_X].join(",")
+	, [BLOCK_SIDE_LEN, BLOCK_SIDE_LEN].join(",")].join(" ");
+
+const PHOLDER = [-1,0,1,2,3,4,5,6,7,8,9,10];
+
 BlockIllustrator = function(chartId) {
 	this.id = "block-illust"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
@@ -19,65 +32,49 @@ BlockIllustrator = function(chartId) {
 	this.selected = -1; // Meaning always select the latest block
 	this.displayTo = 0;
 
-	var timeFormat = d3.time.format("%H:%M:%S");
-	var paddTop = 15, paddLft = 45, paddRgt = 10, paddBtm = 70, txtHght = 15;
+//	var timeFormat = d3.time.format("%H:%M:%S");
+//	var paddTop = 15, paddLft = 45, paddRgt = 10, paddBtm = 70, txtHght = 15;
 
 	this.buildUi = function(func) {
 		func('<div class="chart-title"></div><svg class="chart-viz" />');
 	};
 
+	var blockArray = [];
 	var duration = 0;
 	this.render = function() {
 		var obj = this;
 //		accessData(this.url, function(rspn) {
 		accessDummy(this.url, function(rspn) {
+				if (!rspn || (rspn.length <= 0)) {
+					return;
+				}
+
+				var valTo = (obj.selected < 0) ? rspn.height : (obj.displayTo + 1);
+				var valFm = valTo - MAX_BLOCK_DSP - 2;
+				if (valFm < 0) valFm = 0;
+				var idx = 0;
+
+				while (valFm < valTo) {
+					blockArray[idx ++] = valFm ++;
+				}
+
 				obj.redraw(duration, rspn);
 		});
 		duration = 2000;
 	};
 
 	this.redraw = function(duration, rspn) {
-		if (!rspn || (rspn.length <= 0)) {
-			return;
-		}
-		var blockArray = [];
-		var domainArray = [];
-		var valTo = (this.selected < 0) ? rspn.height : this.displayTo;
-		var valFm = valTo - MAX_BLOCK_DSP - 2;
-		if (valFm < 0) valFm = 0;
-		var idx = 0;
-		while (valFm < valTo) {
-			domainArray[idx] = valFm;
-			blockArray[idx ++] = valFm ++;
-		}
-		if (idx < (MAX_BLOCK_DSP + 2)) {
-			while (idx < (MAX_BLOCK_DSP + 1)) {
-				domainArray[idx ++] = valFm ++;
-			}
-			domainArray.splice(0, 0, -1);
-		}
-
 		var grph = d3.select("#"+this.domId).select(".chart-viz");
 
 		var blockWidth = this.chartWdth / MAX_BLOCK_DSP;
 
-		var scaleX = d3.scale.ordinal().domain(domainArray).rangeRoundBands([-1 * blockWidth, this.chartWdth + blockWidth + 20]);
+		var scaleX = d3.scale.ordinal()
+			.domain((blockArray.length < (MAX_BLOCK_DSP + 2)) ? PHOLDER : blockArray)
+			.rangeRoundBands([-1 * blockWidth, this.chartWdth + blockWidth + 20]);
 		var tickLastPosn = scaleX(blockArray[blockArray.length - 1]);
 		var tickDistance = scaleX.rangeBand();
 
 		var yPosn = this.chartHght / 2;
-
-		var poly1 =
-			 [[0, 0].join(",")
-			, [BLOCK_SIDE_X, BLOCK_SIDE_Y].join(",")
-			, [BLOCK_SIDE_X + BLOCK_SIDE_LEN, BLOCK_SIDE_Y].join(",")
-			, [BLOCK_SIDE_LEN,  0].join(",")].join(" ");
-
-		var poly2 =
-			 [[BLOCK_SIDE_LEN,  0].join(",")
-			, [BLOCK_SIDE_LEN + BLOCK_SIDE_X, BLOCK_SIDE_Y].join(",")
-			, [BLOCK_SIDE_LEN + BLOCK_SIDE_X, BLOCK_SIDE_X].join(",")
-			, [BLOCK_SIDE_LEN, BLOCK_SIDE_LEN].join(",")].join(" ");
 
 		var blocks = grph.selectAll(".block").data(blockArray, function(d) { return d; } );
 		var block = blocks.enter()
@@ -97,6 +94,25 @@ BlockIllustrator = function(chartId) {
 			.text(function(d) { return d; })
 			.attr("x", BLOCK_SIDE_HLF)
 			.attr("y", BLOCK_SIDE_HLF).attr("text-anchor", "middle").attr("dominant-baseline", "middle");
+
+		var bnode = block.node();
+		if (bnode) {
+			var bbox = bnode.getBBox();
+			var over = block.append("rect").attr("class", "overlay")
+				.attr("x", bbox.x).attr("y", bbox.y).attr("width", BLOCK_SIDE_LEN + BLOCK_SIDE_X).attr("height", bbox.height);
+			over.on("click", blockClicked);
+		}
+
+		var obj = this;
+		function blockClicked(dataPoint) {
+			if (obj.selected < 0) {
+				obj.selected = dataPoint;
+				obj.displayTo = blockArray[blockArray.length - 1];
+			} else {
+				obj.selected = -1;
+				obj.displayTo = 0;
+			}
+		};
 
 		blocks.exit().remove();
 
@@ -125,11 +141,11 @@ BlockIllustrator.prototype = new Chart();
 BlockIllustrator.prototype.constructor = BlockIllustrator;
 addAvailableCharts(new BlockIllustrator());
 
-var dummy = 7;
+var dummy = 1;
+setInterval(function() {
+		dummy ++;
+}, 2000);
+
 function accessDummy(url, callback) {
-	//var sec = Math.floor(Math.random() * 10) + 5; //random 5 to 15
-	//setTimeout(function() {
-	dummy ++;
 	callback({ "height" : dummy, "currentBlockHash" : ("RrndKwuojRMjOz/rdD7rJD/NUupiuBuCtQwnZG7Vdi/XXcTd2MDyAMsFAZ1ntZL2/IIcSUeatIZAKS6ss7fEvg" + dummy)});
-	//}, 1000 * (Math.floor(Math.random() * 10) + 5));
 }
