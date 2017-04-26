@@ -39,7 +39,7 @@ BlockIllustrator = function(chartId) {
 		func('<div class="chart-title"></div><svg class="chart-viz" />');
 	};
 
-	var blockArray = [];
+	var blockArray = [0];
 	var duration = 0;
 	this.render = function() {
 		var obj = this;
@@ -49,16 +49,23 @@ BlockIllustrator = function(chartId) {
 					return;
 				}
 
-				var valTo = (obj.selected < 0) ? rspn.height : (obj.displayTo + 1);
-				var valFm = valTo - MAX_BLOCK_DSP - 2;
-				if (valFm < 0) valFm = 0;
-				var idx = 0;
+				if (obj.selected < 0) {
+					var lastVal = blockArray[blockArray.length - 1];
+					var nextVal = rspn.height - 1;
 
-				while (valFm < valTo) {
-					blockArray[idx ++] = valFm ++;
+					while (lastVal < nextVal) {
+						blockArray[blockArray.length] = ++ lastVal;
+						if (blockArray.length > (MAX_BLOCK_DSP + 2)) {
+							blockArray.shift();
+						}
+						console.log(blockArray.length, lastVal, nextVal); //TODO TEMP
+						obj.redraw((nextVal == lastVal) ? duration : 1000, rspn);
+					}
+				} else {
+					console.log(rspn); //TODO TEMP
+					console.log(blockArray); //TODO TEMP
 				}
-
-				obj.redraw(duration, rspn);
+				//console.log(blockArray); //TODO TEMP
 		});
 		duration = 2000;
 	};
@@ -71,7 +78,6 @@ BlockIllustrator = function(chartId) {
 		var scaleX = d3.scale.ordinal()
 			.domain((blockArray.length < (MAX_BLOCK_DSP + 2)) ? PHOLDER : blockArray)
 			.rangeRoundBands([-1 * blockWidth, this.chartWdth + blockWidth + 20]);
-		var tickLastPosn = scaleX(blockArray[blockArray.length - 1]);
 		var tickDistance = scaleX.rangeBand();
 
 		var yPosn = this.chartHght / 2;
@@ -79,7 +85,7 @@ BlockIllustrator = function(chartId) {
 		var blocks = grph.selectAll(".block").data(blockArray, function(d) { return d; } );
 		var block = blocks.enter()
 			.append("g").attr("class", "block")
-			.attr("transform", "translate(" + tickLastPosn + ", " + yPosn + ")");
+			.attr("transform", function(d) { return "translate(" + scaleX(d) + ", " + yPosn + ")"; });
 
 		block.append("rect").attr("class", "block-rect")
 			.attr("x", 0).attr("y", 0).attr("width", BLOCK_SIDE_LEN).attr("height", BLOCK_SIDE_LEN);
@@ -141,7 +147,7 @@ BlockIllustrator.prototype = new Chart();
 BlockIllustrator.prototype.constructor = BlockIllustrator;
 addAvailableCharts(new BlockIllustrator());
 
-var dummy = 1;
+var dummy = 5;
 setInterval(function() {
 		dummy ++;
 }, 2000);
