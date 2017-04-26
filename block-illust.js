@@ -1,7 +1,11 @@
 
 const MAX_BLOCK_DSP = 10;
-const MARGIN_LEFT = 15;
+
 const BLOCK_SIDE_LEN = 40;
+const BLOCK_SIDE_HLF = BLOCK_SIDE_LEN / 2;
+const BLOCK_SIDE_X = 0.6 * BLOCK_SIDE_LEN;
+const BLOCK_SIDE_Y = -0.4 * BLOCK_SIDE_LEN;
+const BLOCK_LINE_Y = 0.3 * BLOCK_SIDE_LEN;
 
 BlockIllustrator = function(chartId) {
 	this.id = "block-illust"; //Chart ID
@@ -10,90 +14,94 @@ BlockIllustrator = function(chartId) {
 	this.url = "%%%urlChain%%%";
 	this.minGridWdth = 5;
 	this.minGridHght = 2;
-	this.updateInterval = 1000;
+	this.updateInterval = 2000;
 
 	this.selected = -1; // Meaning always select the latest block
 	this.displayTo = 0;
 
 	var timeFormat = d3.time.format("%H:%M:%S");
 	var paddTop = 15, paddLft = 45, paddRgt = 10, paddBtm = 70, txtHght = 15;
-	var durationX = 2000, durationY = 1000;
 
 	this.buildUi = function(func) {
 		func('<div class="chart-title"></div><svg class="chart-viz" />');
 	};
 
-	this.init = function() {
-		d3.select("#"+this.domId).select(".chart-title").html("Blockchain illustrator");
-	};
-
+	var duration = 0;
 	this.render = function() {
 		var obj = this;
 //		accessData(this.url, function(rspn) {
 		accessDummy(this.url, function(rspn) {
-			if (!rspn || (rspn.length <= 0)) {
-				return;
-			}
-			var blockArray = [];
-			var valTo = (obj.selected < 0) ? rspn.height : obj.displayTo;
-			var valFm = valTo - MAX_BLOCK_DSP;
-			if (valFm < 0) valFm = 0;
-			var idx = 0;
-			while (valFm < valTo) {
-				blockArray[idx ++] = valFm ++;
-			}
-			console.log("Height: " + rspn.height + " -- " + JSON.stringify(blockArray)); //TODO TEMP
-
-			var grph = d3.select("#"+obj.domId).select(".chart-viz");
-
-			var blocksWidth = ((obj.chartWdth - MARGIN_LEFT) / MAX_BLOCK_DSP) * blockArray.length;
-			var scaleX = d3.scale.ordinal().domain(blockArray).rangeRoundPoints([0, blocksWidth]);
-			var tickDistance = MARGIN_LEFT; // Any value
-			if (blockArray.length > 1) {
-				tickDistance = scaleX(blockArray[blockArray.length - 1]) - scaleX(blockArray[blockArray.length - 2]);
-			}
-			console.log(obj.chartWdth, blocksWidth, tickDistance); //TODO TEMP
-
-			var BLOCK_SIDE_HLF = BLOCK_SIDE_LEN / 2;
-			var BLOCK_SIDE_X = 0.6 * BLOCK_SIDE_LEN;
-			var BLOCK_SIDE_Y = -0.4 * BLOCK_SIDE_LEN;
-			var BLOCK_LINE_Y = 0.3 * BLOCK_SIDE_LEN;
-
-			var blocks = grph.selectAll("block").data(blockArray, function(d) { return d; } );
-			var block = blocks.enter().append("g").attr("class", "block").attr("transform", "translate(0, " + (obj.chartHght / 2) + ")");
-
-			block.append("rect").attr("class", "block-rect")
-				.attr("x", function(d) { return scaleX(d) + MARGIN_LEFT; })
-				.attr("y", 0).attr("width", BLOCK_SIDE_LEN).attr("height", BLOCK_SIDE_LEN);
-			block.append("polygon").attr("class", "block-rect")
-				.attr("points", function(d) {
-						var p0 = [scaleX(d) + MARGIN_LEFT, 0];
-						var p1 = [p0[0] + BLOCK_SIDE_X, BLOCK_SIDE_Y];
-						var p2 = [p1[0] + BLOCK_SIDE_LEN, BLOCK_SIDE_Y];
-						var p3 = [p0[0] + BLOCK_SIDE_LEN,  0];
-						return [p0.join(","), p1.join(","), p2.join(","), p3.join(",")].join(" ");
-				});
-			block.append("polygon").attr("class", "block-rect")
-				.attr("points", function(d) {
-						var p0 = [scaleX(d) + MARGIN_LEFT + BLOCK_SIDE_LEN,  0];
-						var p1 = [p0[0] + BLOCK_SIDE_X, BLOCK_SIDE_Y];
-						var p2 = [p1[0], BLOCK_SIDE_X];
-						var p3 = [p0[0], BLOCK_SIDE_LEN];
-						return [p0.join(","), p1.join(","), p2.join(","), p3.join(",")].join(" ");
-				});
-			block.append("line").attr("class", "block-line")
-				.attr("x1", function(d) { return scaleX(d) + MARGIN_LEFT - tickDistance + BLOCK_SIDE_LEN + BLOCK_LINE_Y; }).attr("y1", BLOCK_LINE_Y)
-				.attr("x2", function(d) { return scaleX(d) + MARGIN_LEFT; }).attr("y2", BLOCK_LINE_Y);
-			block.append("line").attr("class", "block-line")
-				.attr("x1", function(d) { return scaleX(d) + MARGIN_LEFT + BLOCK_SIDE_LEN + BLOCK_LINE_Y; }).attr("y1", BLOCK_LINE_Y)
-				.attr("x2", function(d) { return scaleX(d) + MARGIN_LEFT + tickDistance; }).attr("y2", BLOCK_LINE_Y);
-			block.append("text").attr("class", "block-text")
-				.text(function(d) { return d; })
-				.attr("x", function(d) { return scaleX(d) + MARGIN_LEFT + BLOCK_SIDE_HLF; })
-				.attr("y", BLOCK_SIDE_HLF).attr("text-anchor", "middle").attr("dominant-baseline", "middle");
-
-			blocks.exit().remove();
+				obj.redraw(duration, rspn);
 		});
+		duration = 2000;
+	};
+
+	this.redraw = function(duration, rspn) {
+		if (!rspn || (rspn.length <= 0)) {
+			return;
+		}
+		var blockArray = [];
+		var domainArray = [];
+		var valTo = (this.selected < 0) ? rspn.height : this.displayTo;
+		var valFm = valTo - MAX_BLOCK_DSP - 2;
+		if (valFm < 0) valFm = 0;
+		var idx = 0;
+		while (valFm < valTo) {
+			domainArray[idx] = valFm;
+			blockArray[idx ++] = valFm ++;
+		}
+		if (idx < (MAX_BLOCK_DSP + 2)) {
+			while (idx < (MAX_BLOCK_DSP + 1)) {
+				domainArray[idx ++] = valFm ++;
+			}
+			domainArray.splice(0, 0, -1);
+		}
+
+		var grph = d3.select("#"+this.domId).select(".chart-viz");
+
+		var blockWidth = this.chartWdth / MAX_BLOCK_DSP;
+
+		var scaleX = d3.scale.ordinal().domain(domainArray).rangeRoundBands([-1 * blockWidth, this.chartWdth + blockWidth + 20]);
+		var tickLastPosn = scaleX(blockArray[blockArray.length - 1]);
+		var tickDistance = scaleX.rangeBand();
+
+		var yPosn = this.chartHght / 2;
+
+		var poly1 =
+			 [[0, 0].join(",")
+			, [BLOCK_SIDE_X, BLOCK_SIDE_Y].join(",")
+			, [BLOCK_SIDE_X + BLOCK_SIDE_LEN, BLOCK_SIDE_Y].join(",")
+			, [BLOCK_SIDE_LEN,  0].join(",")].join(" ");
+
+		var poly2 =
+			 [[BLOCK_SIDE_LEN,  0].join(",")
+			, [BLOCK_SIDE_LEN + BLOCK_SIDE_X, BLOCK_SIDE_Y].join(",")
+			, [BLOCK_SIDE_LEN + BLOCK_SIDE_X, BLOCK_SIDE_X].join(",")
+			, [BLOCK_SIDE_LEN, BLOCK_SIDE_LEN].join(",")].join(" ");
+
+		var blocks = grph.selectAll(".block").data(blockArray, function(d) { return d; } );
+		var block = blocks.enter()
+			.append("g").attr("class", "block")
+			.attr("transform", "translate(" + tickLastPosn + ", " + yPosn + ")");
+
+		block.append("rect").attr("class", "block-rect")
+			.attr("x", 0).attr("y", 0).attr("width", BLOCK_SIDE_LEN).attr("height", BLOCK_SIDE_LEN);
+		block.append("polygon").attr("class", "block-rect")
+			.attr("points", poly1);
+		block.append("polygon").attr("class", "block-rect")
+			.attr("points", poly2);
+		block.append("line").attr("class", "block-line")
+			.attr("x1", BLOCK_SIDE_LEN + BLOCK_LINE_Y).attr("y1", BLOCK_LINE_Y)
+			.attr("x2", tickDistance).attr("y2", BLOCK_LINE_Y);
+		block.append("text").attr("class", "block-text")
+			.text(function(d) { return d; })
+			.attr("x", BLOCK_SIDE_HLF)
+			.attr("y", BLOCK_SIDE_HLF).attr("text-anchor", "middle").attr("dominant-baseline", "middle");
+
+		blocks.exit().remove();
+
+		blocks.transition().duration(duration).ease("linear")
+			.attr("transform", function(d) { return "translate(" + scaleX(d) + ", " + yPosn + ")"; });
 	};
 
 	this.fromCookie = function(cook) {
@@ -117,82 +125,11 @@ BlockIllustrator.prototype = new Chart();
 BlockIllustrator.prototype.constructor = BlockIllustrator;
 addAvailableCharts(new BlockIllustrator());
 
-var dummy = 2;
+var dummy = 7;
 function accessDummy(url, callback) {
-	setTimeout(function() {
-			dummy ++;
-			callback({ "height" : dummy, "currentBlockHash" : ("RrndKwuojRMjOz/rdD7rJD/NUupiuBuCtQwnZG7Vdi/XXcTd2MDyAMsFAZ1ntZL2/IIcSUeatIZAKS6ss7fEvg" + dummy)});
-	}, 1000 * (Math.floor(Math.random() * 10) + 5));
-}
-
-function render() {
-	var uldim = d3.select(".charts").node().getBoundingClientRect();
-
-	// Draw block-list
-	var blockList = d3.select("#block-list");
-	blockList.style("top", uldim.y + 5).style("left", 5);
-	var dimen = blockList.node().getBoundingClientRect();
-
-	var grph = blockList.select(".chart-ctnt .chart-viz");
-	if (grph.empty()) {
-		grph = blockList.append("div").attr("class", "chart-ctnt").append("svg").attr("class", "chart-viz");
-	}
-	grph.attr("viewBox", "0 0 " + dimen.width + " " + dimen.height).attr("preserveAspectRation", "none");
-	if (isIE) {
-		blockList.select(".chart-ctnt").style("height", dimen.height + "px");
-	}
-
-	var blockArray = [];
-	var blockCount = 10; //TODO: get from the chain...
-	for (var idx = 0; idx < blockCount; idx ++) {
-		blockArray[idx] = idx;
-	}
-	if (blockArray.length > MAX_BLOCK_DSP) blockArray.length = MAX_BLOCK_DSP; //TODO: truncate
-	var blocksWidth = ((dimen.width - MARGIN_LEFT) / MAX_BLOCK_DSP) * blockArray.length;
-	var scaleX = d3.scale.ordinal().domain(blockArray).rangeRoundPoints([0, blocksWidth]);
-
-	var tickDistance = MARGIN_LEFT; // Any value
-	if (blockArray.length > 1) {
-		tickDistance = scaleX(blockArray[blockArray.length - 1]) - scaleX(blockArray[blockArray.length - 2]);
-	}
-	console.log(new Date(), dimen.width, blocksWidth, tickDistance); //TODO TEMP
-
-	var BLOCK_SIDE_HLF = BLOCK_SIDE_LEN / 2;
-	var BLOCK_SIDE_X = 0.6 * BLOCK_SIDE_LEN;
-	var BLOCK_SIDE_Y = -0.4 * BLOCK_SIDE_LEN;
-	var BLOCK_LINE_Y = 0.3 * BLOCK_SIDE_LEN;
-
-	var blocks = grph.selectAll("block").data(blockArray, function(d) { return d; } );
-	var block = blocks.enter().append("g").attr("class", "block").attr("transform", "translate(0, " + (dimen.height / 2) + ")");
-	block.append("rect").attr("class", "block-rect")
-		.attr("x", function(d) { return scaleX(d) + MARGIN_LEFT; })
-		.attr("y", 0).attr("width", BLOCK_SIDE_LEN).attr("height", BLOCK_SIDE_LEN);
-	block.append("polygon").attr("class", "block-rect")
-		.attr("points", function(d) {
-				var p0 = [scaleX(d) + MARGIN_LEFT, 0];
-				var p1 = [p0[0] + BLOCK_SIDE_X, BLOCK_SIDE_Y];
-				var p2 = [p1[0] + BLOCK_SIDE_LEN, BLOCK_SIDE_Y];
-				var p3 = [p0[0] + BLOCK_SIDE_LEN,  0];
-				return [p0.join(","), p1.join(","), p2.join(","), p3.join(",")].join(" ");
-		});
-	block.append("polygon").attr("class", "block-rect")
-		.attr("points", function(d) {
-				var p0 = [scaleX(d) + MARGIN_LEFT + BLOCK_SIDE_LEN,  0];
-				var p1 = [p0[0] + BLOCK_SIDE_X, BLOCK_SIDE_Y];
-				var p2 = [p1[0], BLOCK_SIDE_X];
-				var p3 = [p0[0], BLOCK_SIDE_LEN];
-				return [p0.join(","), p1.join(","), p2.join(","), p3.join(",")].join(" ");
-		});
-	block.append("line").attr("class", "block-line")
-		.attr("x1", function(d) { return scaleX(d) + MARGIN_LEFT - tickDistance + BLOCK_SIDE_LEN + BLOCK_LINE_Y; }).attr("y1", BLOCK_LINE_Y)
-		.attr("x2", function(d) { return scaleX(d) + MARGIN_LEFT; }).attr("y2", BLOCK_LINE_Y);
-	block.append("line").attr("class", "block-line")
-		.attr("x1", function(d) { return scaleX(d) + MARGIN_LEFT + BLOCK_SIDE_LEN + BLOCK_LINE_Y; }).attr("y1", BLOCK_LINE_Y)
-		.attr("x2", function(d) { return scaleX(d) + MARGIN_LEFT + tickDistance; }).attr("y2", BLOCK_LINE_Y);
-	block.append("text").attr("class", "block-text")
-		.text(function(d) { return d; })
-		.attr("x", function(d) { return scaleX(d) + MARGIN_LEFT + BLOCK_SIDE_HLF; })
-		.attr("y", BLOCK_SIDE_HLF).attr("text-anchor", "middle").attr("dominant-baseline", "middle");
-
-	blocks.exit().remove();
+	//var sec = Math.floor(Math.random() * 10) + 5; //random 5 to 15
+	//setTimeout(function() {
+	dummy ++;
+	callback({ "height" : dummy, "currentBlockHash" : ("RrndKwuojRMjOz/rdD7rJD/NUupiuBuCtQwnZG7Vdi/XXcTd2MDyAMsFAZ1ntZL2/IIcSUeatIZAKS6ss7fEvg" + dummy)});
+	//}, 1000 * (Math.floor(Math.random() * 10) + 5));
 }
