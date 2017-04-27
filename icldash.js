@@ -1,12 +1,12 @@
 // **** Constants ****
-const DASHBOARD_LOGO = "logo.png";
-const DASHBOARD_TITLE = "HKICL"; //default value
-const COK_PFX = "icldash=";
+const COK_PFX = "dashcook=";
 const KEY_CHART = "chartId";
 const KEY_ROW = "row";
 const KEY_COL = "column";
 const KEY_WDTH = "width"
 const KEY_HGHT = "height";
+
+const DRAG_CHART_ENABLED = false;
 
 // **** Configurables ****
 const RUN_INTERVAL = 1000; //2500 is 2.5 seconds
@@ -389,7 +389,8 @@ function showChart(elmId, row, col, wdth, hght, cook) {
 			var cntr = d3.select(".charts")
 				.append("li")
 					.attr("id", domId).attr("class", "chart tbl r" + row + " c" + col + " w" + wdth + " h" + hght)
-					.attr("draggable", "true").attr("ondragstart", "drag(event)").attr("ondragend", "dragEnded(event)");
+					.attr("ondragstart", "drag(event)").attr("ondragend", "dragEnded(event)");
+			if (DRAG_CHART_ENABLED) cntr.attr("draggable", "true");
 			cntr.append("a").attr("class", "chart-cntrl").attr("href", "javascript:;").append("img").attr("src", IMG_SETTING);
 			cntr.append("div").attr("class", "chart-ctnt " + elmId).attr("id", domId + "Container");
 

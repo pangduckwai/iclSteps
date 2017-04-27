@@ -34,8 +34,8 @@ BlockIllustrator = function(chartId) {
 	this.minGridHght = 3;
 	this.updateInterval = 2000;
 
-	this.selected = -1; // Meaning always select the latest block
-	this.displayTo = 0;
+	this.selected = -1;
+	this.displayTo = -1; // Meaning always select the latest block
 
 	this.buildUi = function(func) {
 		func('<div class="chart-title"></div><svg class="chart-viz" />');
@@ -56,17 +56,16 @@ BlockIllustrator = function(chartId) {
 					return;
 				}
 
-				if (obj.selected < 0) {
+				if (obj.displayTo < 0) {
 					var lastVal = blockArray[blockArray.length - 1];
 					var nextVal = rspn.height - 1;
 					var itr = nextVal - lastVal;
 
 					if (itr > 1) {
 						var idx = 0;
-
+						var dur = 1000;
 						function _redraw() {
 							if (idx < itr) {
-								var dur = 20;
 								if (idx == (itr - 1)) {
 									catchUp = false;
 									dur = 1000;
@@ -78,8 +77,10 @@ BlockIllustrator = function(chartId) {
 										dur = 250;
 									else if (idx == (itr - 4))
 										dur = 125;
-									else if (idx == 0)
-										dur = 100;
+									else {
+										dur -= 200;
+										if (dur < 200) dur = 20;
+									}
 								}
 
 								idx ++;
@@ -120,24 +121,7 @@ BlockIllustrator = function(chartId) {
 
 		var yPosn = this.chartHght / 4;
 
-		// Draw the resume button
-		if (grph.select("#btn-end").empty()) {
-			grph.append("image").attr("id", "btn-end").attr("x", this.chartWdth - 40).attr("y", 4).attr("xlink:href", IMG_TOEND).style("display", "none")
-				.on("click", function() {
-						obj.selected = -1;
-						obj.displayTo = 0;
-						grph.selectAll(".block-slct").style("display", "none");
-						grph.select("#btn-end").style("display", "none");
-				})
-				.on("mouseover", function() {
-						grph.select("#btn-end").node().style.cursor = "pointer";
-				})
-				.on("mouseout", function() {
-						grph.select("#btn-end").node().style.cursor = "auto";
-			});
-		}
-
-		// Draw chain height
+		// Draw chain height text
 		if (grph.select("#txt-hght").empty()) {
 			grph.append("text").attr("id", "txt-hght").attr("class", "block-text")
 			.attr("x", 10).attr("y", 20).attr("text-anchor", "left");
@@ -172,7 +156,7 @@ BlockIllustrator = function(chartId) {
 					block.select(".block-slct").style("display", "block");
 				})
 			.on("mouseout", function(d, i) {
-					if ((obj.selected < 0) || (obj.selected != d)) {
+					if ((obj.displayTo < 0) || (obj.selected != d)) {
 						block.select(".block-slct").style("display", "none");
 					}
 				})
@@ -189,6 +173,45 @@ BlockIllustrator = function(chartId) {
 		blocks.transition().duration(duration).ease("linear")
 			.attr("transform", function(d) { return "translate(" + scaleX(d) + ", " + yPosn + ")"; })
 			.call(endAll, function() { callback(); });
+
+		// Draw the drag pane
+		var drag = d3.behavior.drag()
+			.on("drag", function(d, i) {
+					console.log("X: " + d3.event.dx + "; Y: " + d3.event.dy);
+					d.x += d3.event.dx;
+					grph.selectAll(".block")
+						.attr("transform", function(d) { return "translate(" + d.x + ", " + yPosn + ")"; })
+				})
+			.on("dragstart", function() {
+					grph.select("#drag-pane").node().style.cursor = "ew-resize";
+					obj.displayTo = blockArray[blockArray.length - 1];
+				})
+			.on("dragend", function() {
+					grph.select("#drag-pane").node().style.cursor = "auto";
+			});
+
+		if (grph.select("#drag-pane").empty()) {
+			grph.append("rect").attr("id", "drag-pane").attr("class", "overlay")
+				.attr("x", 0).attr("y", 20).attr("width", this.chartWdth).attr("height", this.chartHght - 20)
+				.call(drag);
+		}
+
+		// Draw the resume button
+		if (grph.select("#btn-end").empty()) {
+			grph.append("image").attr("id", "btn-end").attr("x", this.chartWdth - 40).attr("y", 4).attr("xlink:href", IMG_TOEND).style("display", "none")
+				.on("click", function() {
+						obj.selected = -1;
+						obj.displayTo = -1;
+						grph.selectAll(".block-slct").style("display", "none");
+						grph.select("#btn-end").style("display", "none");
+				})
+				.on("mouseover", function() {
+						grph.select("#btn-end").node().style.cursor = "pointer";
+				})
+				.on("mouseout", function() {
+						grph.select("#btn-end").node().style.cursor = "auto";
+			});
+		}
 	};
 
 	this.fromCookie = function(cook) {
