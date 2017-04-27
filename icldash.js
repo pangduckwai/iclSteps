@@ -21,6 +21,7 @@ const IMG_CONFIG = "icon_more0" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
 const IMG_SETTING = "icon_more1" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
 const IMG_NETWORK = "icon_network" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
 const IMG_REFRESH = "icon_refresh" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
+const IMG_TOEND = "icon_end" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
 
 const topMargin = 72;
 const btmMargin = 18;
@@ -167,7 +168,7 @@ function init() {
 	if ((chrts.trim() == "") || (chrts.trim() == "[]")) {
 		console.log("Displaying default charts...");
 		//chrts = '[{"chartId":"sample-topten","row":1,"column":1,"width":4,"height":4,"topCnt":10,"sortBy":"out","sameSc":"yes"},{"chartId":"datetime-widget","row":1,"column":7,"width":1,"height":1,"source":"Server","format":"24","url":"https://dev.echeque.hkicl.com.hk/dashboard/datetime.json"},{"chartId":"sample-pie","row":1,"column":5,"width":2,"height":2,"topCnt":5},{"chartId":"sample-gauge","row":2,"column":7,"width":1,"height":1,"min":0,"max":50,"alert1":35,"alert2":45},{"chartId":"sample-candle","row":3,"column":5,"width":3,"height":3,"selected":"004"}]';
-		chrts = '[{"chartId":"block-illust","row":1,"column":1,"width":5,"height":2,"selected":"-1"},{"chartId":"datetime-widget","row":1,"column":7,"width":1,"height":1,"source":"Local","format":"24","url":""}]';
+		chrts = '[{"chartId":"block-illust","row":1,"column":1,"width":5,"height":3,"selected":"-1"},{"chartId":"datetime-widget","row":1,"column":7,"width":1,"height":1,"source":"Local","format":"24","url":""}]';
 	}
 
 	var startDelay = 1;
@@ -721,7 +722,7 @@ function Chart(chartId) {
 		var ttld = d3.select(elmId).select(".chart-title");
 
 		this.chartWdth = size.width - 5;
-		this.chartHght = size.height - (ttld.empty() ? 0 : ttld.node().getBoundingClientRect().height) - 8;
+		this.chartHght = size.height - 3;
 		var grph = d3.select(elmId).select(".chart-viz");
 		if (grph.empty()) {
 			grph = d3.select(elmId + "Container").append("svg").attr("class", "chart-viz");
