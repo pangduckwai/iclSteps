@@ -37,10 +37,6 @@ BlockIllustrator = function(chartId) {
 	this.selected = -1;
 	this.displayTo = -1; // Meaning always select the latest block
 
-	this.buildUi = function(func) {
-		func('<div class="chart-title"></div><svg class="chart-viz" />');
-	};
-
 	var blockArray = [0];
 	var catchUp = false;
 	this.render = function() {
@@ -68,7 +64,7 @@ BlockIllustrator = function(chartId) {
 							if (idx < itr) {
 								if (idx == (itr - 1)) {
 									catchUp = false;
-									dur = 1000;
+									dur = 1000; // slow down scroll nearing the end of catching up
 								} else {
 									catchUp = true;
 									if (idx == (itr - 2))
@@ -78,7 +74,7 @@ BlockIllustrator = function(chartId) {
 									else if (idx == (itr - 4))
 										dur = 125;
 									else {
-										dur -= 200;
+										dur -= 200; // accelerate scroll when catching up initially
 										if (dur < 200) dur = 20;
 									}
 								}
@@ -89,7 +85,7 @@ BlockIllustrator = function(chartId) {
 									blockArray.shift();
 								}
 //								console.log("Catching up", JSON.stringify(blockArray)); //TODO TEMP
-								obj.redraw(dur, rspn, _redraw);
+								obj.redraw(dur, rspn, false, _redraw); // Catching up
 							} else {
 								catchUp = false;
 							}
@@ -100,16 +96,16 @@ BlockIllustrator = function(chartId) {
 						if (blockArray.length > (MAX_BLOCK_DSP + 2)) {
 							blockArray.shift();
 						}
-						obj.redraw(2000, rspn, function() {} );
+						obj.redraw(2000, rspn, false, function() {} ); // Normal ticking
 					}
 				} else {
-					obj.redraw(2000, rspn, function() {} );
+					obj.redraw(2000, rspn, true, function() {} ); // Interactive mode, only update latest chain depth
 				}
 				//console.log(blockArray); //TODO TEMP
 		});
 	};
 
-	this.redraw = function(duration, rspn, callback) {
+	this.redraw = function(duration, rspn, textOnly, callback) {
 		var obj = this;
 		var grph = d3.select("#"+this.domId).select(".chart-viz");
 
@@ -121,18 +117,45 @@ BlockIllustrator = function(chartId) {
 
 		var yPosn = this.chartHght / 4;
 
-		// Draw chain height text
+		// *** Draw chain height text ***
 		if (grph.select("#txt-hght").empty()) {
 			grph.append("text").attr("id", "txt-hght").attr("class", "block-text")
 			.attr("x", 10).attr("y", 20).attr("text-anchor", "left");
 		}
 		grph.select("#txt-hght").text("Current chain depth: " + rspn.height);
+		if (textOnly) return;
 
-		// Draw the block chain!
+		// *** Drag handler ***
+		var drag = d3.behavior.drag()
+			.on("drag", function() {
+					if (obj.displayTo < 0) {
+						grph.select("#btn-end").style("display", "block");
+						obj.displayTo = blockArray[blockArray.length - 1];
+					}
+
+					d3.selectAll(".block")
+						.attr("transform", function(d, i) {
+								if (i == 0) {
+									console.log("Left", d3.transform(d3.select(this).attr("transform")).translate[0], d3.event.dx); //TODO TEMP
+								} else if (i == (blockArray.length - 1)) {
+									console.log("Right", (obj.chartWdth - blockWidth - d3.transform(d3.select(this).attr("transform")).translate[0]), d3.event.dx); //TODO TEMP
+								}
+								return "translate(" + (d3.transform(d3.select(this).attr("transform")).translate[0] + d3.event.dx) + ", " + yPosn + ")";
+						})
+				})
+			.on("dragstart", function() {
+					d3.select(this).node().style.cursor = "ew-resize";
+				})
+			.on("dragend", function() {
+					d3.select(this).node().style.cursor = "auto";
+			});
+
+		// *** Draw the block chain! ***
 		var blocks = grph.selectAll(".block").data(blockArray, function(d) { return d; } );
 		var block = blocks.enter()
 			.append("g").attr("class", "block")
-			.attr("transform", function(d) { return "translate(" + scaleX(d) + ", " + yPosn + ")"; });
+			.attr("transform", function(d) { return "translate(" + scaleX(d) + ", " + yPosn + ")"; })
+			.call(drag); // The drag handler should be attached to the element being dragged
 
 		block.append("rect").attr("class", "block-rect")
 			.attr("x", 0).attr("y", 0).attr("width", BLOCK_SIDE_LEN).attr("height", BLOCK_SIDE_LEN);
@@ -150,6 +173,11 @@ BlockIllustrator = function(chartId) {
 			.attr("x", BLOCK_SIDE_HLF)
 			.attr("y", BLOCK_SIDE_HLF).attr("text-anchor", "middle").attr("dominant-baseline", "middle");
 
+		// Since the <g> element (variable 'block') does not receive mouse event, add this invisible box in between the blocks to allow dragging at these places
+		block.append("rect").attr("class", "overlay")
+			.attr("x", BLOCK_SIDE_LEN + BLOCK_SIDE_X).attr("y", BLOCK_SIDE_Y)
+			.attr("width", blockWidth - BLOCK_SIDE_LEN - BLOCK_SIDE_X).attr("height", BLOCK_SIDE_LEN - BLOCK_SIDE_Y);
+
 		block.append("rect").attr("class", "overlay")
 			.attr("x", 0).attr("y", BLOCK_SIDE_Y).attr("width", BLOCK_SIDE_LEN + BLOCK_SIDE_X).attr("height", BLOCK_SIDE_LEN - BLOCK_SIDE_Y)
 			.on("mouseover", function(d, i) {
@@ -161,44 +189,24 @@ BlockIllustrator = function(chartId) {
 					}
 				})
 			.on("click", function(d) {
-					grph.selectAll(".block-slct").style("display", "none");
+					grph.selectAll(".block-slct").style("display", "none"); // Clear any other selections
 					obj.selected = d;
 					obj.displayTo = blockArray[blockArray.length - 1];
 					block.select(".block-slct").style("display", "block");
 					grph.select("#btn-end").style("display", "block");
 			});
 
-		blocks.exit().remove();
+		blocks.exit().remove(); // Remove graphical elements binded with removed data
 
+		// *** Slide blocks to left ***
 		blocks.transition().duration(duration).ease("linear")
 			.attr("transform", function(d) { return "translate(" + scaleX(d) + ", " + yPosn + ")"; })
 			.call(endAll, function() { callback(); });
 
-		// Draw the drag pane
-		var drag = d3.behavior.drag()
-			.on("drag", function(d, i) {
-					console.log("X: " + d3.event.dx + "; Y: " + d3.event.dy);
-					d.x += d3.event.dx;
-					grph.selectAll(".block")
-						.attr("transform", function(d) { return "translate(" + d.x + ", " + yPosn + ")"; })
-				})
-			.on("dragstart", function() {
-					grph.select("#drag-pane").node().style.cursor = "ew-resize";
-					obj.displayTo = blockArray[blockArray.length - 1];
-				})
-			.on("dragend", function() {
-					grph.select("#drag-pane").node().style.cursor = "auto";
-			});
-
-		if (grph.select("#drag-pane").empty()) {
-			grph.append("rect").attr("id", "drag-pane").attr("class", "overlay")
-				.attr("x", 0).attr("y", 20).attr("width", this.chartWdth).attr("height", this.chartHght - 20)
-				.call(drag);
-		}
-
-		// Draw the resume button
+		// *** Draw the resume button ***
 		if (grph.select("#btn-end").empty()) {
-			grph.append("image").attr("id", "btn-end").attr("x", this.chartWdth - 40).attr("y", 4).attr("xlink:href", IMG_TOEND).style("display", "none")
+			grph.append("image").attr("id", "btn-end").attr("x", this.chartWdth - 40).attr("y", 4).attr("width", 18).attr("height", 18)
+				.attr("xlink:href", IMG_TOEND).style("display", "none")
 				.on("click", function() {
 						obj.selected = -1;
 						obj.displayTo = -1;
@@ -212,6 +220,10 @@ BlockIllustrator = function(chartId) {
 						grph.select("#btn-end").node().style.cursor = "auto";
 			});
 		}
+	};
+
+	this.buildUi = function(func) {
+		func('<div class="chart-title"></div><svg class="chart-viz" />');
 	};
 
 	this.fromCookie = function(cook) {
@@ -235,6 +247,7 @@ BlockIllustrator.prototype = new Chart();
 BlockIllustrator.prototype.constructor = BlockIllustrator;
 addAvailableCharts(new BlockIllustrator());
 
+// Only invoke the callback when all transitions of the given selection are completed
 function endAll(trans, func) {
 	var n = 0;
 	trans
@@ -242,11 +255,11 @@ function endAll(trans, func) {
 		.each("end", function() { if (!--n) func.apply(this, arguments); });
 };
 
+// ***** TEMP *****
 var dummy = 8;
 setInterval(function() {
 		dummy ++;
 }, 2000);
-
 function accessDummy(url, callback) {
 	callback({ "height" : dummy, "currentBlockHash" : ("RrndKwuojRMjOz/rdD7rJD/NUupiuBuCtQwnZG7Vdi/XXcTd2MDyAMsFAZ1ntZL2/IIcSUeatIZAKS6ss7fEvg" + dummy)});
 }
