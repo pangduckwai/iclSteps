@@ -8,10 +8,10 @@ const fs = require('fs');
 // TODO!!! Learn where to put config params in node.js!!!
 const protocol = 'http';
 const bcNodes = [
-	{name : "Node 0", addr : "127.0.0.1", port : "7050",  user : "test_user0", scrt : "MS9qrN8hFjlE"}, //127.0.0.1 7050 8050 9050 10050
-	{name : "Node 1", addr : "127.0.0.1", port : "8050",  user : "test_user1", scrt : "jGlNl6ImkuDo"}, //192.168.14.130
-	{name : "Node 2", addr : "127.0.0.1", port : "9050",  user : "test_user2", scrt : "zMflqOKezFiA"},
-	{name : "Node 3", addr : "127.0.0.1", port : "10050", user : "test_user3", scrt : "vWdLCE00vJy0"},
+	{name : "Node 0", addr : "192.168.14.130", port : "7050",  user : "test_user0", scrt : "MS9qrN8hFjlE"}, //127.0.0.1 7050 8050 9050 10050
+	{name : "Node 1", addr : "192.168.14.130", port : "8050",  user : "test_user1", scrt : "jGlNl6ImkuDo"}, //192.168.14.130
+	{name : "Node 2", addr : "192.168.14.130", port : "9050",  user : "test_user2", scrt : "zMflqOKezFiA"},
+	{name : "Node 3", addr : "192.168.14.130", port : "10050", user : "test_user3", scrt : "vWdLCE00vJy0"},
 ];
 const mimeMap = {
 	'.ico' : 'image/x-icon',
@@ -89,7 +89,8 @@ var buildUi = function(html, msg, user, yr, mn, dt, step, node, state, succ, fai
 				.replace(/%%%anchorVerify%%%/g, mnuVrfy)
 				.replace(/%%%returnLink%%%/g, vsbLink)
 				.replace(/%%%formButton%%%/g, vsbBttn)
-				.replace(/%%%urlChain%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain'));
+				.replace(/%%%urlChain%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain')
+				.replace(/%%%urlPeers%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/network/peers'));
 		},
 		function(sts, ctn) {
 			fail(sts, ctn);
@@ -310,6 +311,7 @@ http.createServer(function(req, res) {
 						break;
 					}
 					depth += incr;
+					if (depth > 115) depth = 115; //TODO TEMP
 					res.setHeader('Content-type', 'application/json');
 					res.end('{ "height" : ' + depth + ', "currentBlockHash" : "RrndKwuojRMjOz/rdD7rJD/NUupiuBuCtQwnZG7Vdi/XXcTd2MDyAMsFAZ1ntZL2/IIcSUeatIZAKS6ss7f' + depth + '"}');
 					break;
