@@ -168,7 +168,7 @@ function init() {
 	if ((chrts.trim() == "") || (chrts.trim() == "[]")) {
 		console.log("Displaying default charts...");
 		//chrts = '[{"chartId":"sample-topten","row":1,"column":1,"width":4,"height":4,"topCnt":10,"sortBy":"out","sameSc":"yes"},{"chartId":"datetime-widget","row":1,"column":7,"width":1,"height":1,"source":"Server","format":"24","url":"https://dev.echeque.hkicl.com.hk/dashboard/datetime.json"},{"chartId":"sample-pie","row":1,"column":5,"width":2,"height":2,"topCnt":5},{"chartId":"sample-gauge","row":2,"column":7,"width":1,"height":1,"min":0,"max":50,"alert1":35,"alert2":45},{"chartId":"sample-candle","row":3,"column":5,"width":3,"height":3,"selected":"004"}]';
-		chrts = '[{"chartId":"block-illust","row":1,"column":1,"width":5,"height":3,"selected":"-1"},{"chartId":"datetime-widget","row":1,"column":7,"width":1,"height":1,"source":"Local","format":"24","url":""}]';
+		chrts = '[{"chartId":"block-illust","row":1,"column":1,"width":5,"height":2,"selected":"-1"},{"chartId":"datetime-widget","row":1,"column":7,"width":1,"height":1,"source":"Local","format":"24","url":""}]';
 	}
 
 	var startDelay = 1;

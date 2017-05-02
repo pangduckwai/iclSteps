@@ -8,10 +8,10 @@ const fs = require('fs');
 // TODO!!! Learn where to put config params in node.js!!!
 const protocol = 'http';
 const bcNodes = [
-	{name : "Node 0", addr : "192.168.14.130", port : "7050",  user : "test_user0", scrt : "MS9qrN8hFjlE"}, //127.0.0.1 7050 8050 9050 10050
-	{name : "Node 1", addr : "192.168.14.130", port : "8050",  user : "test_user1", scrt : "jGlNl6ImkuDo"}, //192.168.14.130
-	{name : "Node 2", addr : "192.168.14.130", port : "9050",  user : "test_user2", scrt : "zMflqOKezFiA"},
-	{name : "Node 3", addr : "192.168.14.130", port : "10050", user : "test_user3", scrt : "vWdLCE00vJy0"},
+	{name : "Node 0", addr : "127.0.0.1", port : "7050",  user : "test_user0", scrt : "MS9qrN8hFjlE"}, //127.0.0.1 7050 8050 9050 10050
+	{name : "Node 1", addr : "127.0.0.1", port : "8050",  user : "test_user1", scrt : "jGlNl6ImkuDo"}, //192.168.14.130
+	{name : "Node 2", addr : "127.0.0.1", port : "9050",  user : "test_user2", scrt : "zMflqOKezFiA"},
+	{name : "Node 3", addr : "127.0.0.1", port : "10050", user : "test_user3", scrt : "vWdLCE00vJy0"},
 ];
 const mimeMap = {
 	'.ico' : 'image/x-icon',
@@ -179,7 +179,9 @@ var ccid = {};
 ccid = {"0":"00000000000000000000000",
 		"1":"11111111111111111111111",
 		"2":"22222222222222222222222",
-		"3":"33333333333333333333333"}
+		"3":"33333333333333333333333"};
+var depth = 0;
+var count = 0;
 //!!!!!!!!!!!TEMP
 
 http.createServer(function(req, res) {
@@ -292,6 +294,36 @@ http.createServer(function(req, res) {
 						function(respStatus, errMsg) {
 							rspnErr(res, respStatus, errMsg);
 					});
+					break;
+
+				case '/ws/temp1':
+					var incr = 0;
+					switch (Math.floor(Math.random() * 6)) {
+					case 0:
+						incr = Math.floor(Math.random() * 15) - 5;
+						if (incr < 0) incr = 0;
+						break;
+					case 1:
+					case 2:
+					case 3:
+						incr = 1;
+						break;
+					}
+					depth += incr;
+					res.setHeader('Content-type', 'application/json');
+					res.end('{ "height" : ' + depth + ', "currentBlockHash" : "RrndKwuojRMjOz/rdD7rJD/NUupiuBuCtQwnZG7Vdi/XXcTd2MDyAMsFAZ1ntZL2/IIcSUeatIZAKS6ss7f' + depth + '"}');
+					break;
+
+				case '/ws/temp2':
+					var peers = Math.floor(count / 10) + 1;
+					if (peers > 10) peers = 9;
+					var buff = { peers : []};
+					for (var i = 0; i < peers; i ++) {
+						buff.peers[i] = { ID : { name : "vp" + i }, address : "172.18.0." + i + ":7051", type : 1, pkiID : "VqDFpP5mW3dMkzK050rl/ax1otqRedEZRKA1o6E70Pk" + i };
+					}
+					res.setHeader('Content-type', 'application/json');
+					res.end(JSON.stringify(buff));
+					count ++;
 					break;
 
 				default:
