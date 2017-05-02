@@ -9,7 +9,7 @@ const KEY_HGHT = "height";
 const DRAG_CHART_ENABLED = false;
 
 // **** Configurables ****
-const RUN_INTERVAL = 1000; //2500 is 2.5 seconds
+const RUN_INTERVAL = 250; //2500 is 2.5 seconds
 const MAX_ROW = 5; // Number of rows available in the dashboard grid
 const MAX_COL = 7; // Number of columns available in the dashboard grid
 
@@ -753,6 +753,9 @@ function Chart(chartId) {
 		} else {
 			return false;
 		}
+	};
+	this.runNow = function() {
+		elapse = 0;
 	};
 
 	/*
