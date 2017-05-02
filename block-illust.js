@@ -29,9 +29,9 @@ BlockIllustrator = function(chartId) {
 	this.id = "block-illust"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Blockchain illustrator";
-	this.url = "%%%urlChain%%%";
+	this.url = "http://localhost:8080/ws/temp1"; //"%%%urlChain%%%";
 	this.minGridWdth = 5;
-	this.minGridHght = 3;
+	this.minGridHght = 2;
 	this.updateInterval = 2000;
 
 	this.selected = -1;
@@ -51,8 +51,7 @@ BlockIllustrator = function(chartId) {
 		}
 
 		var obj = this;
-//		accessData(this.url, function(rspn) {
-		accessDummy(this.url, function(rspn) {
+		accessData(this.url, function(rspn) {
 				if (!rspn || (rspn.length <= 0)) {
 					return;
 				}
@@ -149,11 +148,10 @@ BlockIllustrator = function(chartId) {
 		var blockWidth = this.chartWdth / MAX_BLOCK_DSP;
 
 		var scaleX = d3.scale.linear()
-			.domain((blockArray.length < (MAX_BLOCK_DSP + 2)) ? [0, 10] : [blockArray[1], blockArray[MAX_BLOCK_DSP + 1]])
-			.range([0, this.chartWdth + 2]);
+			.domain((blockArray.length < (MAX_BLOCK_DSP + 1)) ? [0, 9] : [blockArray[1], blockArray[MAX_BLOCK_DSP]])
+			.range([0, this.chartWdth - blockWidth]);
 
-		var yPosn = this.chartHght / 4;
-		console.log(JSON.stringify(blockArray)); //TODO TEMP
+		var yPosn = this.chartHght / 3;
 
 		// *** Draw chain height text ***
 		if (grph.select("#txt-hght").empty()) {
@@ -211,18 +209,18 @@ BlockIllustrator = function(chartId) {
 			.attr("transform", function(d) { return "translate(" + scaleX(d) + ", " + yPosn + ")"; })
 			.call(drag); // The drag handler should be attached to the element being dragged
 
-		block.append("rect").attr("class", "block-rect")
+		block.append("rect").attr("class", "block-rect").style("display", "none")
 			.attr("x", 0).attr("y", 0).attr("width", BLOCK_SIDE_LEN).attr("height", BLOCK_SIDE_LEN);
-		block.append("polygon").attr("class", "block-rect")
+		block.append("polygon").attr("class", "block-rect").style("display", "none")
 			.attr("points", poly1);
-		block.append("polygon").attr("class", "block-rect")
+		block.append("polygon").attr("class", "block-rect").style("display", "none")
 			.attr("points", poly2);
-		block.append("polygon").attr("class", "block-slct")
+		block.append("polygon").attr("class", "block-slct").style("display", "none")
 			.attr("points", poly3);
-		block.append("line").attr("class", "block-line")
+		block.append("line").attr("class", "block-line").style("display", "none")
 			.attr("x1", BLOCK_SIDE_LEN + BLOCK_LINE_Y).attr("y1", BLOCK_LINE_Y)
 			.attr("x2", blockWidth).attr("y2", BLOCK_LINE_Y);
-		block.append("text").attr("class", "block-text")
+		block.append("text").attr("class", "block-text").style("display", "none")
 			.text(function(d) { return d; })
 			.attr("x", BLOCK_SIDE_HLF)
 			.attr("y", BLOCK_SIDE_HLF).attr("text-anchor", "middle").attr("dominant-baseline", "middle");
@@ -235,19 +233,19 @@ BlockIllustrator = function(chartId) {
 		block.append("rect").attr("class", "overlay")
 			.attr("x", 0).attr("y", BLOCK_SIDE_Y).attr("width", BLOCK_SIDE_LEN + BLOCK_SIDE_X).attr("height", BLOCK_SIDE_LEN - BLOCK_SIDE_Y)
 			.on("mouseover", function(d, i) {
-					block.select(".block-slct").style("display", "block");
+					block.select(".block-slct").style("opacity", "0.5");
 				})
 			.on("mouseout", function(d, i) {
 					if ((obj.displayTo < 0) || (obj.selected != d)) {
-						block.select(".block-slct").style("display", "none");
+						block.select(".block-slct").style("opacity", "0.0");
 					}
 				})
 			.on("click", function(d) {
-					grph.selectAll(".block-slct").style("display", "none"); // Clear any other selections
+					grph.selectAll(".block-slct").style("opacity", "0.0"); // Clear any other selections
 					obj.selected = d;
 					obj.displayTo = blockArray[blockArray.length - 1];
 					obj.runNow();
-					block.select(".block-slct").style("display", "block");
+					block.select(".block-slct").style("opacity", "0.5");
 					grph.select("#btn-end").style("display", "block");
 			});
 
@@ -257,6 +255,7 @@ BlockIllustrator = function(chartId) {
 		blocks.transition().duration(duration).ease("linear")
 			.attr("transform", function(d) { return "translate(" + scaleX(d) + ", " + yPosn + ")"; })
 			.call(endAll, function() { callback(); });
+		blocks.selectAll(".block-rect, .block-line, .block-text, .block-slct").transition().delay(duration).style("display", "block");
 
 		// *** Draw the resume button ***
 		if (grph.select("#btn-end").empty()) {
@@ -312,7 +311,7 @@ function endAll(trans, func) {
 		.each("end", function() { if (!--n) func.apply(this, arguments); });
 };
 
-// ***** TEMP *****
+/***** TEMP *****
 var dummy = 8;
 setInterval(function() {
 		if (dummy < 35) dummy ++;
@@ -320,3 +319,4 @@ setInterval(function() {
 function accessDummy(url, callback) {
 	callback({ "height" : dummy, "currentBlockHash" : ("RrndKwuojRMjOz/rdD7rJD/NUupiuBuCtQwnZG7Vdi/XXcTd2MDyAMsFAZ1ntZL2/IIcSUeatIZAKS6ss7fEvg" + dummy)});
 }
+*/
