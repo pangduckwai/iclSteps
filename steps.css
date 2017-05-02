@@ -25,6 +25,5 @@
 .block-slct {
 	fill: white;
 	pointer-events: visible;
-	opacity: 0.5;
-	display: none;
+	opacity: 0.0;
 }
