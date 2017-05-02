@@ -26,20 +26,21 @@ PeersIllustrator = function(chartId) {
 	this.render = function() {
 		var obj = this;
 		accessData(this.url, function(rspn) {
-				//console.log(JSON.stringify(rspn)); //TODO TEMP
+				//console.log(JSON.stringify(rspn.peers[2].ID)); //TODO TEMP
 				var grph = d3.select("#"+this.domId).select(".chart-viz");
 
-				var peers = grph.selectAll(".peers").data(pie(rspn.peers), function(d) { console.log(d.ID.name); return d.ID.name; });
+				var peers = grph.selectAll(".peers").data(pie(rspn.peers), function(d) { return d.ID.name; });
 				peers.enter()
 					.append("g").attr("class", "peers")
 					.append("text").attr("class", "block-text")
 					.attr("dy", ".35em")
-					.text(function(d) { return d.ID.name; });
+					.text(function(d) { console.log(d.ID.name); return d.ID.name; });
 
 				peers.exit().remove();
 
 				peers.transition().duration(600)
 					.attrTween("transform", function(d) {
+						console.log(JSON.stringify(d)); //TODO TEMP
 						this._current = this._current || d;
 						var intr = d3.interpolate(this._current, d);
 						this._current = intr(0);
@@ -55,6 +56,9 @@ PeersIllustrator = function(chartId) {
 
 	this.buildUi = function(func) {
 		func('<div class="chart-title"></div><svg class="chart-viz" />');
+	};
+
+	this.fromCookie = function(cook) {
 	};
 
 	this.toCookie = function(row, col, wdth, hght) {
