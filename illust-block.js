@@ -149,10 +149,6 @@ BlockIllustrator = function(chartId) {
 		var obj = this;
 		var grph = d3.select("#"+obj.domId).select(".chart-viz");
 
-		if (!dirn) {
-			console.log("No direction!!!!!!!");//TODO TEMP
-		}
-
 		var scaleX = d3.scale.linear()
 			.domain((blockArray.length < (MAX_BLOCK_DSP + 1)) ? [0, 9] : [blockArray[1], blockArray[MAX_BLOCK_DSP]])
 			.range([0, this.chartWdth - blockWidth]);
