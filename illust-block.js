@@ -46,6 +46,7 @@ BlockIllustrator = function(chartId) {
 
 	var blockWidth;
 	var yPosn;
+	var scaleX;
 
 	var chainDepth = 0;
 	var blockArray = [0];
@@ -53,26 +54,29 @@ BlockIllustrator = function(chartId) {
 	var blockPosLst = -100;
 	var catchUp = false;
 
+	var grph;
+	var _this = this;
+
+	// *** Called by dashboard main thread once at the begining ***
 	this.init = function() {
 		blockWidth = this.chartWdth / MAX_BLOCK_DSP;
 		yPosn = this.chartHght / 3;
+		scaleX = d3.scale.linear().domain([1, 10]).range([0, this.chartWdth - blockWidth]);
+		grph = d3.select("#"+_this.domId).select(".chart-viz");
 	};
 
-	// *** Called by dashboard main thread
+	// *** Called by dashboard main thread repeatedly ***
 	this.render = function() {
 		if (catchUp) {
 			console.log("Catching up, normal run interrupted"); //TODO TEMP
 			return;
 		}
 
-		var obj = this;
 		accessData(this.url, function(rspn) {
 				if (!rspn || (rspn.length <= 0)) {
 					return;
 				}
 				chainDepth = rspn.height;
-
-				var grph = d3.select("#"+obj.domId).select(".chart-viz");
 
 				// *** Draw chain height text ***
 				if (grph.select("#txt-hght").empty()) {
@@ -83,12 +87,12 @@ BlockIllustrator = function(chartId) {
 
 				// *** Draw the resume button ***
 				if (grph.select("#btn-end").empty()) {
-					grph.append("image").attr("id", "btn-end").attr("x", obj.chartWdth - 40).attr("y", 4).attr("width", 18).attr("height", 18)
+					grph.append("image").attr("id", "btn-end").attr("x", _this.chartWdth - 40).attr("y", 4).attr("width", 18).attr("height", 18)
 						.attr("xlink:href", IMG_TOEND).style("display", "none")
 						.on("click", function() {
-								obj.selected = -1;
-								obj.displayTo = -1;
-								obj.runNow();
+								_this.selected = -1;
+								_this.displayTo = -1;
+								_this.runNow();
 								grph.selectAll(".block-slct").style("display", "none");
 								grph.select("#btn-end").style("display", "none");
 						})
@@ -100,7 +104,7 @@ BlockIllustrator = function(chartId) {
 					});
 				}
 
-				if (obj.displayTo < 0) { // if >= 0 means interactive mode, only update latest chain depth
+				if (_this.displayTo < 0) { // if >= 0 means interactive mode, only update latest chain depth
 					var lastVal = blockArray[blockArray.length - 1];
 					var nextVal = chainDepth - 1;
 					var itr = nextVal - lastVal;
@@ -128,17 +132,17 @@ BlockIllustrator = function(chartId) {
 								}
 
 								idx ++;
-								obj.addBlock(++ lastVal);
+								_this.addBlock(++ lastVal);
 //								console.log("Catching up", JSON.stringify(blockArray)); //TODO TEMP
-								obj.redraw(dur, _redraw); // Catching up
+								_this.redraw(dur, _redraw); // Catching up
 							} else {
 								catchUp = false;
 							}
 						}
 						_redraw();
 					} else if (itr == 1) {
-						obj.addBlock(nextVal);
-						obj.redraw(2000, function() {} ); // Normal ticking
+						_this.addBlock(nextVal);
+						_this.redraw(2000, function() {} ); // Normal ticking
 					}
 				}
 				//console.log(blockArray); //TODO TEMP
@@ -146,55 +150,6 @@ BlockIllustrator = function(chartId) {
 	};
 
 	this.redraw = function(duration, callback, dirn) {
-		var obj = this;
-		var grph = d3.select("#"+obj.domId).select(".chart-viz");
-
-		var scaleX = d3.scale.linear()
-			.domain((blockArray.length < (MAX_BLOCK_DSP + 1)) ? [0, 9] : [blockArray[1], blockArray[MAX_BLOCK_DSP]])
-			.range([0, this.chartWdth - blockWidth]);
-
-		// *** Drag handler ***
-		var drag = d3.behavior.drag()
-			.on("drag", function(dat) {
-					if (obj.displayTo < 0) {
-						grph.select("#btn-end").style("display", "block");
-						obj.displayTo = blockArray[blockArray.length - 1];
-						obj.runNow();
-					}
-					var pos = d3.transform(d3.select(this).attr("transform")).translate[0];
-
-					var p1, p2;
-					var blks = d3.selectAll(".block");
-					blks.each(function(d, i) {
-							p1 = d3.transform(blks.first().attr("transform")).translate[0];
-							p2 = obj.chartWdth - d3.transform(blks.last().attr("transform")).translate[0] - blockWidth;
-					});
-
-					if (p1 > 5) {
-						obj.scrollBack();
-					} else if (p2 > 5) {
-						obj.scrollForward();
-					}
-
-					console.log("Blocks", p1, pos, p2); //TODO TEMP
-					blks.attr("transform", function(d, i) {
-							var p = d3.transform(d3.select(this).attr("transform")).translate[0];
-							if (p1 > 5) {
-								return "translate(" + (p - 5) + ", " + yPosn + ")";
-							} else if (p2 > 5) {
-								return "translate(" + (p + 5) + ", " + yPosn + ")";
-							} else {
-								return "translate(" + (p + d3.event.dx) + ", " + yPosn + ")";
-							}
-					});
-				})
-			.on("dragstart", function() {
-					d3.select(this).node().style.cursor = "ew-resize";
-				})
-			.on("dragend", function() {
-					d3.select(this).node().style.cursor = "auto";
-			});
-
 		// *** Draw the block chain! ***
 		if (grph.select(".blocks").empty()) {
 			grph.append("g").attr("class", "blocks");
@@ -202,7 +157,7 @@ BlockIllustrator = function(chartId) {
 		var blocks = grph.select(".blocks").selectAll(".block").data(blockArray, function(d) { return d; } );
 		var block = blocks.enter()
 			.append("g").attr("class", "block")
-			.attr("transform", function(d) { return "translate(" + scaleX(d + ((dirn > 1) ? 1 : 0)) + ", " + yPosn + ")"; })
+			.attr("transform", function(d, i) { return "translate(" + scaleX(i) + ", " + yPosn + ")"; })
 			.call(drag); // The drag handler should be attached to the element being dragged
 
 		block.append("rect").attr("class", "block-rect").style("display", "none")
@@ -232,15 +187,15 @@ BlockIllustrator = function(chartId) {
 					block.select(".block-slct").style("opacity", "0.5");
 				})
 			.on("mouseout", function(d, i) {
-					if ((obj.displayTo < 0) || (obj.selected != d)) {
+					if ((_this.displayTo < 0) || (_this.selected != d)) {
 						block.select(".block-slct").style("opacity", "0.0");
 					}
 				})
 			.on("click", function(d) {
 					grph.selectAll(".block-slct").style("opacity", "0.0"); // Clear any other selections
-					obj.selected = d;
-					obj.displayTo = blockArray[blockArray.length - 1];
-					obj.runNow();
+					_this.selected = d;
+					_this.displayTo = blockArray[blockArray.length - 1];
+					_this.runNow();
 					block.select(".block-slct").style("opacity", "0.5");
 					grph.select("#btn-end").style("display", "block");
 			});
@@ -248,9 +203,11 @@ BlockIllustrator = function(chartId) {
 		blocks.exit().remove(); // Remove graphical elements binded with removed data
 
 		// *** Slide blocks to left ***
-		blocks.transition().duration(duration).ease("linear")
-			.attr("transform", function(d) { return "translate(" + scaleX(d) + ", " + yPosn + ")"; })
-			.call(endAll, function() { callback(); });
+		if (!dirn && (dirn != 1) && (dirn != -1)) {
+			blocks.transition().duration(duration).ease("linear")
+				.attr("transform", function(d, i) { return "translate(" + scaleX(i) + ", " + yPosn + ")"; })
+				.call(endAll, function() { callback(); });
+		}
 		blocks.selectAll(".block-rect, .block-line, .block-text, .block-slct").transition().delay(duration).style("display", "block");
 	};
 
@@ -263,7 +220,7 @@ BlockIllustrator = function(chartId) {
 		return blockArray[blockArray.length - 1];
 	};
 
-	this.scrollForward = function(blockWidth) {
+	this.scrollForward = function() {
 		var value = blockArray[blockArray.length - 1] + 1;
 		if (value < (chainDepth - 1)) {
 			blockArray.push(value);
@@ -284,6 +241,44 @@ BlockIllustrator = function(chartId) {
 			this.redraw(0, function() {}, -1);
 		}
 	};
+
+	// *** Drag handler ***
+	var drag = d3.behavior.drag()
+		.on("dragstart", function() { d3.select(this).node().style.cursor = "ew-resize"; })
+		.on("dragend", function() { d3.select(this).node().style.cursor = "auto"; })
+		.on("drag", function(dat) {
+				if (_this.displayTo < 0) {
+					grph.select("#btn-end").style("display", "block");
+					_this.displayTo = blockArray[blockArray.length - 1];
+					_this.runNow();
+				}
+				var pos = d3.transform(d3.select(this).attr("transform")).translate[0];
+
+				var p1, p2;
+				var blks = d3.selectAll(".block");
+				blks.each(function(d, i) {
+						p1 = d3.transform(blks.first().attr("transform")).translate[0];
+						p2 = _this.chartWdth - d3.transform(blks.last().attr("transform")).translate[0] - blockWidth;
+				});
+
+				/*if (p1 > 0) {
+					_this.scrollBack();
+				} else if (p2 > 0) {
+					_this.scrollForward();
+				}*/
+
+				console.log("Blocks", _this.chartWdth, p1, pos, p2); //TODO TEMP
+				blks.attr("transform", function(d, i) {
+						var p = d3.transform(d3.select(this).attr("transform")).translate[0];
+						if (p1 > 5) {
+							return "translate(" + (p - 5) + ", " + yPosn + ")";
+						} else if (p2 > 5) {
+							return "translate(" + (p + 5) + ", " + yPosn + ")";
+						} else {
+							return "translate(" + (p + d3.event.dx) + ", " + yPosn + ")";
+						}
+				});
+	});
 
 	// *** API functions ***
 	this.buildUi = function(func) {

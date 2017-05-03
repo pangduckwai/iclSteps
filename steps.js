@@ -311,7 +311,7 @@ http.createServer(function(req, res) {
 						break;
 					}
 					depth += incr;
-					if (depth > 115) depth = 115; //TODO TEMP
+					//if (depth > 115) depth = 115; //TODO TEMP
 					res.setHeader('Content-type', 'application/json');
 					res.end('{ "height" : ' + depth + ', "currentBlockHash" : "RrndKwuojRMjOz/rdD7rJD/NUupiuBuCtQwnZG7Vdi/XXcTd2MDyAMsFAZ1ntZL2/IIcSUeatIZAKS6ss7f' + depth + '"}');
 					break;
