@@ -16,12 +16,14 @@ const MAX_COL = 7; // Number of columns available in the dashboard grid
 // **** Themes ****
 const THEME_IS_DARK = false; // false means theme lis 'light'
 const IMG_PLAY = "icon_play" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
+const IMG_PLAY_S = "icon_play1" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
 const IMG_PAUSE = "icon_pause" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
-const IMG_CONFIG = "icon_more0" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
+const IMG_PAUSE_S = "icon_pause1" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
+const IMG_CONFIG = "icon_more" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
 const IMG_SETTING = "icon_more1" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
-const IMG_NETWORK = "icon_network" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
+const IMG_NETWORK = "icon_net1" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
 const IMG_REFRESH = "icon_refresh" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
-const IMG_TOEND = "icon_end" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
+const IMG_TOEND = "icon_end1" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
 
 const topMargin = 72;
 const btmMargin = 18;

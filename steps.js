@@ -181,7 +181,7 @@ ccid = {"0":"00000000000000000000000",
 		"1":"11111111111111111111111",
 		"2":"22222222222222222222222",
 		"3":"33333333333333333333333"};
-var depth = 0;
+var depth = 1;
 var count = 0;
 //!!!!!!!!!!!TEMP
 
@@ -311,7 +311,6 @@ http.createServer(function(req, res) {
 						break;
 					}
 					depth += incr;
-					//if (depth > 115) depth = 115; //TODO TEMP
 					res.setHeader('Content-type', 'application/json');
 					res.end('{ "height" : ' + depth + ', "currentBlockHash" : "RrndKwuojRMjOz/rdD7rJD/NUupiuBuCtQwnZG7Vdi/XXcTd2MDyAMsFAZ1ntZL2/IIcSUeatIZAKS6ss7f' + depth + '"}');
 					break;
