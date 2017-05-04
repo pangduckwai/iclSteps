@@ -182,7 +182,7 @@ ccid = {"0":"00000000000000000000000",
 		"2":"22222222222222222222222",
 		"3":"33333333333333333333333"};
 var depth = 1;
-var count = 0;
+var count = 7;
 //!!!!!!!!!!!TEMP
 
 http.createServer(function(req, res) {
@@ -316,15 +316,15 @@ http.createServer(function(req, res) {
 					break;
 
 				case '/ws/temp2':
-					var peers = Math.floor(count / 10) + 1;
-					if (peers > 10) peers = 9;
+					count += (Math.floor(Math.random() * 4) - 2);
+					if (count < 1) count = 1;
+					if (count > 9) count = 9;
 					var buff = { peers : []};
-					for (var i = 0; i < peers; i ++) {
+					for (var i = 0; i < count; i ++) {
 						buff.peers[i] = { ID : { name : "vp" + i }, address : "172.18.0." + i + ":7051", type : 1, pkiID : "VqDFpP5mW3dMkzK050rl/ax1otqRedEZRKA1o6E70Pk" + i };
 					}
 					res.setHeader('Content-type', 'application/json');
 					res.end(JSON.stringify(buff));
-					count ++;
 					break;
 
 				default:

@@ -41,6 +41,13 @@ if ((/*@cc_on ! @*/ false) || navigator.userAgent.match(/Trident/g)) {
 	isIE = true;
 }
 
+d3.selection.prototype.first = function() {
+	return d3.select(this[0][0]);
+};
+d3.selection.prototype.last = function() {
+	return d3.select(this[0][this.size() - 1]);
+};
+
 var avlbPosition = [];
 function hasEnoughRoom(row, col, wdth, hght) {
 	var endc = col + wdth - 1;

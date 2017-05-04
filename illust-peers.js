@@ -3,7 +3,7 @@ PeersIllustrator = function(chartId) {
 	this.id = "illust-peers"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Peers illustrator";
-	this.url = "http://localhost:8080/ws/temp2"; //"%%%urlPeers%%%";
+	this.url = "http://192.168.14.130:8080/ws/temp2"; //"%%%urlPeers%%%";
 	this.minGridWdth = 3;
 	this.minGridHght = 3;
 	this.updateInterval = 2000;
@@ -11,6 +11,10 @@ PeersIllustrator = function(chartId) {
 	var radius;
 	var arc;
 	var pie;
+
+	var grph;
+	var _this = this;
+
 	this.init = function() {
 		radius = Math.min(this.chartWdth*3/4, this.chartHght) / 2;
 
@@ -21,33 +25,36 @@ PeersIllustrator = function(chartId) {
 		arc = d3.svg.arc()
 			.outerRadius(radius * 0.7)
 			.innerRadius(radius * 0.7);
+
+		grph = d3.select("#"+this.domId).select(".chart-viz");
 	};
 
 	this.render = function() {
-		var obj = this;
 		accessData(this.url, function(rspn) {
-				//console.log(JSON.stringify(rspn.peers[2].ID)); //TODO TEMP
-				var grph = d3.select("#"+this.domId).select(".chart-viz");
+				//console.log(JSON.stringify(rspn)); //TODO TEMP
+				if (grph.select(".peers").empty()) {
+					grph.append("g").attr("class", "peers").attr("transform", "translate(" + (_this.chartWdth / 2) + ", " + (_this.chartHght / 2) + ")");
+				}
 
-				var peers = grph.selectAll(".peers").data(pie(rspn.peers), function(d) { return d.ID.name; });
-				peers.enter()
-					.append("g").attr("class", "peers")
-					.append("text").attr("class", "block-text")
-					.attr("dy", ".35em")
-					.text(function(d) { console.log(d.ID.name); return d.ID.name; });
+				var peers = grph.select(".peers").selectAll(".peer").data(pie(rspn.peers), function(d) { console.log(JSON.stringify(d)); return d.data.pkiID; });
+				var peer = peers.enter().append("g").attr("class", "peer");
+				peer.append("rect").attr("class", "block-rect")
+					.attr("x", 0).attr("y", 0).attr("width", 5).attr("height", 5);
+				peer.append("text").attr("class", "block-text")
+					.attr("dy", "16")
+					.text(function(d) { return d.data.ID.name; });
 
 				peers.exit().remove();
 
 				peers.transition().duration(600)
 					.attrTween("transform", function(d) {
-						console.log(JSON.stringify(d)); //TODO TEMP
 						this._current = this._current || d;
 						var intr = d3.interpolate(this._current, d);
 						this._current = intr(0);
 						return function(t) {
 							var val = intr(t);
 							var pos = arc.centroid(val);
-							//pos[0] = radius * (midAngle(val) < Math.PI ? 1 : -1);
+							pos[0] = radius * (val.startAngle < Math.PI ? 1 : -1);
 							return "translate(" + pos + ")";
 						};
 				});

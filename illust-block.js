@@ -1,48 +1,16 @@
 
-const MAX_BLOCK_DSP = 10;
-
-const BLOCK_SIDE_LEN = 40;
-const BLOCK_SIDE_HLF = BLOCK_SIDE_LEN / 2;
-const BLOCK_SIDE_X = 0.6 * BLOCK_SIDE_LEN;
-const BLOCK_SIDE_Y = -0.4 * BLOCK_SIDE_LEN;
-const BLOCK_LINE_Y = 0.3 * BLOCK_SIDE_LEN;
-
-const poly1 =
-	 [[0, 0].join(",")
-	, [BLOCK_SIDE_X, BLOCK_SIDE_Y].join(",")
-	, [BLOCK_SIDE_LEN + BLOCK_SIDE_X, BLOCK_SIDE_Y].join(",")
-	, [BLOCK_SIDE_LEN, 0].join(",")].join(" ");
-const poly2 =
-	 [[BLOCK_SIDE_LEN, 0].join(",")
-	, [BLOCK_SIDE_LEN + BLOCK_SIDE_X, BLOCK_SIDE_Y].join(",")
-	, [BLOCK_SIDE_LEN + BLOCK_SIDE_X, BLOCK_SIDE_X].join(",")
-	, [BLOCK_SIDE_LEN, BLOCK_SIDE_LEN].join(",")].join(" ");
-const poly3 =
-	 [[0, 0].join(",")
-	, [BLOCK_SIDE_X, BLOCK_SIDE_Y].join(",")
-	, [BLOCK_SIDE_LEN + BLOCK_SIDE_X, BLOCK_SIDE_Y].join(",")
-	, [BLOCK_SIDE_LEN + BLOCK_SIDE_X, BLOCK_SIDE_X].join(",")
-	, [BLOCK_SIDE_LEN, BLOCK_SIDE_LEN].join(",")
-	, [0, BLOCK_SIDE_LEN].join(",")].join(" ");
-
-d3.selection.prototype.first = function() {
-	return d3.select(this[0][0]);
-};
-d3.selection.prototype.last = function() {
-	return d3.select(this[0][this.size() - 1]);
-};
-
 BlockIllustrator = function(chartId) {
 	this.id = "block-illust"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Blockchain illustrator";
-	this.url = "http://localhost:8080/ws/temp1"; //"%%%urlChain%%%";
+	this.url = "http://192.168.14.130:8080/ws/temp1"; //"%%%urlChain%%%";
 	this.minGridWdth = 5;
 	this.minGridHght = 2;
 	this.updateInterval = 2000;
-
+	this.maxBlockDisplay = 10; // Maximum number of blocks to display at one time
+	this.blockSideLength = 40; // Size of the blocks drawn
 	this.selected = -1;
-	this.displayTo = -1; // Meaning always select the latest block
+	this.interactiveMode = false; // Default is scorll forward as new blocks arrive
 
 	var blockWidth;
 	var yPosn;
@@ -55,18 +23,40 @@ BlockIllustrator = function(chartId) {
 	var grph;
 	var _this = this;
 
+	var blockHalf;
+	var blockSideX;
+	var blockSideY;
+	var blockLineY;
+	var shape1;
+	var shape2;
+
 	// *** Called by dashboard main thread once at the begining ***
 	this.init = function() {
-		blockWidth = this.chartWdth / MAX_BLOCK_DSP;
+		blockWidth = this.chartWdth / this.maxBlockDisplay;
 		yPosn = this.chartHght / 3;
 		scaleX = d3.scale.linear().range([0, this.chartWdth - blockWidth]);
-		grph = d3.select("#"+_this.domId).select(".chart-viz");
+		grph = d3.select("#"+this.domId).select(".chart-viz");
+
+		blockHalf = this.blockSideLength / 2;
+		blockSideX = this.blockSideLength * 0.6;
+		blockSideY = this.blockSideLength * -0.4;
+		blockLineY = this.blockSideLength * 0.3;
+
+		shape1 = [[0, 0].join(",")
+				, [blockSideX, blockSideY].join(",")
+				, [this.blockSideLength + blockSideX, blockSideY].join(",")
+				, [this.blockSideLength + blockSideX, blockSideX].join(",")
+				, [this.blockSideLength, this.blockSideLength].join(",")
+				, [0, this.blockSideLength].join(",")].join(" ");
+		shape2 = [[0, 0].join(",")
+				, [this.blockSideLength, 0].join(",")
+				, [this.blockSideLength + blockSideX, blockSideY].join(",")].join(" ");
 	};
 
 	// *** Called by dashboard main thread repeatedly ***
 	this.render = function() {
 		if (catchUp) {
-			console.log("Catching up, normal run interrupted"); //TODO TEMP
+			//console.log("Catching up, normal run interrupted"); //TODO TEMP
 			return;
 		}
 
@@ -87,15 +77,15 @@ BlockIllustrator = function(chartId) {
 				if (grph.select("#btn-end").empty()) {
 					grph.append("image").attr("id", "btn-end").attr("x", _this.chartWdth - 40).attr("y", 4).attr("width", 18).attr("height", 18).attr("xlink:href", IMG_PAUSE_S)
 						.on("click", function() {
-								if (_this.displayTo >= 0) {
+								if (_this.interactiveMode) {
+									_this.interactiveMode = false;
 									_this.selected = -1;
-									_this.displayTo = -1;
 									_this.runNow();
 									grph.selectAll(".block-slct").style("display", "none");
 									grph.select("#btn-end").attr("xlink:href", IMG_PAUSE_S);
 								} else {
+									_this.interactiveMode = true;
 									_this.selected = -1;
-									_this.displayTo = blockArray[blockArray.length - 1];
 									_this.runNow();
 									grph.selectAll(".block-slct").style("display", "none");
 									grph.select("#btn-end").attr("xlink:href", IMG_PLAY_S);
@@ -109,7 +99,7 @@ BlockIllustrator = function(chartId) {
 					});
 				}
 
-				if (_this.displayTo < 0) { // if >= 0 means interactive mode, only update latest chain depth
+				if (!_this.interactiveMode) {
 					var lastVal = (blockArray.length > 0) ? blockArray[blockArray.length - 1] : -1;
 					var nextVal = chainDepth - 1;
 					var itr = nextVal - lastVal;
@@ -120,50 +110,35 @@ BlockIllustrator = function(chartId) {
 
 					if (itr > 1) {
 						var idx = 0;
-						var dur = 1000;
+						var dur;
 						function _redraw() {
 							if (idx < itr) {
-								if (idx == (itr - 1)) {
-									catchUp = false;
-									dur = 1000; // slow down scroll nearing the end of catching up
-								} else {
-									catchUp = true;
-									if (idx == (itr - 2))
-										dur = 500;
-									else if (idx == (itr - 3))
-										dur = 250;
-									else if (idx == (itr - 4))
-										dur = 125;
-									else {
-										dur -= 200; // accelerate scroll when catching up initially
-										if (dur < 200) dur = 20;
-									}
-								}
-
-								idx ++;
+								catchUp = true;
+								dur = calcDuration(itr, idx ++, _this.updateInterval);
 								_this.addBlock(++ lastVal);
-//								console.log("Catching up", JSON.stringify(blockArray)); //TODO TEMP
+								//console.log("Catching up", idx, itr, dur, lastVal, nextVal); //TODO TEMP
 								_this.redraw(dur, _redraw, 0); // Catching up
 							} else {
 								catchUp = false;
+								//console.log("Huh???", idx, itr, dur, lastVal, nextVal); //TODO TEMP
 							}
 						}
 						_redraw();
 					} else if (itr == 1) {
+						//console.log("Normal ticking", nextVal); //TODO TEMP
 						_this.addBlock(nextVal);
-						_this.redraw(2000, function() {}, 0); // Normal ticking
+						_this.redraw(_this.updateInterval, function() {}, 0); // Normal ticking
 					}
 				}
-				//console.log(blockArray); //TODO TEMP
 		});
 	};
 
 	this.redraw = function(duration, callback, dirn) {
-		if (blockArray.length <= MAX_BLOCK_DSP) {
-			scaleX.domain([0, MAX_BLOCK_DSP - 1]);
+		if (blockArray.length <= this.maxBlockDisplay) {
+			scaleX.domain([0, this.maxBlockDisplay - 1]);
 			duration = 0;
 		} else
-			scaleX.domain([1, MAX_BLOCK_DSP]);
+			scaleX.domain([1, this.maxBlockDisplay]);
 
 		// *** Draw the block chain! ***
 		if (grph.select(".blocks").empty()) {
@@ -179,41 +154,43 @@ BlockIllustrator = function(chartId) {
 		}
 
 		block.attr("transform", function(d, i) { return "translate(" + scaleX(i) + ", " + yPosn + ")"; }).call(drag); // The drag handler should be attached to the element being dragged
-		block.append("rect").attr("class", "block-rect").style("display", "none")
-			.attr("x", 0).attr("y", 0).attr("width", BLOCK_SIDE_LEN).attr("height", BLOCK_SIDE_LEN);
 		block.append("polygon").attr("class", "block-rect").style("display", "none")
-			.attr("points", poly1);
-		block.append("polygon").attr("class", "block-rect").style("display", "none")
-			.attr("points", poly2);
+			.attr("points", shape1);
+		block.append("polyline").attr("class", "block-rect").style("display", "none")
+			.attr("points", shape2);
+		block.append("line").attr("class", "block-rect").style("display", "none")
+			.attr("x1", this.blockSideLength).attr("y1", 0)
+			.attr("x2", this.blockSideLength).attr("y2", this.blockSideLength);
 		block.append("polygon").attr("class", "block-slct").style("display", "none")
-			.attr("points", poly3);
+			.attr("points", shape1);
 		block.append("line").attr("class", "block-line").style("display", "none")
-			.attr("x1", BLOCK_SIDE_LEN + BLOCK_LINE_Y).attr("y1", BLOCK_LINE_Y)
-			.attr("x2", blockWidth).attr("y2", BLOCK_LINE_Y);
+			.attr("x1", this.blockSideLength + blockLineY).attr("y1", blockLineY)
+			.attr("x2", blockWidth).attr("y2", blockLineY);
 		block.append("text").attr("class", "block-text").style("display", "none")
 			.text(function(d) { return d; })
-			.attr("x", BLOCK_SIDE_HLF)
-			.attr("y", BLOCK_SIDE_HLF).attr("text-anchor", "middle").attr("dominant-baseline", "middle");
+			.attr("x", blockHalf)
+			.attr("y", blockHalf).attr("text-anchor", "middle").attr("dominant-baseline", "middle");
 
 		// Since the <g> element (variable 'block') does not receive mouse event, add this invisible box in between the blocks to allow dragging at these places
 		block.append("rect").attr("class", "overlay")
-			.attr("x", BLOCK_SIDE_LEN + BLOCK_SIDE_X).attr("y", BLOCK_SIDE_Y)
-			.attr("width", blockWidth - BLOCK_SIDE_LEN - BLOCK_SIDE_X).attr("height", BLOCK_SIDE_LEN - BLOCK_SIDE_Y);
+			.attr("x", this.blockSideLength + blockSideX).attr("y", blockSideY)
+			.attr("width", blockWidth - this.blockSideLength - blockSideX).attr("height", this.blockSideLength - blockSideY);
 
 		block.append("rect").attr("class", "overlay")
-			.attr("x", 0).attr("y", BLOCK_SIDE_Y).attr("width", BLOCK_SIDE_LEN + BLOCK_SIDE_X).attr("height", BLOCK_SIDE_LEN - BLOCK_SIDE_Y)
+			.attr("x", 0).attr("y", blockSideY).attr("width", this.blockSideLength + blockSideX).attr("height", this.blockSideLength - blockSideY)
 			.on("mouseover", function(d, i) {
 					block.select(".block-slct").style("opacity", "0.5");
 				})
 			.on("mouseout", function(d, i) {
-					if ((_this.displayTo < 0) || (_this.selected != d)) {
+					if ((!_this.interactiveMode) || (_this.selected != d)) {
 						block.select(".block-slct").style("opacity", "0.0");
 					}
 				})
 			.on("click", function(d) {
 					grph.selectAll(".block-slct").style("opacity", "0.0"); // Clear any other selections
+					grph.select("#btn-end").attr("xlink:href", IMG_PLAY_S);
+					_this.interactiveMode = true;
 					_this.selected = d;
-					_this.displayTo = blockArray[blockArray.length - 1];
 					_this.runNow();
 					block.select(".block-slct").style("opacity", "0.5");
 			});
@@ -230,7 +207,7 @@ BlockIllustrator = function(chartId) {
 	// *** Util functions ***
 	this.addBlock = function(value) {
 		blockArray.push(value);
-		if (blockArray.length > (MAX_BLOCK_DSP + 1)) {
+		if (blockArray.length > (this.maxBlockDisplay + 1)) {
 			blockArray.shift();
 		}
 		return blockArray[blockArray.length - 1];
@@ -243,7 +220,7 @@ BlockIllustrator = function(chartId) {
 				d3.select(this).node().style.cursor = "auto";
 
 				var pos = d3.transform(d3.select(".block").attr("transform")).translate[0];
-				if (blockArray.length > (MAX_BLOCK_DSP + 1)) {
+				if (blockArray.length > (_this.maxBlockDisplay + 1)) {
 					if ((blockWidth + pos) < 0) {
 						blockArray.shift(); // remove the first element
 					} else {
@@ -252,9 +229,10 @@ BlockIllustrator = function(chartId) {
 				}
 		})
 		.on("drag", function(dat) {
-				if (_this.displayTo < 0) {
+				if (!_this.interactiveMode) {
 					grph.select("#btn-end").style("display", "block");
-					_this.displayTo = blockArray[blockArray.length - 1];
+					grph.select("#btn-end").attr("xlink:href", IMG_PLAY_S);
+					_this.interactiveMode = true;
 					_this.runNow();
 				}
 				var pos = d3.transform(d3.select(this).attr("transform")).translate[0];
@@ -271,7 +249,7 @@ BlockIllustrator = function(chartId) {
 					if (value >= 0) {
 						// Scroll backward
 						blockArray.unshift(value);
-						if (blockArray.length > (MAX_BLOCK_DSP + 1)) {
+						if (blockArray.length > (_this.maxBlockDisplay + 1)) {
 							blockArray.pop();
 						}
 						_this.redraw(0, function() {}, -1);
@@ -281,7 +259,7 @@ BlockIllustrator = function(chartId) {
 					if (value < chainDepth) {
 						// Scroll forkward
 						blockArray.push(value);
-						if (blockArray.length > (MAX_BLOCK_DSP + 2)) {
+						if (blockArray.length > (_this.maxBlockDisplay + 2)) {
 							blockArray.shift();
 						}
 						_this.redraw(0, function() {}, 1);
@@ -332,4 +310,17 @@ function endAll(trans, func) {
 	trans
 		.each(function() { ++n; })
 		.each("end", function() { if (!--n) func.apply(this, arguments); });
+};
+
+function calcDuration(range, index, max) {
+	if ((index == 0) || (index == (range - 1)) || (index >= range)) return max;
+
+	var mid = range / 2;
+	var idx = index + 1;
+	if (index < mid) {
+		return Math.floor(max / idx / idx);
+	} else {
+		var tmp = index - range;
+		return Math.floor(max / tmp / tmp);
+	}
 };
