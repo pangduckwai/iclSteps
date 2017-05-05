@@ -8,10 +8,10 @@ const fs = require('fs');
 // TODO!!! Learn where to put config params in node.js!!!
 const protocol = 'http';
 const bcNodes = [
-	{name : "Node 0", addr : "192.168.14.130", port : "7050",  user : "test_user0", scrt : "MS9qrN8hFjlE"}, //127.0.0.1 7050 8050 9050 10050
-	{name : "Node 1", addr : "192.168.14.130", port : "8050",  user : "test_user1", scrt : "jGlNl6ImkuDo"}, //192.168.14.130
-	{name : "Node 2", addr : "192.168.14.130", port : "9050",  user : "test_user2", scrt : "zMflqOKezFiA"},
-	{name : "Node 3", addr : "192.168.14.130", port : "10050", user : "test_user3", scrt : "vWdLCE00vJy0"},
+	{name : "Node 0", addr : "127.0.0.1", port : "7050",  user : "test_user0", scrt : "MS9qrN8hFjlE"}, //127.0.0.1 7050 8050 9050 10050
+	{name : "Node 1", addr : "127.0.0.1", port : "8050",  user : "test_user1", scrt : "jGlNl6ImkuDo"}, //192.168.14.130
+	{name : "Node 2", addr : "127.0.0.1", port : "9050",  user : "test_user2", scrt : "zMflqOKezFiA"},
+	{name : "Node 3", addr : "127.0.0.1", port : "10050", user : "test_user3", scrt : "vWdLCE00vJy0"},
 ];
 const mimeMap = {
 	'.ico' : 'image/x-icon',
@@ -182,7 +182,7 @@ ccid = {"0":"00000000000000000000000",
 		"2":"22222222222222222222222",
 		"3":"33333333333333333333333"};
 var depth = 1;
-var count = 7;
+var count = 4;
 //!!!!!!!!!!!TEMP
 
 http.createServer(function(req, res) {
@@ -316,9 +316,9 @@ http.createServer(function(req, res) {
 					break;
 
 				case '/ws/temp2':
-					count += (Math.floor(Math.random() * 4) - 2);
+					/*count += (Math.floor(Math.random() * 4) - 1);
 					if (count < 1) count = 1;
-					if (count > 9) count = 9;
+					if (count > 9) count = 9;*/
 					var buff = { peers : []};
 					for (var i = 0; i < count; i ++) {
 						buff.peers[i] = { ID : { name : "vp" + i }, address : "172.18.0." + i + ":7051", type : 1, pkiID : "VqDFpP5mW3dMkzK050rl/ax1otqRedEZRKA1o6E70Pk" + i };
