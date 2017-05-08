@@ -3,7 +3,7 @@ PeersIllustrator = function(chartId) {
 	this.id = "illust-peers"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Peers illustrator";
-	this.url = "http://localhost:8080/ws/temp2"; //"%%%urlPeers%%%";
+	this.url = "http://192.168.14.130:8080/ws/temp2"; //"%%%urlPeers%%%";
 	this.minGridWdth = 3;
 	this.minGridHght = 3;
 	this.updateInterval = 2000;
@@ -34,9 +34,9 @@ PeersIllustrator = function(chartId) {
 
 	this.render = function() {
 		accessData(this.url, function(rspn) {
-				var prnt = grph.select(".peers");
-				if (prnt.empty()) {
-					prnt = grph.append("g").attr("class", "peers").attr("transform", "translate(" + (_this.chartWdth / 2) + ", " + (_this.chartHght / 2) + ")");
+				var rnode = grph.select(".peers");
+				if (rnode.empty()) {
+					rnode = grph.append("g").attr("class", "peers").attr("transform", "translate(" + (_this.chartWdth / 2) + ", " + (_this.chartHght / 2) + ")");
 				}
 
 				var nodes = pie(rspn.peers).map(function(d) {
@@ -45,17 +45,17 @@ PeersIllustrator = function(chartId) {
 						return d;
 				});
 
-				var peers = prnt.selectAll(".peer").data(nodes, function(d) { return d.data.pkiID; });
+				var peers = rnode.selectAll(".peer").data(nodes, function(d) { return d.data.pkiID; });
 				var peer = peers.enter().append("g").attr("class", "peer");
 				peer.append("circle").attr("class", "block-rect")
-					.attr("cx", 0).attr("cy", 0).attr("r", 5)
-					.each(function(d, i) {
+					.attr("cx", 0).attr("cy", 0).attr("r", 5);
+					/*.each(function(d, i) {
 							var p0 = arc.centroid(d);
 							for (var idx = 0; idx < i; idx ++) {
 								var p1 = arc.centroid(nodes[idx]);
-								prnt.append("path").attr("class", "test block-rect").attr("d", line([p0, p1]));
+								rnode.append("path").attr("class", "peer-line p" + i + " q" + idx).attr("d", line([p0, p1]));
 							}
-					});
+					});*/
 				peer.append("text").attr("class", "block-text")
 					.attr("dy", "16")
 					.text(function(d, i) { return d.data.ID.name; });
@@ -76,6 +76,25 @@ PeersIllustrator = function(chartId) {
 							return "translate(" + pos + ")";
 						};
 				});
+
+				var p0, p1;
+				var pth = rnode.selectAll(".peer-line");
+				pth.each(function(d, i) {
+						console.log(d3.select(this).attr("class")); // TODO TEMP
+				});
+
+				for (var i = 0; i < nodes.length; i ++) {
+					p0 = arc.centroid(nodes[i]);
+					for (var j = 0; j < i; j ++) {
+						p1 = arc.centroid(nodes[j]);
+						pth = rnode.select(".peer-line.p" + i + ".q" + j);
+						if (pth.empty()) {
+							pth = rnode.append("path").attr("class", "peer-line p" + i + " q" + j);
+						}
+						pth.transition().duration(600)
+							.attr("d", line([p0, p1]));
+					}
+				}
 		});
 	};
 

@@ -27,3 +27,8 @@
 	pointer-events: visible;
 	opacity: 0.0;
 }
+
+.peer-line {
+	stroke: black;
+	stroke-width: 1;
+}

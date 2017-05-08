@@ -182,7 +182,7 @@ ccid = {"0":"00000000000000000000000",
 		"2":"22222222222222222222222",
 		"3":"33333333333333333333333"};
 var depth = 1;
-var count = 4;
+var count = 3;
 //!!!!!!!!!!!TEMP
 
 http.createServer(function(req, res) {
@@ -316,6 +316,17 @@ http.createServer(function(req, res) {
 					break;
 
 				case '/ws/temp2':
+					switch (count) {
+					case 5:
+						count = 3;
+						break;
+					case 4:
+						count = 5;
+						break;
+					case 3:
+						count = 4;
+						break;
+					}
 					/*count += (Math.floor(Math.random() * 4) - 1);
 					if (count < 1) count = 1;
 					if (count > 9) count = 9;*/
