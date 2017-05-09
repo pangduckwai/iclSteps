@@ -39,9 +39,12 @@ PeersIllustrator = function(chartId) {
 					rnode = grph.append("g").attr("class", "peers").attr("transform", "translate(" + (_this.chartWdth / 2) + ", " + (_this.chartHght / 2) + ")");
 				}
 
+				var names = new Set();
+				var rotat = Math.PI / rspn.peers.length;
 				var nodes = pie(rspn.peers).map(function(d) {
-						d.startAngle -= (Math.PI / rspn.peers.length);
-						d.endAngle -= (Math.PI / rspn.peers.length);
+						d.startAngle -= rotat;
+						d.endAngle -= rotat;
+						names.add(d.data.ID.name);
 						return d;
 				});
 
@@ -49,23 +52,17 @@ PeersIllustrator = function(chartId) {
 				var peer = peers.enter().append("g").attr("class", "peer");
 				peer.append("circle").attr("class", "block-rect")
 					.attr("cx", 0).attr("cy", 0).attr("r", 5);
-					/*.each(function(d, i) {
-							var p0 = arc.centroid(d);
-							for (var idx = 0; idx < i; idx ++) {
-								var p1 = arc.centroid(nodes[idx]);
-								rnode.append("path").attr("class", "peer-line p" + i + " q" + idx).attr("d", line([p0, p1]));
-							}
-					});*/
 				peer.append("text").attr("class", "block-text")
-					.attr("dy", "16")
 					.text(function(d, i) { return d.data.ID.name; });
 
 				peers.exit().remove();
 
+				peers.select("text")
+					.attr("dx", function(d) { return  21 * Math.sin((d.endAngle - d.startAngle) / 2 + d.startAngle); })
+					.attr("dy", function(d) { return -21 * Math.cos((d.endAngle - d.startAngle) / 2 + d.startAngle); });//TODO HERE
+
 				peers.transition().duration(600)
 					.attrTween("transform", function(d) {
-						//d.startAngle -= (Math.PI / rspn.peers.length);
-						//d.endAngle -= (Math.PI / rspn.peers.length);
 						this._current = this._current || d;
 						var intr = d3.interpolate(this._current, d);
 						this._current = intr(0);
@@ -77,19 +74,28 @@ PeersIllustrator = function(chartId) {
 						};
 				});
 
+				// Manage the lines between the nodes
 				var p0, p1;
 				var pth = rnode.selectAll(".peer-line");
+				var regex = /^peer-line f([_a-zA-Z0-9-]+) t([_a-zA-Z0-9-]+)$/;
+				var lne, mth;
 				pth.each(function(d, i) {
-						console.log(d3.select(this).attr("class")); // TODO TEMP
+						lne = d3.select(this);
+						mth = regex.exec(lne.attr("class"));
+						if (mth != null) {
+							if (!names.has(mth[1]) || !names.has(mth[2])) {
+								lne.remove();
+							}
+						}
 				});
 
 				for (var i = 0; i < nodes.length; i ++) {
 					p0 = arc.centroid(nodes[i]);
 					for (var j = 0; j < i; j ++) {
 						p1 = arc.centroid(nodes[j]);
-						pth = rnode.select(".peer-line.p" + i + ".q" + j);
+						pth = rnode.select(".peer-line.f" + nodes[i].data.ID.name + ".t" + nodes[j].data.ID.name);
 						if (pth.empty()) {
-							pth = rnode.append("path").attr("class", "peer-line p" + i + " q" + j);
+							pth = rnode.append("path").attr("class", "peer-line f" + nodes[i].data.ID.name + " t" + nodes[j].data.ID.name);
 						}
 						pth.transition().duration(600)
 							.attr("d", line([p0, p1]));

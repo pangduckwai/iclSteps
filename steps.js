@@ -182,7 +182,8 @@ ccid = {"0":"00000000000000000000000",
 		"2":"22222222222222222222222",
 		"3":"33333333333333333333333"};
 var depth = 1;
-var count = 3;
+var count = 0;
+var fmto = [[0, 3], [0, 4], [0, 5], [1, 7], [2, 7], [3, 7], [3, 6], [2, 6], [2, 5], [1, 5]];
 //!!!!!!!!!!!TEMP
 
 http.createServer(function(req, res) {
@@ -316,23 +317,12 @@ http.createServer(function(req, res) {
 					break;
 
 				case '/ws/temp2':
-					switch (count) {
-					case 5:
-						count = 3;
-						break;
-					case 4:
-						count = 5;
-						break;
-					case 3:
-						count = 4;
-						break;
-					}
-					/*count += (Math.floor(Math.random() * 4) - 1);
-					if (count < 1) count = 1;
-					if (count > 9) count = 9;*/
+					var idx = (count ++) % 10;
 					var buff = { peers : []};
-					for (var i = 0; i < count; i ++) {
-						buff.peers[i] = { ID : { name : "vp" + i }, address : "172.18.0." + i + ":7051", type : 1, pkiID : "VqDFpP5mW3dMkzK050rl/ax1otqRedEZRKA1o6E70Pk" + i };
+					var j = fmto[idx][0];
+					for (var i = 0; i < (fmto[idx][1] - fmto[idx][0]); i ++) {
+						buff.peers[i] = { ID : { name : "vp" + j }, address : "172.18.0." + j + ":7051", type : j, pkiID : "VqDFpP5mW3dMkzK050rl/ax1otqRedEZRKA1o6E70Pk" + j };
+						j ++;
 					}
 					res.setHeader('Content-type', 'application/json');
 					res.end(JSON.stringify(buff));
