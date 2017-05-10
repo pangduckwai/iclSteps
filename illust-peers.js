@@ -52,16 +52,16 @@ PeersIllustrator = function(chartId) {
 				var peer = peers.enter().append("g").attr("class", "peer");
 				peer.append("circle").attr("class", "block-rect")
 					.attr("cx", 0).attr("cy", 0).attr("r", 5);
-				peer.append("text").attr("class", "block-text")
+				peer.append("text").attr("class", "block-text").attr("text-anchor", "middle").attr("dominant-baseline", "middle")
 					.text(function(d, i) { return d.data.ID.name; });
 
 				peers.exit().remove();
 
 				peers.select("text")
 					.attr("dx", function(d) { return  21 * Math.sin((d.endAngle - d.startAngle) / 2 + d.startAngle); })
-					.attr("dy", function(d) { return -21 * Math.cos((d.endAngle - d.startAngle) / 2 + d.startAngle); });//TODO HERE
+					.attr("dy", function(d) { return -21 * Math.cos((d.endAngle - d.startAngle) / 2 + d.startAngle); });
 
-				peers.transition().duration(600)
+				peers.transition().duration(_this.updateInterval)
 					.attrTween("transform", function(d) {
 						this._current = this._current || d;
 						var intr = d3.interpolate(this._current, d);
@@ -95,10 +95,12 @@ PeersIllustrator = function(chartId) {
 						p1 = arc.centroid(nodes[j]);
 						pth = rnode.select(".peer-line.f" + nodes[i].data.ID.name + ".t" + nodes[j].data.ID.name);
 						if (pth.empty()) {
-							pth = rnode.append("path").attr("class", "peer-line f" + nodes[i].data.ID.name + " t" + nodes[j].data.ID.name);
+							pth = rnode.append("path")
+								.attr("class", "peer-line f" + nodes[i].data.ID.name + " t" + nodes[j].data.ID.name);
 						}
-						pth.transition().duration(600)
-							.attr("d", line([p0, p1]));
+						pth.transition().duration(_this.updateInterval)
+							.attr("d", line([p0, p1]))
+							.style("opacity", 1);
 					}
 				}
 		});

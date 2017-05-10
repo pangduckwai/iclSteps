@@ -317,7 +317,7 @@ http.createServer(function(req, res) {
 					break;
 
 				case '/ws/temp2':
-					var idx = (count ++) % 10;
+					var idx = (count ++) % fmto.length;
 					var buff = { peers : []};
 					var j = fmto[idx][0];
 					for (var i = 0; i < (fmto[idx][1] - fmto[idx][0]); i ++) {
