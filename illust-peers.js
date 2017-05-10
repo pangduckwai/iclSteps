@@ -57,11 +57,11 @@ PeersIllustrator = function(chartId) {
 
 				peers.exit().remove();
 
-				peers.select("text")
+				peers.select("text").transition().duration(_this.updateInterval / 2)
 					.attr("dx", function(d) { return  21 * Math.sin((d.endAngle - d.startAngle) / 2 + d.startAngle); })
 					.attr("dy", function(d) { return -21 * Math.cos((d.endAngle - d.startAngle) / 2 + d.startAngle); });
 
-				peers.transition().duration(_this.updateInterval)
+				peers.transition().duration(_this.updateInterval / 2)
 					.attrTween("transform", function(d) {
 						this._current = this._current || d;
 						var intr = d3.interpolate(this._current, d);
@@ -98,7 +98,7 @@ PeersIllustrator = function(chartId) {
 							pth = rnode.append("path")
 								.attr("class", "peer-line f" + nodes[i].data.ID.name + " t" + nodes[j].data.ID.name);
 						}
-						pth.transition().duration(_this.updateInterval)
+						pth.transition().duration(_this.updateInterval / 2)
 							.attr("d", line([p0, p1]))
 							.style("opacity", 1);
 					}
