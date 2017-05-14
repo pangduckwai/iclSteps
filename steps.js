@@ -182,8 +182,8 @@ ccid = {"0":"00000000000000000000000",
 		"2":"22222222222222222222222",
 		"3":"33333333333333333333333"};
 var depth = 1;
-var count = 3;
-var peers = ['tp0', 'tp1', 'tp2', 'tp3', 'tp4', 'tp5', 'tp6', 'tp7', 'tp8', 'tp9'];
+var count = 0;
+var hosts = ['tp0', 'tp1', 'tp2', 'tp3', 'tp4', 'tp5', 'tp6', 'tp7', 'tp8', 'tp9'];
 //!!!!!!!!!!!TEMP
 
 http.createServer(function(req, res) {
@@ -319,22 +319,22 @@ http.createServer(function(req, res) {
 				case '/ws/temp2':
 					var buff = { peers : []};
 					var lght = 0, j = 0;
-					/*if (count < 3) {
+					if (count < 3) {
 						lght = 3;
-					} else if (count < peers.length) {
+					} else if (count < hosts.length) {
 						lght = count;
 					} else {
-						lght = peers.length;
-					}*/
-					lgth = count; //TODO TEMP
+						lght = hosts.length;
+					}
+					//lght = count; //TODO TEMP
 					for (var i = 0; i < lght; i ++) {
-						if ((count < peers.length) || (Math.random() < 0.7)) {
-							buff.peers[j] = { ID : { name : peers[i] }, address : "172.18.0." + i + ":7051", type : i, pkiID : "VqDFpP5mW3dMkzK050rl/ax1otqRedEZRKA1o6E70Pk" + i };
+						if ((count < hosts.length) || (Math.random() < 0.7)) {
+							buff.peers[j] = { ID : { name : hosts[i] }, address : "172.18.0." + i + ":7051", type : i, pkiID : "VqDFpP5mW3dMkzK050rl/ax1otqRedEZRKA1o6E70Pk" + i };
 							j ++;
 						}
 					}
 					count ++;
-					if (count > 7) count = 3; //TODO TEMP
+					//if (count > 5) count = 3; //TODO TEMP
 					res.setHeader('Content-type', 'application/json');
 					res.end(JSON.stringify(buff));
 					break;

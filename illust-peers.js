@@ -34,7 +34,6 @@ PeersIllustrator = function(chartId) {
 
 	this.render = function() {
 		accessData(this.url, function(rspn) {
-				console.log(JSON.stringify(rspn));
 				var rnode = grph.select(".peers");
 				if (rnode.empty()) {
 					rnode = grph.append("g").attr("class", "peers").attr("transform", "translate(" + (_this.chartWdth / 2) + ", " + (_this.chartHght / 2) + ")");
@@ -48,10 +47,14 @@ PeersIllustrator = function(chartId) {
 						names.add(d.data.ID.name);
 						return d;
 				});
-				var plast = [];
 
+				var plast = {};
 				var peers = rnode.selectAll(".peer").data(nodes, function(d) { return d.data.pkiID; });
-				var peer = peers.enter().append("g").attr("class", "peer");
+				peers.each(function(d, i) {
+						plast[d.data.ID.name] = d3.transform(d3.select(this).attr("transform")).translate;
+				});
+
+				var peer = peers.enter().append("g").attr("class", function(d) { return "peer p" + d.data.ID.name; });
 				peer.append("circle").attr("class", "block-rect")
 					.attr("cx", 0).attr("cy", 0).attr("r", 5);
 				peer.append("text").attr("class", "block-text").attr("text-anchor", "middle").attr("dominant-baseline", "middle")
@@ -77,7 +80,7 @@ PeersIllustrator = function(chartId) {
 				});
 
 				// Manage the lines between the nodes
-				var p0, p1;
+				var p0, p1, px;
 				var pth = rnode.selectAll(".peer-line");
 				var regex = /^peer-line f([_a-zA-Z0-9-]+) t([_a-zA-Z0-9-]+)$/;
 				var lne, mth;
@@ -95,20 +98,14 @@ PeersIllustrator = function(chartId) {
 					p0 = arc.centroid(nodes[i]);
 					for (var j = 0; j < i; j ++) {
 						p1 = arc.centroid(nodes[j]);
+						px = (plast[nodes[j].data.ID.name]) ? plast[nodes[j].data.ID.name] : p1;
 						pth = rnode.select(".peer-line.f" + nodes[i].data.ID.name + ".t" + nodes[j].data.ID.name);
 						if (pth.empty()) {
 							pth = rnode.append("path").attr("class", "peer-line f" + nodes[i].data.ID.name + " t" + nodes[j].data.ID.name);
-							if (plast[i] && plast[j]) {
-								console.log("yes...");
-								pth.attr("d", line([plast[i], plast[j]]))
-							}
+							pth.attr("d", line([p0, px]));
 						}
-						pth.transition().duration(_this.updateInterval / 2)
-							.attr("d", line([p0, p1]));
-							//.style("opacity", 1);
-						plast[j] = p1
+						pth.transition().duration(_this.updateInterval / 2).attr("d", line([p0, p1]));
 					}
-					plast[i] = p0;
 				}
 		});
 	};

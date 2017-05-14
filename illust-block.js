@@ -29,6 +29,7 @@ BlockIllustrator = function(chartId) {
 	var blockLineY;
 	var shape1;
 	var shape2;
+	var shape3;
 
 	// *** Called by dashboard main thread once at the begining ***
 	this.init = function() {
@@ -51,6 +52,9 @@ BlockIllustrator = function(chartId) {
 		shape2 = [[0, 0].join(",")
 				, [this.blockSideLength, 0].join(",")
 				, [this.blockSideLength + blockSideX, blockSideY].join(",")].join(" ");
+		shape3 = [[this.blockSideLength + blockLineY + 5, blockLineY + 5].join(",")
+				, [this.blockSideLength + blockLineY, blockLineY].join(",")
+				, [this.blockSideLength + blockLineY + 5, blockLineY - 5].join(",")].join(" "); 
 	};
 
 	// *** Called by dashboard main thread repeatedly ***
@@ -166,6 +170,8 @@ BlockIllustrator = function(chartId) {
 		block.append("line").attr("class", "block-line").style("display", "none")
 			.attr("x1", this.blockSideLength + blockLineY).attr("y1", blockLineY)
 			.attr("x2", blockWidth).attr("y2", blockLineY);
+		block.append("polyline").attr("class", "block-line").style("display", "none")
+			.attr("points", shape3);
 		block.append("text").attr("class", "block-text").style("display", "none")
 			.text(function(d) { return d; })
 			.attr("x", blockHalf)
