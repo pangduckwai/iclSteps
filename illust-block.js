@@ -21,12 +21,15 @@ BlockIllustrator = function(chartId) {
 	var catchUp = false;
 
 	var grph;
+	var line;
 	var _this = this;
 
 	var blockHalf;
+	var blockPls5, blockPlsX, blockPlsY, blockMnsY;
 	var blockSideX;
-	var blockSideY;
-	var blockLineY;
+	var blockSideY, blockSideY2;
+	var blockLineY, blockLineY2, blockLineY3;
+	var blockOffset;
 	var shape1;
 	var shape2;
 	var shape3;
@@ -34,27 +37,37 @@ BlockIllustrator = function(chartId) {
 	// *** Called by dashboard main thread once at the begining ***
 	this.init = function() {
 		blockWidth = this.chartWdth / this.maxBlockDisplay;
-		yPosn = this.chartHght / 3;
-		scaleX = d3.scale.linear().range([0, this.chartWdth - blockWidth]);
+		yPosn = this.chartHght / 2.5;
 		grph = d3.select("#"+this.domId).select(".chart-viz");
+		line = d3.svg.line();
 
-		blockHalf = this.blockSideLength / 2;
 		blockSideX = this.blockSideLength * 0.6;
 		blockSideY = this.blockSideLength * -0.4;
 		blockLineY = this.blockSideLength * 0.3;
+		blockSideY2 = blockSideY + 5;
+		blockLineY2 = blockLineY + 5;
+		blockLineY3 = blockLineY + 10;
+		blockHalf = this.blockSideLength / 2;
+		blockPls5 = this.blockSideLength + 5;
+		blockPlsX = this.blockSideLength + blockSideX;
+		blockPlsY = this.blockSideLength + blockLineY - blockWidth;
+		blockMnsY = this.blockSideLength - blockSideY;
+		blockOffset = blockWidth - blockPlsX - 5;
+
+		scaleX = d3.scale.linear().range([blockOffset, this.chartWdth - blockWidth + blockOffset]);
 
 		shape1 = [[0, 0].join(",")
 				, [blockSideX, blockSideY].join(",")
-				, [this.blockSideLength + blockSideX, blockSideY + 5].join(",")
-				, [this.blockSideLength + blockSideX, blockSideX + 5].join(",")
-				, [this.blockSideLength, this.blockSideLength + 5].join(",")
+				, [blockPlsX, blockSideY2].join(",")
+				, [blockPlsX, blockSideX + 5].join(",")
+				, [this.blockSideLength, blockPls5].join(",")
 				, [0, this.blockSideLength].join(",")].join(" ");
 		shape2 = [[0, 0].join(",")
 				, [this.blockSideLength, 5].join(",")
-				, [this.blockSideLength + blockSideX, blockSideY + 5].join(",")].join(" ");
-		shape3 = [[this.blockSideLength + blockLineY - blockWidth + 5, blockLineY + 8].join(",")
-				, [this.blockSideLength + blockLineY - blockWidth, blockLineY + 3].join(",")
-				, [this.blockSideLength + blockLineY - blockWidth + 5, blockLineY - 2].join(",")].join(" "); 
+				, [blockPlsX, blockSideY2].join(",")].join(" ");
+		shape3 = [[blockPlsY + 5, blockLineY3].join(",")
+				, [blockPlsY, blockLineY2].join(",")
+				, [blockPlsY + 5, blockLineY].join(",")].join(" "); 
 	};
 
 	// *** Called by dashboard main thread repeatedly ***
@@ -120,16 +133,13 @@ BlockIllustrator = function(chartId) {
 								catchUp = true;
 								dur = calcDuration(itr, idx ++, _this.updateInterval);
 								_this.addBlock(++ lastVal);
-								//console.log("Catching up", idx, itr, dur, lastVal, nextVal); //TODO TEMP
 								_this.redraw(dur, _redraw, 0); // Catching up
 							} else {
 								catchUp = false;
-								//console.log("Huh???", idx, itr, dur, lastVal, nextVal); //TODO TEMP
 							}
 						}
 						_redraw();
 					} else if (itr == 1) {
-						//console.log("Normal ticking", nextVal); //TODO TEMP
 						_this.addBlock(nextVal);
 						_this.redraw(_this.updateInterval, function() {}, 0); // Normal ticking
 					}
@@ -152,39 +162,39 @@ BlockIllustrator = function(chartId) {
 
 		var block;
 		if (dirn < 0) {
-			block = blocks.enter().insert("g").attr("class", "block");//-webkit-perspective
+			block = blocks.enter().insert("g").attr("class", "block");
 		} else {
 			block = blocks.enter().append("g").attr("class", "block");
 		}
 
-		block.attr("transform", function(d, i) { return "translate(" + scaleX(i) + ", " + yPosn + ")"; }).call(drag); // The drag handler should be attached to the element being dragged
+		block.attr("transform", function(d, i) { return "translate(" + scaleX(i) + ", " + yPosn + ")"; }).call(drag); // call 'drag' here because the drag handler should be attached to the element being dragged
 		block.append("polygon").attr("class", "block-rect").style("display", "none")
-			.attr("points", shape1);
+			.attr("points", shape1).attr("shape-rendering", "geometricPrecision");
 		block.append("polyline").attr("class", "block-rect").style("display", "none")
-			.attr("points", shape2);
+			.attr("points", shape2).attr("shape-rendering", "geometricPrecision");
 		block.append("line").attr("class", "block-rect").style("display", "none")
 			.attr("x1", this.blockSideLength).attr("y1", 5)
-			.attr("x2", this.blockSideLength).attr("y2", this.blockSideLength + 5);
+			.attr("x2", this.blockSideLength).attr("y2", blockPls5);
 		block.append("polygon").attr("class", "block-slct").style("display", "none")
 			.attr("points", shape1);
 		block.append("line").attr("class", "block-line").style("display", "none")
-			.attr("x1", this.blockSideLength + blockLineY - blockWidth).attr("y1", blockLineY + 3)
-			.attr("x2", 0).attr("y2", blockLineY + 3);
+			.attr("x1", blockPlsY).attr("y1", blockLineY2)
+			.attr("x2", 0).attr("y2", blockLineY3);
 		block.append("polyline").attr("class", "block-line").style("display", "none")
 			.attr("points", shape3);
 		block.append("text").attr("class", "block-text").style("display", "none")
 			.text(function(d) { return d; })
 			.attr("x", blockHalf)
-			.attr("y", blockHalf + 3).attr("text-anchor", "middle").attr("dominant-baseline", "middle")
-			.attr("transform", "skewY(8)");
+			.attr("y", blockHalf).attr("text-anchor", "middle").attr("dominant-baseline", "middle")
+			.attr("transform", "skewY(7)");
 
 		// Since the <g> element (variable 'block') does not receive mouse event, add this invisible box in between the blocks to allow dragging at these places
 		block.append("rect").attr("class", "overlay")
-			.attr("x", this.blockSideLength + blockSideX - blockWidth).attr("y", blockSideY)
-			.attr("width", blockWidth - this.blockSideLength - blockSideX).attr("height", this.blockSideLength - blockSideY);
+			.attr("x", blockPlsX - blockWidth).attr("y", blockSideY)
+			.attr("width", blockWidth - blockPlsX).attr("height", blockMnsY + 5);
 
 		block.append("rect").attr("class", "overlay")
-			.attr("x", 0).attr("y", blockSideY).attr("width", this.blockSideLength + blockSideX).attr("height", this.blockSideLength - blockSideY)
+			.attr("x", 0).attr("y", blockSideY).attr("width", blockPlsX).attr("height", blockMnsY + 5)
 			.on("mouseover", function(d, i) {
 					block.select(".block-slct").style("opacity", "0.5");
 				})
@@ -247,8 +257,8 @@ BlockIllustrator = function(chartId) {
 				var p1, p2;
 				var blks = d3.selectAll(".block");
 				blks.each(function(d, i) {
-						p1 = d3.transform(blks.first().attr("transform")).translate[0];
-						p2 = _this.chartWdth - d3.transform(blks.last().attr("transform")).translate[0] - blockWidth;
+						p1 = d3.transform(blks.first().attr("transform")).translate[0] - blockOffset;
+						p2 = _this.chartWdth - d3.transform(blks.last().attr("transform")).translate[0] - blockWidth + blockOffset;
 				});
 
 				if (p1 > 0) {

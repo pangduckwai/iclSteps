@@ -8,13 +8,13 @@
 
 .block-rect {
 	fill: none;
-	stroke: black;
+	stroke: #909090;
 	stroke-width: 1;
 }
 
 .block-line {
-	stroke: black;
-	stroke-width: 3;
+	stroke: #909090;
+	stroke-width: 1;
 }
 
 .block-text {
@@ -28,7 +28,18 @@
 	opacity: 0.0;
 }
 
-.peer-line {
+.peer-node {
+	fill: white;
 	stroke: black;
+	stroke-width: 1;
+}
+
+.peer-frme {
+	stroke: black;
+	stroke-width: 2;
+}
+
+.peer-line {
+	stroke: darkgray;
 	stroke-width: 1;
 }

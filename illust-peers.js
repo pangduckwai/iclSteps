@@ -34,9 +34,19 @@ PeersIllustrator = function(chartId) {
 
 	this.render = function() {
 		accessData(this.url, function(rspn) {
-				var rnode = grph.select(".peers");
-				if (rnode.empty()) {
-					rnode = grph.append("g").attr("class", "peers").attr("transform", "translate(" + (_this.chartWdth / 2) + ", " + (_this.chartHght / 2) + ")");
+				if (grph.select(".peers").empty()) {
+					grph.append("g").attr("class", "peers")
+						.attr("transform", "translate(" + (_this.chartWdth / 2) + ", " + (_this.chartHght / 2) + ")");
+				}
+
+				var pline = grph.select(".peer-lines");
+				if (pline.empty()) {
+					pline = grph.select(".peers").append("g").attr("class", "peer-lines");
+				}
+
+				var pnode = grph.select(".peer-nodes");
+				if (pnode.empty()) {
+					pnode = grph.select(".peers").append("g").attr("class", "peer-nodes");
 				}
 
 				var names = new Set();
@@ -49,14 +59,48 @@ PeersIllustrator = function(chartId) {
 				});
 
 				var plast = {};
-				var peers = rnode.selectAll(".peer").data(nodes, function(d) { return d.data.pkiID; });
+				var peers = pnode.selectAll(".peer").data(nodes, function(d) { return d.data.pkiID; });
 				peers.each(function(d, i) {
 						plast[d.data.ID.name] = d3.transform(d3.select(this).attr("transform")).translate;
 				});
 
-				var peer = peers.enter().append("g").attr("class", function(d) { return "peer p" + d.data.ID.name; });
-				peer.append("circle").attr("class", "block-rect")
-					.attr("cx", 0).attr("cy", 0).attr("r", 5);
+				// Draw connections between the nodes
+				var p0, p1, px;
+				var pth = pline.selectAll(".peer-line");
+				var regex = /^peer-line f([_a-zA-Z0-9-]+) t([_a-zA-Z0-9-]+)$/;
+				var lne, mth;
+				pth.each(function(d, i) {
+						lne = d3.select(this);
+						mth = regex.exec(lne.attr("class"));
+						if (mth != null) {
+							if (!names.has(mth[1]) || !names.has(mth[2])) {
+								lne.remove();
+							}
+						}
+				});
+
+				for (var i = 0; i < nodes.length; i ++) {
+					p0 = arc.centroid(nodes[i]);
+					for (var j = 0; j < i; j ++) {
+						p1 = arc.centroid(nodes[j]);
+						px = (plast[nodes[j].data.ID.name]) ? plast[nodes[j].data.ID.name] : p1;
+						pth = pline.select(".peer-line.f" + nodes[i].data.ID.name + ".t" + nodes[j].data.ID.name);
+						if (pth.empty()) {
+							pth = pline.append("path").attr("class", "peer-line f" + nodes[i].data.ID.name + " t" + nodes[j].data.ID.name);
+							pth.attr("d", line([p0, px]));
+						}
+						pth.transition().duration(_this.updateInterval / 2).attr("d", line([p0, p1]));
+					}
+				}
+
+				// Draw the nodes
+				var peer = peers.enter().append("g").attr("class", "peer");
+				peer.append("rect").attr("class", "peer-node")
+					.attr("x", -7).attr("y", -12).attr("width", 14).attr("height", 7);
+				peer.append("line").attr("class", "peer-frme")
+					.attr("x1", 0).attr("y1", -5).attr("x2", 0).attr("y2", 0);
+				peer.append("line").attr("class", "peer-frme")
+					.attr("x1", -8).attr("y1", 0).attr("x2", 8).attr("y2", 0);
 				peer.append("text").attr("class", "block-text").attr("text-anchor", "middle").attr("dominant-baseline", "middle")
 					.text(function(d, i) { return d.data.ID.name; });
 
@@ -78,35 +122,6 @@ PeersIllustrator = function(chartId) {
 							return "translate(" + pos + ")";
 						};
 				});
-
-				// Manage the lines between the nodes
-				var p0, p1, px;
-				var pth = rnode.selectAll(".peer-line");
-				var regex = /^peer-line f([_a-zA-Z0-9-]+) t([_a-zA-Z0-9-]+)$/;
-				var lne, mth;
-				pth.each(function(d, i) {
-						lne = d3.select(this);
-						mth = regex.exec(lne.attr("class"));
-						if (mth != null) {
-							if (!names.has(mth[1]) || !names.has(mth[2])) {
-								lne.remove();
-							}
-						}
-				});
-
-				for (var i = 0; i < nodes.length; i ++) {
-					p0 = arc.centroid(nodes[i]);
-					for (var j = 0; j < i; j ++) {
-						p1 = arc.centroid(nodes[j]);
-						px = (plast[nodes[j].data.ID.name]) ? plast[nodes[j].data.ID.name] : p1;
-						pth = rnode.select(".peer-line.f" + nodes[i].data.ID.name + ".t" + nodes[j].data.ID.name);
-						if (pth.empty()) {
-							pth = rnode.append("path").attr("class", "peer-line f" + nodes[i].data.ID.name + " t" + nodes[j].data.ID.name);
-							pth.attr("d", line([p0, px]));
-						}
-						pth.transition().duration(_this.updateInterval / 2).attr("d", line([p0, p1]));
-					}
-				}
 		});
 	};
 
