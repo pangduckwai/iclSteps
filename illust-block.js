@@ -3,7 +3,7 @@ BlockIllustrator = function(chartId) {
 	this.id = "block-illust"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Blockchain illustrator";
-	this.url = "http://192.168.14.130:8080/ws/temp1"; //"%%%urlChain%%%";
+	this.url = "http://localhost:8080/ws/temp1"; //"%%%urlChain%%%";
 	this.minGridWdth = 5;
 	this.minGridHght = 2;
 	this.updateInterval = 2000;
@@ -45,16 +45,16 @@ BlockIllustrator = function(chartId) {
 
 		shape1 = [[0, 0].join(",")
 				, [blockSideX, blockSideY].join(",")
-				, [this.blockSideLength + blockSideX, blockSideY].join(",")
-				, [this.blockSideLength + blockSideX, blockSideX].join(",")
-				, [this.blockSideLength, this.blockSideLength].join(",")
+				, [this.blockSideLength + blockSideX, blockSideY + 5].join(",")
+				, [this.blockSideLength + blockSideX, blockSideX + 5].join(",")
+				, [this.blockSideLength, this.blockSideLength + 5].join(",")
 				, [0, this.blockSideLength].join(",")].join(" ");
 		shape2 = [[0, 0].join(",")
-				, [this.blockSideLength, 0].join(",")
-				, [this.blockSideLength + blockSideX, blockSideY].join(",")].join(" ");
-		shape3 = [[this.blockSideLength + blockLineY + 5, blockLineY + 5].join(",")
-				, [this.blockSideLength + blockLineY, blockLineY].join(",")
-				, [this.blockSideLength + blockLineY + 5, blockLineY - 5].join(",")].join(" "); 
+				, [this.blockSideLength, 5].join(",")
+				, [this.blockSideLength + blockSideX, blockSideY + 5].join(",")].join(" ");
+		shape3 = [[this.blockSideLength + blockLineY - blockWidth + 5, blockLineY + 8].join(",")
+				, [this.blockSideLength + blockLineY - blockWidth, blockLineY + 3].join(",")
+				, [this.blockSideLength + blockLineY - blockWidth + 5, blockLineY - 2].join(",")].join(" "); 
 	};
 
 	// *** Called by dashboard main thread repeatedly ***
@@ -152,7 +152,7 @@ BlockIllustrator = function(chartId) {
 
 		var block;
 		if (dirn < 0) {
-			block = blocks.enter().insert("g").attr("class", "block");
+			block = blocks.enter().insert("g").attr("class", "block");//-webkit-perspective
 		} else {
 			block = blocks.enter().append("g").attr("class", "block");
 		}
@@ -163,23 +163,24 @@ BlockIllustrator = function(chartId) {
 		block.append("polyline").attr("class", "block-rect").style("display", "none")
 			.attr("points", shape2);
 		block.append("line").attr("class", "block-rect").style("display", "none")
-			.attr("x1", this.blockSideLength).attr("y1", 0)
-			.attr("x2", this.blockSideLength).attr("y2", this.blockSideLength);
+			.attr("x1", this.blockSideLength).attr("y1", 5)
+			.attr("x2", this.blockSideLength).attr("y2", this.blockSideLength + 5);
 		block.append("polygon").attr("class", "block-slct").style("display", "none")
 			.attr("points", shape1);
 		block.append("line").attr("class", "block-line").style("display", "none")
-			.attr("x1", this.blockSideLength + blockLineY).attr("y1", blockLineY)
-			.attr("x2", blockWidth).attr("y2", blockLineY);
+			.attr("x1", this.blockSideLength + blockLineY - blockWidth).attr("y1", blockLineY + 3)
+			.attr("x2", 0).attr("y2", blockLineY + 3);
 		block.append("polyline").attr("class", "block-line").style("display", "none")
 			.attr("points", shape3);
 		block.append("text").attr("class", "block-text").style("display", "none")
 			.text(function(d) { return d; })
 			.attr("x", blockHalf)
-			.attr("y", blockHalf).attr("text-anchor", "middle").attr("dominant-baseline", "middle");
+			.attr("y", blockHalf + 3).attr("text-anchor", "middle").attr("dominant-baseline", "middle")
+			.attr("transform", "skewY(8)");
 
 		// Since the <g> element (variable 'block') does not receive mouse event, add this invisible box in between the blocks to allow dragging at these places
 		block.append("rect").attr("class", "overlay")
-			.attr("x", this.blockSideLength + blockSideX).attr("y", blockSideY)
+			.attr("x", this.blockSideLength + blockSideX - blockWidth).attr("y", blockSideY)
 			.attr("width", blockWidth - this.blockSideLength - blockSideX).attr("height", this.blockSideLength - blockSideY);
 
 		block.append("rect").attr("class", "overlay")
