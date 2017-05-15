@@ -3,7 +3,7 @@ PeersIllustrator = function(chartId) {
 	this.id = "illust-peers"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Peers illustrator";
-	this.url = "http://localhost:8080/ws/temp2"; //"%%%urlPeers%%%";
+	this.url = "http://192.168.14.130:8080/ws/temp2"; //"%%%urlPeers%%%";
 	this.minGridWdth = 3;
 	this.minGridHght = 3;
 	this.updateInterval = 2000;
@@ -16,8 +16,12 @@ PeersIllustrator = function(chartId) {
 	var grph;
 	var _this = this;
 
+	var txtOff = 28;
+
 	this.init = function() {
-		radius = Math.min(this.chartWdth*3/4, this.chartHght) / 2;
+		this.chartWdth *= 0.5;
+		this.chartHght *= 0.7;
+		radius = Math.min(this.chartWdth*3/4, this.chartHght) / 1.5;
 
 		pie = d3.layout.pie()
 			.sort(null)
@@ -30,6 +34,7 @@ PeersIllustrator = function(chartId) {
 		line = d3.svg.line();
 
 		grph = d3.select("#"+this.domId).select(".chart-viz");
+		grph.attr("viewBox", "0 0 " + this.chartWdth + " " + this.chartHght)
 	};
 
 	this.render = function() {
@@ -50,7 +55,7 @@ PeersIllustrator = function(chartId) {
 				}
 
 				var names = new Set();
-				var rotat = Math.PI / rspn.peers.length;
+				var rotat = Math.PI / rspn.peers.length / 2;
 				var nodes = pie(rspn.peers).map(function(d) {
 						d.startAngle -= rotat;
 						d.endAngle -= rotat;
@@ -101,14 +106,26 @@ PeersIllustrator = function(chartId) {
 					.attr("x1", 0).attr("y1", -5).attr("x2", 0).attr("y2", 0);
 				peer.append("line").attr("class", "peer-frme")
 					.attr("x1", -8).attr("y1", 0).attr("x2", 8).attr("y2", 0);
-				peer.append("text").attr("class", "block-text").attr("text-anchor", "middle").attr("dominant-baseline", "middle")
+				peer.append("text").attr("class", "peer-text").attr("text-anchor", "middle").attr("dominant-baseline", "middle")
 					.text(function(d, i) { return d.data.ID.name; });
 
 				peers.exit().remove();
 
+				var max = 1.7;
+				var mid = Math.floor(nodes.length / 2);
+				var inc = (max - 1) / mid;
+				peers.select("text")
+					.style("font-size", function(d, i) {
+							if (i <= mid) {
+								return (max - i * inc) + "em";
+							} else {
+								return (max - (nodes.length - i) * inc) + "em";
+							}
+					});
+
 				peers.select("text").transition().duration(_this.updateInterval / 2)
-					.attr("dx", function(d) { return  21 * Math.sin((d.endAngle - d.startAngle) / 2 + d.startAngle); })
-					.attr("dy", function(d) { return -21 * Math.cos((d.endAngle - d.startAngle) / 2 + d.startAngle); });
+					.attr("dx", function(d) { return  txtOff * Math.sin((d.endAngle - d.startAngle) / 2 + d.startAngle); })
+					.attr("dy", function(d) { return -txtOff * Math.cos((d.endAngle - d.startAngle) / 2 + d.startAngle); });
 
 				peers.transition().duration(_this.updateInterval / 2)
 					.attrTween("transform", function(d) {
@@ -126,7 +143,7 @@ PeersIllustrator = function(chartId) {
 	};
 
 	this.buildUi = function(func) {
-		func('<div class="chart-title"></div><svg class="chart-viz" />');
+		func('<div class="chart-title"></div><div style="perspective:500px"><svg class="chart-viz" style="transform:rotateX(45deg) translate(0, -200px)"/></div>');
 	};
 
 	this.fromCookie = function(cook) {

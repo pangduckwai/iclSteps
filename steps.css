@@ -31,7 +31,7 @@
 .peer-node {
 	fill: white;
 	stroke: black;
-	stroke-width: 1;
+	stroke-width: 2;
 }
 
 .peer-frme {
@@ -40,6 +40,11 @@
 }
 
 .peer-line {
-	stroke: darkgray;
+	stroke: #909090;
 	stroke-width: 1;
+}
+
+.peer-text {
+	color: black;
+	font-size: 1.5em;
 }

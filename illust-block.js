@@ -3,7 +3,7 @@ BlockIllustrator = function(chartId) {
 	this.id = "block-illust"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Blockchain illustrator";
-	this.url = "http://localhost:8080/ws/temp1"; //"%%%urlChain%%%";
+	this.url = "http://192.168.14.130:8080/ws/temp1"; //"%%%urlChain%%%";
 	this.minGridWdth = 5;
 	this.minGridHght = 2;
 	this.updateInterval = 2000;
@@ -37,7 +37,7 @@ BlockIllustrator = function(chartId) {
 	// *** Called by dashboard main thread once at the begining ***
 	this.init = function() {
 		blockWidth = this.chartWdth / this.maxBlockDisplay;
-		yPosn = this.chartHght / 2.5;
+		yPosn = this.chartHght / 3;
 		grph = d3.select("#"+this.domId).select(".chart-viz");
 		line = d3.svg.line();
 
@@ -86,7 +86,7 @@ BlockIllustrator = function(chartId) {
 				// *** Draw chain height text ***
 				if (grph.select("#txt-hght").empty()) {
 					grph.append("text").attr("id", "txt-hght").attr("class", "block-text")
-					.attr("x", 10).attr("y", 20).attr("text-anchor", "left");
+						.attr("x", 10).attr("y", 20).attr("text-anchor", "left");
 				}
 				grph.select("#txt-hght").text("Current chain depth: " + chainDepth);
 
@@ -114,6 +114,16 @@ BlockIllustrator = function(chartId) {
 						.on("mouseout", function() {
 								grph.select("#btn-end").node().style.cursor = "auto";
 					});
+				}
+
+				// *** Selected ***
+				if (!grph.select(".selected").empty()) {
+					grph.select(".selected").remove();
+				}
+				if (_this.selected > 0) {
+					grph.append("text").attr("class", "selected block-text")
+						.attr("x", 10).attr("y", _this.chartHght - 20).attr("text-anchor", "left")
+						.text("Selected block: " + _this.selected);
 				}
 
 				if (!_this.interactiveMode) {
@@ -196,7 +206,7 @@ BlockIllustrator = function(chartId) {
 		block.append("rect").attr("class", "overlay")
 			.attr("x", 0).attr("y", blockSideY).attr("width", blockPlsX).attr("height", blockMnsY + 5)
 			.on("mouseover", function(d, i) {
-					block.select(".block-slct").style("opacity", "0.5");
+					block.select(".block-slct").style("opacity", "0.8");
 				})
 			.on("mouseout", function(d, i) {
 					if ((!_this.interactiveMode) || (_this.selected != d)) {
@@ -209,7 +219,7 @@ BlockIllustrator = function(chartId) {
 					_this.interactiveMode = true;
 					_this.selected = d;
 					_this.runNow();
-					block.select(".block-slct").style("opacity", "0.5");
+					block.select(".block-slct").style("opacity", "0.8");
 			});
 
 		blocks.exit().remove(); // Remove graphical elements binded with removed data
