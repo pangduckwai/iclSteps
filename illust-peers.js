@@ -3,7 +3,7 @@ PeersIllustrator = function(chartId) {
 	this.id = "illust-peers"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Peers illustrator";
-	this.url = "http://192.168.14.130:8080/ws/temp2"; //"%%%urlPeers%%%";
+	this.url = "http://localhost:8080/ws/temp2"; //"%%%urlPeers%%%";
 	this.minGridWdth = 3;
 	this.minGridHght = 3;
 	this.updateInterval = 2000;
@@ -21,7 +21,7 @@ PeersIllustrator = function(chartId) {
 	this.init = function() {
 		this.chartWdth *= 0.5;
 		this.chartHght *= 0.7;
-		radius = Math.min(this.chartWdth*3/4, this.chartHght) / 1.5;
+		radius = Math.min(this.chartWdth*3/4, this.chartHght) / 2;
 
 		pie = d3.layout.pie()
 			.sort(null)

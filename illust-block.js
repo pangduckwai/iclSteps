@@ -3,7 +3,7 @@ BlockIllustrator = function(chartId) {
 	this.id = "block-illust"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Blockchain illustrator";
-	this.url = "http://192.168.14.130:8080/ws/temp1"; //"%%%urlChain%%%";
+	this.url = "http://localhost:8080/ws/temp1"; //"%%%urlChain%%%";
 	this.minGridWdth = 5;
 	this.minGridHght = 2;
 	this.updateInterval = 2000;
@@ -195,7 +195,7 @@ BlockIllustrator = function(chartId) {
 		block.append("text").attr("class", "block-text").style("display", "none")
 			.text(function(d) { return d; })
 			.attr("x", blockHalf)
-			.attr("y", blockHalf).attr("text-anchor", "middle").attr("dominant-baseline", "middle")
+			.attr("y", blockHalf + 2).attr("text-anchor", "middle").attr("dominant-baseline", "middle")
 			.attr("transform", "skewY(7)");
 
 		// Since the <g> element (variable 'block') does not receive mouse event, add this invisible box in between the blocks to allow dragging at these places
