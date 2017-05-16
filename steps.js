@@ -90,6 +90,7 @@ var buildUi = function(html, msg, user, yr, mn, dt, step, node, state, succ, fai
 				.replace(/%%%returnLink%%%/g, vsbLink)
 				.replace(/%%%formButton%%%/g, vsbBttn)
 				.replace(/%%%urlChain%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain')
+				.replace(/%%%urlBlock%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain/blocks/')
 				.replace(/%%%urlPeers%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/network/peers'));
 		},
 		function(sts, ctn) {
@@ -176,7 +177,7 @@ var deploy = function(node, succ, fail) {
 
 var node = -1;
 var ccid = {};
-//TEMP!!!!!!!!!!!
+/*TEMP!!!!!!!!!!!
 ccid = {"0":"00000000000000000000000",
 		"1":"11111111111111111111111",
 		"2":"22222222222222222222222",
@@ -184,7 +185,7 @@ ccid = {"0":"00000000000000000000000",
 var depth = 1;
 var count = 0;
 var hosts = ['tp0', 'tp1', 'tp2', 'tp3', 'tp4', 'tp5', 'tp6', 'tp7', 'tp8', 'tp9'];
-//!!!!!!!!!!!TEMP
+//!!!!!!!!!!!TEMP*/
 
 http.createServer(function(req, res) {
 	req.on('error', function(err) {

@@ -3,7 +3,7 @@ PeersIllustrator = function(chartId) {
 	this.id = "illust-peers"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Peers illustrator";
-	this.url = "http://localhost:8080/ws/temp2"; //"%%%urlPeers%%%";
+	this.url = "%%%urlPeers%%%"; //"http://localhost:8080/ws/temp2";
 	this.minGridWdth = 3;
 	this.minGridHght = 3;
 	this.updateInterval = 2000;
@@ -19,8 +19,8 @@ PeersIllustrator = function(chartId) {
 	var txtOff = 28;
 
 	this.init = function() {
-		this.chartWdth *= 0.5;
-		this.chartHght *= 0.7;
+		//this.chartWdth *= 0.5; // Perspective view
+		//this.chartHght *= 0.7; // Perspective view
 		radius = Math.min(this.chartWdth*3/4, this.chartHght) / 2;
 
 		pie = d3.layout.pie()
@@ -89,6 +89,7 @@ PeersIllustrator = function(chartId) {
 					for (var j = 0; j < i; j ++) {
 						p1 = arc.centroid(nodes[j]);
 						px = (plast[nodes[j].data.ID.name]) ? plast[nodes[j].data.ID.name] : p1;
+						//if (!plast[nodes[j].data.ID.name]) console.log(j, nodes[j].data.ID.name); //TODO TEMP
 						pth = pline.select(".peer-line.f" + nodes[i].data.ID.name + ".t" + nodes[j].data.ID.name);
 						if (pth.empty()) {
 							pth = pline.append("path").attr("class", "peer-line f" + nodes[i].data.ID.name + " t" + nodes[j].data.ID.name);
@@ -111,6 +112,7 @@ PeersIllustrator = function(chartId) {
 
 				peers.exit().remove();
 
+				/*  Perspective view
 				var max = 1.7;
 				var mid = Math.floor(nodes.length / 2);
 				var inc = (max - 1) / mid;
@@ -121,7 +123,7 @@ PeersIllustrator = function(chartId) {
 							} else {
 								return (max - (nodes.length - i) * inc) + "em";
 							}
-					});
+					}); //*/
 
 				peers.select("text").transition().duration(_this.updateInterval / 2)
 					.attr("dx", function(d) { return  txtOff * Math.sin((d.endAngle - d.startAngle) / 2 + d.startAngle); })
@@ -143,7 +145,8 @@ PeersIllustrator = function(chartId) {
 	};
 
 	this.buildUi = function(func) {
-		func('<div class="chart-title"></div><div style="perspective:500px"><svg class="chart-viz" style="transform:rotateX(45deg) translate(0, -200px)"/></div>');
+		func('<div class="chart-title"></div><svg class="chart-viz"/>'); // Perspective view
+		//func('<div class="chart-title"></div><div style="perspective:500px"><svg class="chart-viz" style="transform:rotateX(45deg) translate(0, -200px)"/></div>');
 	};
 
 	this.fromCookie = function(cook) {

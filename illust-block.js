@@ -3,7 +3,7 @@ BlockIllustrator = function(chartId) {
 	this.id = "block-illust"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Blockchain illustrator";
-	this.url = "http://localhost:8080/ws/temp1"; //"%%%urlChain%%%";
+	this.url = "%%%urlChain%%%"; //"http://localhost:8080/ws/temp1";
 	this.minGridWdth = 5;
 	this.minGridHght = 2;
 	this.updateInterval = 2000;
@@ -11,6 +11,8 @@ BlockIllustrator = function(chartId) {
 	this.blockSideLength = 40; // Size of the blocks drawn
 	this.selected = -1;
 	this.interactiveMode = false; // Default is scorll forward as new blocks arrive
+
+	var urlBlock = "%%%urlBlock%%%";
 
 	var blockWidth;
 	var yPosn;
@@ -98,13 +100,13 @@ BlockIllustrator = function(chartId) {
 									_this.interactiveMode = false;
 									_this.selected = -1;
 									_this.runNow();
-									grph.selectAll(".block-slct").style("display", "none");
+									grph.selectAll(".block-slct").style("opacity", "0.0");
 									grph.select("#btn-end").attr("xlink:href", IMG_PAUSE_S);
 								} else {
 									_this.interactiveMode = true;
 									_this.selected = -1;
 									_this.runNow();
-									grph.selectAll(".block-slct").style("display", "none");
+									grph.selectAll(".block-slct").style("opacity", "0.0");
 									grph.select("#btn-end").attr("xlink:href", IMG_PLAY_S);
 								}
 						})
@@ -118,14 +120,31 @@ BlockIllustrator = function(chartId) {
 
 				// *** Selected ***
 				if (!grph.select(".selected").empty()) {
-					grph.select(".selected").remove();
+					grph.selectAll(".selected").remove();
 				}
-				if (_this.selected > 0) {
-					grph.append("text").attr("class", "selected block-text")
-						.attr("x", 10).attr("y", _this.chartHght - 20).attr("text-anchor", "left")
-						.text("Selected block: " + _this.selected);
+				if (_this.selected >= 0) {
+					accessBlock(urlBlock + _this.selected, function(rspnBlock) {
+							//console.log(JSON.stringify(rspnBlock));//TODO TEMP
+							var time = new Date(0);
+							time.setUTCSeconds(rspnBlock.nonHashData.localLedgerCommitTimestamp.seconds);
+
+							var blk = grph.append("text").attr("class", "selected block-text")
+								.attr("x", 10).attr("y", _this.chartHght - 40).attr("text-anchor", "left")
+								.text("Block " + _this.selected + " selected.");
+
+							grph.append("text").attr("class", "selected block-text")
+								.attr("x", 20 + blk.node().getBBox().width).attr("y", _this.chartHght - 40).attr("text-anchor", "left")
+								.text("Added on " + time);
+							if (rspnBlock.previousBlockHash) {
+								grph.append("text").attr("class", "selected block-text")
+									.attr("x", 10).attr("y", _this.chartHght - 20).attr("text-anchor", "left")
+									.style("font-family", "monospace").style("font-size", "1em")
+									.text(rspnBlock.previousBlockHash);
+							}
+					});
 				}
 
+				// *** Draw the ticking chain ***
 				if (!_this.interactiveMode) {
 					var lastVal = (blockArray.length > 0) ? blockArray[blockArray.length - 1] : -1;
 					var nextVal = chainDepth - 1;
@@ -350,4 +369,14 @@ function calcDuration(range, index, max) {
 		var tmp = index - range;
 		return Math.floor(max / tmp / tmp);
 	}
+};
+
+function accessBlock(url, func) {
+	accessData(url, function(rspn) {
+			if (!rspn || (rspn.length <= 0)) {
+				return;
+			} else {
+				func(rspn);
+			}
+	});
 };
