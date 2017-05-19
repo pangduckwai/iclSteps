@@ -134,7 +134,7 @@ BlockIllustrator = function(chartId) {
 
 							grph.append("text").attr("class", "selected block-text")
 								.attr("x", 20 + blk.node().getBBox().width).attr("y", _this.chartHght - 40).attr("text-anchor", "left")
-								.text("Added on " + time);
+								.text("Added on " + timeFormatSrver(time));
 							if (rspnBlock.previousBlockHash) {
 								grph.append("text").attr("class", "selected block-text")
 									.attr("x", 10).attr("y", _this.chartHght - 20).attr("text-anchor", "left")

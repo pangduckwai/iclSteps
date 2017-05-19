@@ -9,10 +9,14 @@ function switchNode(selForm) {
 		selForm.reset();
 	}
 }
+
+function docLoaded() {
+	document.getElementById('%%%focus%%%').focus()
+}
 		</script>
 		<link type="text/css" rel="stylesheet" href="steps.css"/>
 	</head>
-	<body style="font-family:sans-serif" onload="document.getElementById('%%%focus%%%').focus();">
+	<body style="font-family:sans-serif" onload="docLoaded();">
 		<h2><img src="logo.png" style="vertical-align:middle;width:72;height:72">HKICL Pedometer Contest</h2>
 		<form action="%%%action%%%" method="get">
 			<div style="font-size:0.9em;height:21px">
@@ -26,7 +30,7 @@ function switchNode(selForm) {
 		<div style="font-size:1.1em;height:28px">%%%message%%%</div>
 		<form action="%%%action%%%" method="post" style="display: %%%form%%%">
 			<table>
-				<tr><td>User: </td><td><input type="text" name="user" id="user" value="%%%user%%%" %%%readOnlyUser%%%></td></tr>
+				<tr><td>User: </td><td><input type="text" name="user" id="user" value="%%%user%%%" onfocus="this.select();" %%%readOnlyUser%%%></td></tr>
 				<tr>
 					<td>Date: </td>
 					<td>

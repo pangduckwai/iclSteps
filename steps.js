@@ -52,7 +52,7 @@ var serveFile = function(pathname, encoding, succ, fail) {
 var buildUi = function(html, msg, user, yr, mn, dt, step, node, state, succ, fail) {
 	var ro0 = (state != 1) ? 'readonly' : '';
 	var ro1 = ((state == 2) || (state == 3)) ? 'readonly' : '';
-	var fcs = (state == 0) ? "step" : "user";
+	var fcs = "user"; //(state == 0) ? "step" : "user";
 	var act = ((state == 0) || (state == 2)) ? '/submit' : (((state == 1) || (state == 3)) ? '/verify' : '/');
 	var canSwitch = (state <= 1) ? 'true' : 'false';
 	var mnuHome = (state <= 1) ? "enableAnchor" : "disableAnchor";
@@ -81,7 +81,7 @@ var buildUi = function(html, msg, user, yr, mn, dt, step, node, state, succ, fai
 				.replace(/%%%action%%%/g, act)
 				.replace(/%%%options%%%/g, slt)
 				.replace(/%%%enableNode%%%/g, canSwitch)
-				.replace(/%%%readOnlyUser%%%/g, ro0)
+				.replace(/%%%readOnlyUser%%%/g, ro1) //ro0)
 				.replace(/%%%readOnlyDate%%%/g, ro1)
 				.replace(/%%%readOnlyStep%%%/g, ro1)
 				.replace(/%%%anchorHome%%%/g, mnuHome)
@@ -97,6 +97,9 @@ var buildUi = function(html, msg, user, yr, mn, dt, step, node, state, succ, fai
 			fail(sts, ctn);
 	});
 };
+
+var node = -1;
+var ccid = {};
 
 // Webservices
 var queryChain = function(node, succ, fail, blck) {
@@ -141,7 +144,7 @@ var enroll = function(node, succ, fail) {
 
 var deploy = function(node, succ, fail) {
 	request({
-			uri: protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chaincode', 
+			uri: protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chaincode',
 			method: 'POST',
 			json: {
 				"jsonrpc": "2.0",
@@ -175,14 +178,84 @@ var deploy = function(node, succ, fail) {
 	});
 };
 
-var node = -1;
-var ccid = {};
+var write = function(node, key, value, succ, fail) {
+	request({
+			uri: protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chaincode',
+			method: 'POST',
+			json: {
+				"jsonrpc": "2.0",
+				"method": "invoke",
+				"params": {
+					"type": 1,
+					"chaincodeID": {"name": ccid[node]},
+					"ctorMsg": {"function": "invoke", "args": [key, value]},
+					"secureContext": bcNodes[node].user
+				},
+				"id": 1
+			}
+		},
+		function (error, response, body) {
+			if (error) {
+				fail('Write failed', error);
+			} else {
+				switch (response.statusCode) {
+				case 200:
+					if (!body.error) {
+						//write successful
+						succ(body);
+					} else {
+						fail(body.error.message, body);
+					}
+					break;
+				default:
+					fail('Write result in status ' + response.statusCode, response);
+				}
+			}
+	});
+};
+
+var read = function(node, key, succ, fail) {
+	request({
+			uri: protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chaincode',
+			method: 'POST',
+			json: {
+				"jsonrpc": "2.0",
+				"method": "query",
+				"params": {
+					"type": 1,
+					"chaincodeID": {"name": ccid[node]},
+					"ctorMsg": {"function": "query", "args": [key]},
+					"secureContext": bcNodes[node].user
+				},
+				"id": 1
+			}
+		},
+		function (error, response, body) {
+			if (error) {
+				fail('Read failed', error);
+			} else {
+				switch (response.statusCode) {
+				case 200:
+					if (!body.error) {
+						//write successful
+						succ(body);
+					} else {
+						fail(body.error.message, body);
+					}
+					break;
+				default:
+					fail('Read result in status ' + response.statusCode, response);
+				}
+			}
+	});
+};
+
 /*TEMP!!!!!!!!!!!
 ccid = {"0":"00000000000000000000000",
 		"1":"11111111111111111111111",
 		"2":"22222222222222222222222",
 		"3":"33333333333333333333333"};
-var depth = 1;
+var depth = 1;*/
 var count = 0;
 var hosts = ['tp0', 'tp1', 'tp2', 'tp3', 'tp4', 'tp5', 'tp6', 'tp7', 'tp8', 'tp9'];
 //!!!!!!!!!!!TEMP*/
@@ -219,7 +292,6 @@ http.createServer(function(req, res) {
 	req.on('data', function(chunk) {
 			buff += chunk;
 			if (buff.length > 1e6) req.connection.destroy(); // data larger than 1M
-			console.log("DATA: " + chunk); //TODO TEMP!!!
 	}).on('end', function() {
 			var qstring = require('querystring');
 			var param = qstring.parse(buff);
@@ -252,7 +324,7 @@ http.createServer(function(req, res) {
 							},
 							function(mssg, errr) {
 								rspnErr(res, 500, mssg);
-							});
+						});
 					},
 					function(msg, err) {
 						rspnErr(res, 500, msg);
@@ -318,7 +390,7 @@ http.createServer(function(req, res) {
 					break;
 
 				case '/ws/temp2':
-					var buff = { peers : []};
+					var objt = { peers : []};
 					var lght = 0, j = 0;
 					if (count < 3) {
 						lght = 3;
@@ -330,14 +402,14 @@ http.createServer(function(req, res) {
 					//lght = count; //TODO TEMP
 					for (var i = 0; i < lght; i ++) {
 						if ((count < hosts.length) || (Math.random() < 0.7)) {
-							buff.peers[j] = { ID : { name : hosts[i] }, address : "172.18.0." + i + ":7051", type : i, pkiID : "VqDFpP5mW3dMkzK050rl/ax1otqRedEZRKA1o6E70Pk" + i };
+							objt.peers[j] = { ID : { name : hosts[i] }, address : "172.18.0." + i + ":7051", type : (i < 4 ? 1 : 2), pkiID : "VqDFpP5mW3dMkzK050rl/ax1otqRedEZRKA1o6E70Pk" + i };
 							j ++;
 						}
 					}
 					count ++;
 					//if (count > 5) count = 3; //TODO TEMP
 					res.setHeader('Content-type', 'application/json');
-					res.end(JSON.stringify(buff));
+					res.end(JSON.stringify(objt));
 					break;
 
 				default:
@@ -367,44 +439,81 @@ http.createServer(function(req, res) {
 				switch (rqst.pathname) {
 				case '/submit':
 					var mssg = 'Record submitted, thank you';
-					if (param['user'] != userName) {
-						mssg = 'Cannot submit records for another user ' + param['user'];
-					} else if (parseInt(param['step']) <= 0) {
-						mssg = param['step'] + ' is not a valid number of steps';
+					if (parseInt(param['step']) <= 0) {
+						buildUi('/steps.html', param['step'] + ' is not a valid number of steps'
+								, param['user'], param['year'], param['mnth'], param['date'], param['step'], node, 2,
+							function(htmlBody) {
+								res.setHeader('Content-type', 'text/html');
+								res.end(htmlBody);
+							},
+							function(respStatus, errMsg) {
+								rspnErr(res, respStatus, errMsg);
+						});
 					} else {
-						// TODO HERE!!! write values
-						console.error('Submitting new record to node ' + node);
+						var key = param['year'] + ('0'+param['mnth']).slice(-2) + ('0'+param['date']).slice(-2) + param['user'];
+
+						write(node, key, param['step'],
+							function(body) {
+								console.log('Chaincode write: ' + body.result.status);
+								if (body.result.status == 'OK') {
+									mssg = body.result.message;
+								}
+								buildUi('/steps.html', mssg, param['user'], param['year'], param['mnth'], param['date'], param['step'], node, 2,
+									function(htmlBody) {
+										res.setHeader('Content-type', 'text/html');
+										res.end(htmlBody);
+									},
+									function(respStatus, errMsg) {
+										rspnErr(res, respStatus, errMsg);
+								});
+							},
+							function(mssg, errr) {
+								rspnErr(res, 500, errr.error.data);
+						});
 					}
-					buildUi('/steps.html', mssg, param['user'], param['year'], param['mnth'], param['date'], param['step'], node, 2,
-						function(htmlBody) {
-							res.setHeader('Content-type', 'text/html');
-							res.end(htmlBody);
-						},
-						function(respStatus, errMsg) {
-							rspnErr(res, respStatus, errMsg);
-					});
 					break;
 
 				case '/verify':
-					var mssg = 'Verification submitted, thank you';
-					if (param['user'] == userName) {
+					var mssg; // = 'Verification submitted, thank you';
+					/*if (param['user'] == userName) {
 						mssg = 'Cannot verify your own record';
-					} else if (param['user'] == '') {
+					} else*/
+					if (param['user'] == '') {
 						mssg = 'Please indicate the user being verified';
 					} else if (parseInt(param['step']) <= 0) {
 						mssg = param['step'] + ' is not a valid number of steps';
-					} else {
-						// TODO HERE!!! verify values
-						console.error('Submitting verification to node ' + node);
 					}
-					buildUi('/steps.html', mssg, param['user'], param['year'], param['mnth'], param['date'], param['step'], node, 3,
-						function(htmlBody) {
-							res.setHeader('Content-type', 'text/html');
-							res.end(htmlBody);
-						},
-						function(respStatus, errMsg) {
-							rspnErr(res, respStatus, errMsg);
-					});
+
+					if (!mssg) {
+						var key = param['year'] + ('0'+param['mnth']).slice(-2) + ('0'+param['date']).slice(-2) + param['user'];
+						read(node, key,
+							function(body) {
+								console.log('Chaincode read: ' + body.result.status);
+								if (body.result.status == 'OK') {
+									mssg = param['user'] + ' took ' + body.result.message;
+								}
+								buildUi('/steps.html', mssg, param['user'], param['year'], param['mnth'], param['date'], param['step'], node, 3,
+									function(htmlBody) {
+										res.setHeader('Content-type', 'text/html');
+										res.end(htmlBody);
+									},
+									function(respStatus, errMsg) {
+										rspnErr(res, respStatus, errMsg);
+								});
+							},
+							function(mssg, errr) {
+								rspnErr(res, 500, errr.error.data);
+						});
+					} else {
+						buildUi('/steps.html', mssg, param['user'], param['year'], param['mnth'], param['date'], param['step'], node, 3,
+							function(htmlBody) {
+								res.setHeader('Content-type', 'text/html');
+								res.end(htmlBody);
+							},
+							function(respStatus, errMsg) {
+								rspnErr(res, respStatus, errMsg);
+						});
+					}
 					break;
 
 				default:

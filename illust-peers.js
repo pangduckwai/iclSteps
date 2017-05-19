@@ -3,7 +3,7 @@ PeersIllustrator = function(chartId) {
 	this.id = "illust-peers"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Peers illustrator";
-	this.url = "%%%urlPeers%%%"; //"http://localhost:8080/ws/temp2";
+	this.url = "http://localhost:8080/ws/temp2"; //"%%%urlPeers%%%";
 	this.minGridWdth = 3;
 	this.minGridHght = 3;
 	this.updateInterval = 2000;
@@ -16,11 +16,12 @@ PeersIllustrator = function(chartId) {
 	var grph;
 	var _this = this;
 
+	var rotat = 0;
 	var txtOff = 28;
 
 	this.init = function() {
-		//this.chartWdth *= 0.5; // Perspective view
-		//this.chartHght *= 0.7; // Perspective view
+		//this.chartWdth *= 0.5; // >>Perspective View<<
+		//this.chartHght *= 0.7; // >>Perspective View<<
 		radius = Math.min(this.chartWdth*3/4, this.chartHght) / 2;
 
 		pie = d3.layout.pie()
@@ -39,6 +40,7 @@ PeersIllustrator = function(chartId) {
 
 	this.render = function() {
 		accessData(this.url, function(rspn) {
+				// Make sure all connection lines are drawn first, so the nodes icons are drawn on top of them
 				if (grph.select(".peers").empty()) {
 					grph.append("g").attr("class", "peers")
 						.attr("transform", "translate(" + (_this.chartWdth / 2) + ", " + (_this.chartHght / 2) + ")");
@@ -54,55 +56,74 @@ PeersIllustrator = function(chartId) {
 					pnode = grph.select(".peers").append("g").attr("class", "peer-nodes");
 				}
 
-				var names = new Set();
-				var rotat = Math.PI / rspn.peers.length / 2;
+				// Prepare data
+				rotat = Math.PI / rspn.peers.length / 2; //+= Math.PI / rspn.peers.length / 2; // >>Real network statistic<<
+				//if (rotat >= 2*Math.PI) rotat = 0; // >>Real network statistic<<
+
 				var nodes = pie(rspn.peers).map(function(d) {
 						d.startAngle -= rotat;
 						d.endAngle -= rotat;
-						names.add(d.data.ID.name);
 						return d;
 				});
+				nodes.sort(function(a, b) {
+						if (a.data.ID.name < b.data.ID.name)
+							return -1;
+						else if (a.data.ID.name > b.data.ID.name)
+							return 1;
+						else
+							return 0;
+				});
 
+				// Get the coordinates of each node IN THE PREVIOUS ITERATION to draw the line initially
 				var plast = {};
 				var peers = pnode.selectAll(".peer").data(nodes, function(d) { return d.data.pkiID; });
 				peers.each(function(d, i) {
 						plast[d.data.ID.name] = d3.transform(d3.select(this).attr("transform")).translate;
 				});
 
-				// Draw connections between the nodes
+				// Work out all the points of the nodes of this iteration
+				var clsss = new Set();
+				var lines = [];
+				for (var i = 0; i < nodes.length; i ++) {
+					p0 = arc.centroid(nodes[i]);
+					for (var j = 0; j < i; j ++) {
+						p1 = arc.centroid(nodes[j]);
+						clsss.add("f" + nodes[i].data.ID.name + " t" + nodes[j].data.ID.name);
+						lines.push({"fm" : nodes[i].data.ID.name, "to" : nodes[j].data.ID.name, "points" : [p0, p1]});
+					}
+				}
+
+				// Remove connection lines no longer needed
 				var p0, p1, px;
 				var pth = pline.selectAll(".peer-line");
-				var regex = /^peer-line f([_a-zA-Z0-9-]+) t([_a-zA-Z0-9-]+)$/;
+				var regex = /^peer-line (f[_a-zA-Z0-9-]+ t[_a-zA-Z0-9-]+)$/;
 				var lne, mth;
 				pth.each(function(d, i) {
 						lne = d3.select(this);
 						mth = regex.exec(lne.attr("class"));
 						if (mth != null) {
-							if (!names.has(mth[1]) || !names.has(mth[2])) {
+							if (!clsss.has(mth[1])) {
 								lne.remove();
 							}
 						}
 				});
 
-				for (var i = 0; i < nodes.length; i ++) {
-					p0 = arc.centroid(nodes[i]);
-					for (var j = 0; j < i; j ++) {
-						p1 = arc.centroid(nodes[j]);
-						px = (plast[nodes[j].data.ID.name]) ? plast[nodes[j].data.ID.name] : p1;
-						//if (!plast[nodes[j].data.ID.name]) console.log(j, nodes[j].data.ID.name); //TODO TEMP
-						pth = pline.select(".peer-line.f" + nodes[i].data.ID.name + ".t" + nodes[j].data.ID.name);
-						if (pth.empty()) {
-							pth = pline.append("path").attr("class", "peer-line f" + nodes[i].data.ID.name + " t" + nodes[j].data.ID.name);
-							pth.attr("d", line([p0, px]));
-						}
-						pth.transition().duration(_this.updateInterval / 2).attr("d", line([p0, p1]));
+				// Draw connection lines between the nodes
+				for (var i = 0; i < lines.length; i ++) {
+					px = (plast[lines[i].to]) ? plast[lines[i].to] : lines[i].points[1];
+					pth = pline.select(".peer-line.f" + lines[i].fm + ".t" + lines[i].to);
+					if (pth.empty()) {
+						pth = pline.append("path").attr("class", "peer-line f" + lines[i].fm + " t" + lines[i].to);
+						pth.attr("d", line([lines[i].points[0], px]));
 					}
+					pth.transition().duration(_this.updateInterval / 2).attr("d", line(lines[i].points));
 				}
 
 				// Draw the nodes
 				var peer = peers.enter().append("g").attr("class", "peer");
 				peer.append("rect").attr("class", "peer-node")
-					.attr("x", -7).attr("y", -12).attr("width", 14).attr("height", 7);
+					.attr("x", -7).attr("y", -12).attr("width", 14).attr("height", 7)
+					.style("fill", function(d) { return (d.data.type == 1) ? "lightgreen" : "white"; });
 				peer.append("line").attr("class", "peer-frme")
 					.attr("x1", 0).attr("y1", -5).attr("x2", 0).attr("y2", 0);
 				peer.append("line").attr("class", "peer-frme")
@@ -112,7 +133,7 @@ PeersIllustrator = function(chartId) {
 
 				peers.exit().remove();
 
-				/*  Perspective view
+				/*  >>Perspective View<<
 				var max = 1.7;
 				var mid = Math.floor(nodes.length / 2);
 				var inc = (max - 1) / mid;
@@ -137,7 +158,6 @@ PeersIllustrator = function(chartId) {
 						return function(t) {
 							var val = intr(t);
 							var pos = arc.centroid(val);
-							//pos[0] = radius * (val.startAngle < Math.PI ? 1 : -1);
 							return "translate(" + pos + ")";
 						};
 				});
@@ -145,7 +165,7 @@ PeersIllustrator = function(chartId) {
 	};
 
 	this.buildUi = function(func) {
-		func('<div class="chart-title"></div><svg class="chart-viz"/>'); // Perspective view
+		func('<div class="chart-title"></div><svg class="chart-viz"/>'); // >>Perspective View<<
 		//func('<div class="chart-title"></div><div style="perspective:500px"><svg class="chart-viz" style="transform:rotateX(45deg) translate(0, -200px)"/></div>');
 	};
 
