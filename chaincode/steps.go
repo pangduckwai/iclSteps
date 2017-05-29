@@ -50,7 +50,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 }
 
 func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	fmt.Println("Invoking " + function)
+	fmt.Println(" >>>>>>> Invoking " + function)
 
 	if function == "init" {
 		return t.Init(stub, "init", args)
@@ -62,7 +62,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 }
 
 func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	fmt.Println("Querying " + function)
+	fmt.Println(" >>>>>>> Querying " + function)
 
 	if function == "read" { //read a variable
 		return t.read(stub, args)

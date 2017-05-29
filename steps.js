@@ -179,6 +179,7 @@ var deploy = function(node, succ, fail) {
 };
 
 var write = function(node, key, value, succ, fail) {
+	console.log("Writing to " + node + "; key='" + key + "'; value='" + value + "'"); //TODO TEMP!!!
 	request({
 			uri: protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chaincode',
 			method: 'POST',
@@ -215,6 +216,7 @@ var write = function(node, key, value, succ, fail) {
 };
 
 var read = function(node, key, succ, fail) {
+	console.log("Reading from " + node + "; key='" + key + "'"); //TODO TEMP!!!
 	request({
 			uri: protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chaincode',
 			method: 'POST',
@@ -299,7 +301,7 @@ http.createServer(function(req, res) {
 
 			if (param['node']) node = parseInt(param['node']);
 			if (isNaN(node) || (node < 0)) {
-				node = Math.floor(Math.random() * bcNodes.length);
+				node = 0; //Math.floor(Math.random() * bcNodes.length); TODO TEMP!!!
 				console.log("Randomly choosing node " + node); //TODO TEMP!!!
 			}
 
@@ -454,7 +456,7 @@ http.createServer(function(req, res) {
 
 						write(node, key, param['step'],
 							function(body) {
-								console.log('Chaincode write: ' + body.result.status);
+								console.log('Chaincode write: ' + JSON.stringify(body)); //.result.status); // TODO TEMP
 								if (body.result.status == 'OK') {
 									mssg = body.result.message;
 								}
