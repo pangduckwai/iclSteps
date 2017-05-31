@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"strconv"
+	"time"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
 
@@ -18,32 +18,14 @@ func main() {
 }
 
 func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	if len(args) != 1 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 1")
+	if len(args) != 0 {
+		return nil, errors.New("Incorrect number of arguments. Expecting 0")
 	}
 
-	inp, err := strconv.ParseInt(args[0], 10, 64)
+	now := time.Now().Local()
+	err := stub.PutState("version", []byte(now.Format("20060102150405")))
 	if err != nil {
-		return nil, errors.New("Incorrect type of argument. Expecting numbers")
-	}
-
-	valAsbytes, err := stub.GetState("init")
-	if err == nil {
-		str := string(valAsbytes[:])
-		ext, err := strconv.ParseInt(str, 10, 64)
-		if err != nil {
-			return nil, errors.New("Something very wrong happened...")
-		}
-
-		if ext != inp {
-			fmt.Printf("New version %d", inp)
-			err := stub.PutState("init", []byte(str))
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			fmt.Printf("Version %d already initialized", ext)
-		}
+		return nil, err
 	}
 
 	return nil, nil
@@ -56,6 +38,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.Init(stub, "init", args)
 	} else if function == "write" {
 		return t.write(stub, args)
+	} else {
+		fmt.Println("Function " + function + " not found")
 	}
 
 	return nil, errors.New("Invoking unknown function: " + function)
@@ -66,6 +50,8 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 	if function == "read" { //read a variable
 		return t.read(stub, args)
+	} else {
+		fmt.Println("Function " + function + " not found")
 	}
 
 	return nil, errors.New("Querying unknown function: " + function)
