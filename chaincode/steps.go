@@ -3,7 +3,9 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
+	"encoding/json"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
 
@@ -18,6 +20,12 @@ type StruResponse struct {
 	Jsonrpc string `json:"jsonrpc"`
 	Result StruResult `json:"result"`
 	Id int `json:"id"`
+}
+
+type StruRecord struct {
+	RecDate string `json:"date"`
+	RecName string `json:"name"`
+	Value int64 `json:"value"`
 }
 
 type SimpleChaincode struct {
@@ -68,16 +76,53 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 // write key/value pair to the ledger
 func (t *SimpleChaincode) write(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	var key, value string
+	var buff []byte
 	var err error
 
 	if len(args) != 2 {
 		return nil, errors.New("Incorrect number of arguments. Expecting 2 (key / value pair)")
 	}
 
-	key = args[0]
-	value = args[1]
-	err = stub.PutState(key, []byte(value)) //write the variable into the chaincode state
+	buff, err = stub.GetState(keyRecord)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := StruResponse{}
+    err = json.Unmarshal(buff, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	var records []StruRecord
+
+	// Construct the new record object
+	recd := StruRecord{}
+	recd.RecDate = time.Now().Local().Format("20060102")
+	recd.RecName = args[0]
+	recd.Value, err = strconv.ParseInt(args[1], 10, 64)
+
+	if len(resp.Result.Message) < 1 {
+		// This is a new chain, add the record
+		records = make([]StruRecord, 1)
+		records[0] = recd
+	} else {
+		// Previous records exist, append the new record
+		records = make([]StruRecord, 0)
+		err = json.Unmarshal([]byte(resp.Result.Message), &records)
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, recd)
+	}
+
+	//write the variable into the chaincode state
+	buff, err = json.Marshal(records)
+	if err != nil {
+		return nil, err
+	}
+
+	err = stub.PutState(keyRecord, buff)
 	if err != nil {
 		return nil, err
 	}
