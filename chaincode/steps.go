@@ -92,7 +92,7 @@ func (t *SimpleChaincode) write(stub shim.ChaincodeStubInterface, args []string)
 		return nil, err
 	}
 
-	logger.Info(" ######################## " + string(buff))
+	logger.Warning(" ######################## " + string(buff))
 	resp := StruResponse{}
     err = json.Unmarshal(buff, &resp)
 	if err != nil {
