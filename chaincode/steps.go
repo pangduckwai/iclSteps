@@ -94,9 +94,9 @@ func (t *SimpleChaincode) write(stub shim.ChaincodeStubInterface, args []string)
 		return nil, err
 	}
 
-	logger.Infof("%s", buff) //TODO TEMP
+	logger.Infof("Buffer: '%s'", buff) //TODO TEMP
 	resp := StruResponse{}
-    err = json.Unmarshal(buff, &resp)
+	err = json.Unmarshal(buff, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -109,6 +109,7 @@ func (t *SimpleChaincode) write(stub shim.ChaincodeStubInterface, args []string)
 	recd.RecName = args[0]
 	recd.Value, err = strconv.ParseInt(args[1], 10, 64)
 
+	logger.Infof("Record: %s : %d", args[0], recd.Value) //TODO TEMP
 	if len(resp.Result.Message) < 1 {
 		// This is a new chain, add the record
 		records = make([]StruRecord, 1)
