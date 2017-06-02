@@ -10,11 +10,18 @@ import (
 )
 
 const keyVersion string = "version"
-const keyRecord string = "record"
+const keyRecordd string = "recDate"
+const keyRecordn string = "recName"
 
-type StruRecord struct {
-	RecDate string `json:"date"`
+type Records interface {
+	Equals(other Records) bool
+}
+type RecordDate struct {
 	RecName string `json:"name"`
+	Value int64 `json:"value"`
+}
+type RecordName struct {
+	RecDate string `json:"date"`
 	Value int64 `json:"value"`
 }
 
@@ -39,7 +46,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 	}
 
 	now := time.Now().Local()
-	err := stub.PutState(keyVersion, []byte(now.Format("20060102150405")))
+	err := stub.PutState(keyVersion, []byte(now.Format("20060102230405")))
 	if err != nil {
 		return nil, err
 	}
@@ -71,68 +78,172 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 // write key/value pair to the ledger
 func (t *SimpleChaincode) write(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	var buff []byte
+	var bufd []byte
+	var bufn []byte
 	var err error
 
-	if len(args) != 2 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 2 (key / value pair)")
+	// Construct the new record objects
+	rcdd := RecordDate{}
+	rcdn := RecordName{}
+	switch len(args) {
+	case 2:
+		rcdn.RecDate = time.Now().Local().Format("20060102")
+		rcdd.RecName = args[0]
+		rcdn.Value, _ = strconv.ParseInt(args[1], 10, 64)
+		rcdd.Value = rcdd.Value
+	case 3:
+		rcdn.RecDate = args[0]
+		rcdd.RecName = args[1]
+		rcdn.Value, _ = strconv.ParseInt(args[2], 10, 64)
+		rcdd.Value = rcdd.Value
+	default:
+		return nil, errors.New("Incorrect number of arguments. Expecting 2 or 3 arguments ([date /] key / value)")
 	}
 
-	buff, err = stub.GetState(keyRecord)
+	// Read the blockchain for the records
+	bufd, err = stub.GetState(rcdn.RecDate)
 	if err != nil {
 		return nil, err
 	}
-	logger.Infof("Buffer: '%s'", buff) //TODO TEMP
 
-	records := make([]StruRecord, 0)
-	if len(buff) > 0 {
+	bufn, err = stub.GetState(rcdd.RecName)
+	if err != nil {
+		return nil, err
+	}
+
+	// Turn the raw data into structs
+	rcdds := make([]RecordDate, 0)
+	if len(bufd) > 0 {
 		// Previous records exist, append the new record
-		err = json.Unmarshal(buff, &records)
+		err = json.Unmarshal(bufd, &rcdds)
 		if err != nil {
 			return nil, err
 		}
 	}
+	fndn := false
+	for idx, elm := range rcdds {
+		if elm.RecName == rcdd.RecName {
+			rcdds[idx] = rcdd.Value
+			fndn = true
+			break
+		}
+	}
+	if !fndn {
+		rcdds = append(rcdds, rcdd)
+	}
 
-	// Construct the new record object
-	recd := StruRecord{}
-	recd.RecDate = time.Now().Local().Format("20060102")
-	recd.RecName = args[0]
-	recd.Value, err = strconv.ParseInt(args[1], 10, 64)
-	logger.Infof("Record: %s : %d", args[0], recd.Value) //TODO TEMP
-	records = append(records, recd)
+	rcdns := make([]RecordName, 0)
+	if len(bufn) > 0 {
+		err = json.Unmarshal(bufn, &rcdns)
+		if err != nil {
+			return nil, err
+		}
+	}
+	fndd := false
+	for idx, elm := range rcdns {
+		if elm.RecDate == rcdn.RecDate {
+			rcdns[idx] = rcnd.Value
+			fndd = true
+			break
+		}
+	}
+	if !fndd {
+		rcdns = append(rcdns, rcdn)
+	}
 
 	//write the variable into the chaincode state
-	buff, err = json.Marshal(records)
+	bufd, err = json.Marshal(rcdds)
 	if err != nil {
 		return nil, err
 	}
 
-	err = stub.PutState(keyRecord, buff)
+	bufn, err = json.Marshal(rcdns)
 	if err != nil {
 		return nil, err
 	}
+
+	err = stub.PutState(rcdn.RecDate, bufd)
+	if err != nil {
+		return nil, err
+	}
+
+	err = stub.PutState(rcdd.RecName, bufn)
+	if err != nil {
+		return nil, err
+	}
+
 	return nil, nil
 }
 
 // read - query function to read key/value pair
 func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	var key, jsonResp string
+	var buff []byte
 	var err error
 
-	if len(args) > 1 {
-		return nil, errors.New("Incorrect number of arguments. Expecting name of the key to query")
-	}
+	lngt := len(args)
+	switch lngt {
+	case 0:
+		buff, err = stub.GetState(keyVersion)
+		if err != nil {
+			return nil, errors.New("{\"Error\":\"Failed to get chaincode version\"}")
+		}
+		return buff, nil
+	case 1:
+		fallthrough
+	case 2:
+		buff, err = stub.GetState(keyRecord)
+		if err != nil {
+			return nil, errors.New("{\"Error\":\"Failed to get records\"}")
+		}
 
-	key = keyVersion
-	if len(args) == 1 {
-		key = args[0]
-	}
+		records := make([]StruRecord, 0)
+		if len(buff) > 0 {
+			err = json.Unmarshal(buff, &records)
+			if err != nil {
+				return nil, err
+			}
 
-	valAsbytes, err := stub.GetState(key)
-	if err != nil {
-		jsonResp = "{\"Error\":\"Failed to get state for " + key + "\"}"
-		return nil, errors.New(jsonResp)
+			for idx := 0; idx < len(records); idx++ {
+				if  !(((records[idx].RecDate == args[0]) || (records[idx].RecName == args[0])) ||
+					 ((lngt == 2) && (
+						((records[idx].RecDate == args[0]) && (records[idx].RecName == args[1])) || 
+						((records[idx].RecDate == args[1]) && (records[idx].RecName == args[0]))))) {
+					records = append(records[:idx], records[idx+1:]...)
+					idx--
+				}
+			}
+		}
+	default:
+		return nil, errors.New("Incorrect number of arguments. Expecting 0 to 2 arguments")
 	}
-
-	return valAsbytes, nil
 }
+
+func (self RecordDate) Equals(other Records) bool {
+	if (other.(RecordDate).RecName == self.RecName) {
+		return true
+	} else {
+		return false
+	}
+}
+func (self RecordName) Equals(other Records) bool {
+	if (other.(RecordName).RecDate == self.RecDate) {
+		return true
+	} else {
+		return false
+	}
+}
+
+func AppendOrUpdate(record Records, records []Records) bool {
+	found := false
+	for idx, elm := range records {
+		if elm.Equals(record) {
+			records[idx] = record
+			found = true
+			break
+		}
+	}
+	if !found {
+		records = append(records, record)
+	}
+}
+	
