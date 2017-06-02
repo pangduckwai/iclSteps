@@ -39,7 +39,8 @@ func main() {
 		fmt.Printf("Error starting Simple chaincode: %s", err)
 	}
 
-	//logger.SetLevel(shim.LogInfo)
+	logger.SetLevel(shim.LogInfo)
+	shim.SetLoggingLevel(shim.LogInfo)
 }
 
 func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
@@ -92,7 +93,7 @@ func (t *SimpleChaincode) write(stub shim.ChaincodeStubInterface, args []string)
 		return nil, err
 	}
 
-	logger.Warning(" ######################## " + string(buff))
+	logger.Info(" ######################## " + string(buff))
 	resp := StruResponse{}
     err = json.Unmarshal(buff, &resp)
 	if err != nil {
