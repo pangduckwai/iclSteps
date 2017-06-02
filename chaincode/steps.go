@@ -90,10 +90,11 @@ func (t *SimpleChaincode) write(stub shim.ChaincodeStubInterface, args []string)
 
 	buff, err = stub.GetState(keyRecord)
 	if err != nil {
+		logger.Info(err) //TODO TEMP
 		return nil, err
 	}
 
-	logger.Info(" ######################## " + string(buff))
+	logger.Infof("%s", buff) //TODO TEMP
 	resp := StruResponse{}
     err = json.Unmarshal(buff, &resp)
 	if err != nil {
