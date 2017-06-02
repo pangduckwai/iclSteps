@@ -90,39 +90,48 @@ func (t *SimpleChaincode) write(stub shim.ChaincodeStubInterface, args []string)
 
 	buff, err = stub.GetState(keyRecord)
 	if err != nil {
-		logger.Info(err) //TODO TEMP
 		return nil, err
 	}
-
 	logger.Infof("Buffer: '%s'", buff) //TODO TEMP
-	resp := StruResponse{}
-	err = json.Unmarshal(buff, &resp)
-	if err != nil {
-		return nil, err
-	}
 
-	var records []StruRecord
+	records := make([]StruRecord, 0)
+	resp := StruResponse{}
+	if len(buff) > 0 {
+		err = json.Unmarshal(buff, &resp)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(resp.Result.Message) > 0 {
+			// Previous records exist, append the new record
+			err = json.Unmarshal([]byte(resp.Result.Message), &records)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
 
 	// Construct the new record object
 	recd := StruRecord{}
 	recd.RecDate = time.Now().Local().Format("20060102")
 	recd.RecName = args[0]
 	recd.Value, err = strconv.ParseInt(args[1], 10, 64)
-
 	logger.Infof("Record: %s : %d", args[0], recd.Value) //TODO TEMP
-	if len(resp.Result.Message) < 1 {
-		// This is a new chain, add the record
+	records = append(records, recd)
+
+	/*if len(resp.Result.Message) < 1 {
+		/ / This is a new chain, add the record
 		records = make([]StruRecord, 1)
 		records[0] = recd
 	} else {
-		// Previous records exist, append the new record
+		/ / Previous records exist, append the new record
 		records = make([]StruRecord, 0)
 		err = json.Unmarshal([]byte(resp.Result.Message), &records)
 		if err != nil {
 			return nil, err
 		}
 		records = append(records, recd)
-	}
+	}*/
 
 	//write the variable into the chaincode state
 	buff, err = json.Marshal(records)
