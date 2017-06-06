@@ -1,28 +1,28 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"time"
-	"encoding/json"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
 
 const keyVersion string = "version"
-const keyRecordd string = "recDate"
-const keyRecordn string = "recName"
 
-type Records interface {
-	Equals(other Records) bool
-}
-type RecordDate struct {
-	RecName string `json:"name"`
+type Record struct {
+	Date string `json:"date"`
+	Name string `json:"name"`
 	Value int64 `json:"value"`
 }
-type RecordName struct {
-	RecDate string `json:"date"`
+type RecordTest struct {
+	Date string `json:"date"`
+	Name string `json:"name"`
 	Value int64 `json:"value"`
+	IdxDate []string `json:"idxDate"`
+	IdxName []string `json:"idxName"`
 }
 
 type SimpleChaincode struct {
@@ -78,98 +78,106 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 // write key/value pair to the ledger
 func (t *SimpleChaincode) write(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	var bufd []byte
-	var bufn []byte
 	var err error
+	var inpDate, inpName string
+	var inpValu int64
+	var recBuf, idxDateBuf, idxNameBuf []byte
+	var idxDate, idxName []string
 
-	// Construct the new record objects
-	rcdd := RecordDate{}
-	rcdn := RecordName{}
 	switch len(args) {
 	case 2:
-		rcdn.RecDate = time.Now().Local().Format("20060102")
-		rcdd.RecName = args[0]
-		rcdn.Value, _ = strconv.ParseInt(args[1], 10, 64)
-		rcdd.Value = rcdd.Value
+		inpDate = time.Now().Local().Format("20060102")
+		inpName = args[0]
+		inpValu, _ = strconv.ParseInt(args[1], 10, 64)
 	case 3:
-		rcdn.RecDate = args[0]
-		rcdd.RecName = args[1]
-		rcdn.Value, _ = strconv.ParseInt(args[2], 10, 64)
-		rcdd.Value = rcdd.Value
+		inpDate = args[0]
+		inpName = args[1]
+		inpValu, _ = strconv.ParseInt(args[2], 10, 64)
 	default:
 		return nil, errors.New("Incorrect number of arguments. Expecting 2 or 3 arguments ([date /] key / value)")
 	}
 
-	// Read the blockchain for the records
-	bufd, err = stub.GetState(rcdn.RecDate)
+	rcrd := Record{}
+	recKey := inpDate + inpName
+	recBuf, err = stub.GetState(recKey)
 	if err != nil {
 		return nil, err
 	}
 
-	bufn, err = stub.GetState(rcdd.RecName)
-	if err != nil {
-		return nil, err
-	}
-
-	// Turn the raw data into structs
-	rcdds := make([]RecordDate, 0)
-	if len(bufd) > 0 {
-		// Previous records exist, append the new record
-		err = json.Unmarshal(bufd, &rcdds)
+	if len(recBuf) > 0 {
+		err = json.Unmarshal(recBuf, &rcrd)
 		if err != nil {
 			return nil, err
 		}
-	}
-	fndn := false
-	for idx, elm := range rcdds {
-		if elm.RecName == rcdd.RecName {
-			rcdds[idx] = rcdd.Value
-			fndn = true
-			break
-		}
-	}
-	if !fndn {
-		rcdds = append(rcdds, rcdd)
-	}
 
-	rcdns := make([]RecordName, 0)
-	if len(bufn) > 0 {
-		err = json.Unmarshal(bufn, &rcdns)
+		if (rcrd.Date == inpDate) && (rcrd.Name == inpName) { // Double check
+			rcrd.Value = inpValu
+
+			recBuf, err = json.Marshal(rcrd)
+			if err != nil {
+				return nil, err
+			}
+
+			err = stub.PutState(recKey, recBuf)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, errors.New("{\"Error\":\"Corrupted record " + recKey + " : " + string(recBuf) + "\"}")
+		}
+	} else {
+		rcrd.Date = inpDate
+		rcrd.Name = inpName
+		rcrd.Value = inpValu
+		recBuf, err = json.Marshal(rcrd)
 		if err != nil {
 			return nil, err
 		}
-	}
-	fndd := false
-	for idx, elm := range rcdns {
-		if elm.RecDate == rcdn.RecDate {
-			rcdns[idx] = rcnd.Value
-			fndd = true
-			break
+
+		idxDateBuf, err = stub.GetState(inpName)
+		if err != nil {
+			return nil, err
 		}
-	}
-	if !fndd {
-		rcdns = append(rcdns, rcdn)
-	}
 
-	//write the variable into the chaincode state
-	bufd, err = json.Marshal(rcdds)
-	if err != nil {
-		return nil, err
-	}
+		idxNameBuf, err = stub.GetState(inpDate)
+		if err != nil {
+			return nil, err
+		}
 
-	bufn, err = json.Marshal(rcdns)
-	if err != nil {
-		return nil, err
-	}
+		idxDate, err = buildIndex(idxDateBuf, inpName, inpDate)
+		if err != nil {
+			return nil, err
+		}
 
-	err = stub.PutState(rcdn.RecDate, bufd)
-	if err != nil {
-		return nil, err
-	}
+		idxName, err = buildIndex(idxNameBuf, inpDate, inpName)
+		if err != nil {
+			return nil, err
+		}
 
-	err = stub.PutState(rcdd.RecName, bufn)
-	if err != nil {
-		return nil, err
+		idxDateBuf, err = json.Marshal(idxDate)
+		if err != nil {
+			return nil, err
+		}
+
+		idxNameBuf, err = json.Marshal(idxName)
+		if err != nil {
+			return nil, err
+		}
+
+		err = stub.PutState(recKey, recBuf)
+		if err != nil {
+			return nil, err
+		}
+
+		err = stub.PutState(inpName, idxDateBuf)
+		if err != nil {
+			return nil, err
+		}
+
+		err = stub.PutState(inpDate, idxNameBuf)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return nil, nil
@@ -177,73 +185,85 @@ func (t *SimpleChaincode) write(stub shim.ChaincodeStubInterface, args []string)
 
 // read - query function to read key/value pair
 func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-	var buff []byte
 	var err error
+	var recBuf, idxDateBuf, idxNameBuf []byte
 
 	lngt := len(args)
 	switch lngt {
 	case 0:
-		buff, err = stub.GetState(keyVersion)
+		recBuf, err = stub.GetState(keyVersion)
 		if err != nil {
 			return nil, errors.New("{\"Error\":\"Failed to get chaincode version\"}")
 		}
-		return buff, nil
-	case 1:
-		fallthrough
+		return recBuf, nil
+//	case 1:
+//		fallthrough
 	case 2:
-		buff, err = stub.GetState(keyRecord)
+		recKey := args[0] + args[1]
+		recBuf, err = stub.GetState(recKey)
 		if err != nil {
 			return nil, errors.New("{\"Error\":\"Failed to get records\"}")
 		}
 
-		records := make([]StruRecord, 0)
-		if len(buff) > 0 {
-			err = json.Unmarshal(buff, &records)
-			if err != nil {
-				return nil, err
-			}
-
-			for idx := 0; idx < len(records); idx++ {
-				if  !(((records[idx].RecDate == args[0]) || (records[idx].RecName == args[0])) ||
-					 ((lngt == 2) && (
-						((records[idx].RecDate == args[0]) && (records[idx].RecName == args[1])) || 
-						((records[idx].RecDate == args[1]) && (records[idx].RecName == args[0]))))) {
-					records = append(records[:idx], records[idx+1:]...)
-					idx--
-				}
-			}
+		idxDateBuf, err = stub.GetState(args[1])
+		if err != nil {
+			return nil, err
 		}
+
+		idxNameBuf, err = stub.GetState(args[0])
+		if err != nil {
+			return nil, err
+		}
+
+		rcrd := Record{}
+		err = json.Unmarshal(recBuf, &rcrd)
+		if err != nil {
+			return nil, err
+		}
+
+		idxDate := make([]string, 0)
+		err = json.Unmarshal(idxDateBuf, &idxDate)
+		if err != nil {
+			return nil, err
+		}
+
+		idxName := make([]string, 0)
+		err = json.Unmarshal(idxNameBuf, &idxName)
+		if err != nil {
+			return nil, err
+		}
+
+		test := RecordTest{}
+		test.Date = rcrd.Date
+		test.Name = rcrd.Name
+		test.Value = rcrd.Value
+		test.IdxDate = idxDate
+		test.IdxName = idxName
+		recBuf, err = json.Marshal(test)
+		if err != nil {
+			return nil, err
+		}
+		return recBuf, nil
 	default:
-		return nil, errors.New("Incorrect number of arguments. Expecting 0 to 2 arguments")
+		return nil, errors.New("Incorrect number of arguments. Expecting 0 or 2 arguments")
 	}
 }
 
-func (self RecordDate) Equals(other Records) bool {
-	if (other.(RecordDate).RecName == self.RecName) {
-		return true
-	} else {
-		return false
-	}
-}
-func (self RecordName) Equals(other Records) bool {
-	if (other.(RecordName).RecDate == self.RecDate) {
-		return true
-	} else {
-		return false
-	}
-}
-
-func AppendOrUpdate(record Records, records []Records) bool {
-	found := false
-	for idx, elm := range records {
-		if elm.Equals(record) {
-			records[idx] = record
-			found = true
-			break
+func buildIndex(buff []byte, key string, value string) ([]string, error) {
+	rtrn := make([]string, 0)
+	if len(buff) > 0 {
+		err := json.Unmarshal(buff, &rtrn)
+		if err != nil {
+			return nil, err
+		}
+		for _, elm := range rtrn {
+			if elm == value {
+				return nil, errors.New("Value '" + value + "' already exists in the index '" + key + "'")
+			}
 		}
 	}
-	if !found {
-		records = append(records, record)
-	}
+
+	rtrn = append(rtrn, value)
+	sort.Strings(rtrn)
+	return rtrn, nil
 }
-	
