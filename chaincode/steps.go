@@ -46,7 +46,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 	}
 
 	now := time.Now().Local()
-	err := stub.PutState(keyVersion, []byte(now.Format("20060102230405")))
+	err := stub.PutState(keyVersion, []byte(now.Format("20060102150405")))
 	if err != nil {
 		return nil, err
 	}
