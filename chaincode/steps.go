@@ -105,6 +105,7 @@ func (t *SimpleChaincode) write(stub shim.ChaincodeStubInterface, args []string)
 	}
 
 	if len(recBuf) > 0 {
+		// Record found, update record
 		err = json.Unmarshal(recBuf, &rcrd)
 		if err != nil {
 			return nil, err
@@ -126,6 +127,7 @@ func (t *SimpleChaincode) write(stub shim.ChaincodeStubInterface, args []string)
 			return nil, errors.New("{\"Error\":\"Corrupted record " + recKey + " : " + string(recBuf) + "\"}")
 		}
 	} else {
+		// Record not found, add record and update indices
 		rcrd.Date = inpDate
 		rcrd.Name = inpName
 		rcrd.Value = inpValu
@@ -186,25 +188,31 @@ func (t *SimpleChaincode) write(stub shim.ChaincodeStubInterface, args []string)
 // read - query function to read key/value pair
 func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 	var err error
-	var recBuf, idxDateBuf, idxNameBuf []byte
+	var recBuf []byte
+	var idxDateBuf, idxNameBuf []byte // TEMP
 
 	lngt := len(args)
 	switch lngt {
 	case 0:
+		// Read chaincode version
 		recBuf, err = stub.GetState(keyVersion)
 		if err != nil {
 			return nil, errors.New("{\"Error\":\"Failed to get chaincode version\"}")
 		}
 		return recBuf, nil
-//	case 1:
-//		fallthrough
 	case 2:
+		// Read record
 		recKey := args[0] + args[1]
 		recBuf, err = stub.GetState(recKey)
 		if err != nil {
 			return nil, errors.New("{\"Error\":\"Failed to get records\"}")
 		}
 
+		if len(recBuf) <= 0 {
+			return []byte("Record not found"), nil
+		}
+
+		// **** TEMP ****
 		idxDateBuf, err = stub.GetState(args[1])
 		if err != nil {
 			return nil, err
@@ -243,6 +251,8 @@ func (t *SimpleChaincode) read(stub shim.ChaincodeStubInterface, args []string) 
 		if err != nil {
 			return nil, err
 		}
+		// **** TEMP ****
+
 		return recBuf, nil
 	default:
 		return nil, errors.New("Incorrect number of arguments. Expecting 0 or 2 arguments")
