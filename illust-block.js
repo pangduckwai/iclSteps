@@ -3,7 +3,7 @@ BlockIllustrator = function(chartId) {
 	this.id = "block-illust"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Blockchain illustrator";
-	this.url = "%%%urlChain%%%"; //"http://localhost:8080/ws/temp1";
+	this.url = "http://192.168.14.130:8080/ws/temp1"; //"%%%urlChain%%%";
 	this.minGridWdth = 5;
 	this.minGridHght = 2;
 	this.updateInterval = 2000;
@@ -12,7 +12,7 @@ BlockIllustrator = function(chartId) {
 	this.selected = -1;
 	this.interactiveMode = false; // Default is scorll forward as new blocks arrive
 
-	var urlBlock = "%%%urlBlock%%%";
+	var urlBlock = "http://192.168.14.130:8080/ws/temp3/"; //"%%%urlBlock%%%";
 
 	var blockWidth;
 	var yPosn;
@@ -88,7 +88,7 @@ BlockIllustrator = function(chartId) {
 				// *** Draw chain height text ***
 				if (grph.select("#txt-hght").empty()) {
 					grph.append("text").attr("id", "txt-hght").attr("class", "block-text")
-						.attr("x", 10).attr("y", 20).attr("text-anchor", "left");
+						.attr("x", 10).attr("y", 20).attr("text-anchor", "left").style("font-size", "1em");
 				}
 				grph.select("#txt-hght").text("Current chain depth: " + chainDepth);
 
@@ -179,7 +179,7 @@ BlockIllustrator = function(chartId) {
 	this.redraw = function(duration, callback, dirn) {
 		if (blockArray.length <= this.maxBlockDisplay) {
 			scaleX.domain([0, this.maxBlockDisplay - 1]);
-			duration = 0;
+			//duration = 0;
 		} else
 			scaleX.domain([1, this.maxBlockDisplay]);
 
@@ -196,26 +196,26 @@ BlockIllustrator = function(chartId) {
 			block = blocks.enter().append("g").attr("class", "block");
 		}
 
-		block.attr("transform", function(d, i) { return "translate(" + scaleX(i) + ", " + yPosn + ")"; }).call(drag); // call 'drag' here because the drag handler should be attached to the element being dragged
-		block.append("polygon").attr("class", "block-rect").style("display", "none")
+		block.attr("transform", function(d, i) { return "translate(" + scaleX(i) + ", -3000)"; }).call(drag); // call 'drag' here because the drag handler should be attached to the element being dragged
+		block.append("polygon").attr("class", "block-rect")
 			.attr("points", shape1).attr("shape-rendering", "geometricPrecision");
-		block.append("polyline").attr("class", "block-rect").style("display", "none")
+		block.append("polyline").attr("class", "block-rect")
 			.attr("points", shape2).attr("shape-rendering", "geometricPrecision");
-		block.append("line").attr("class", "block-rect").style("display", "none")
+		block.append("line").attr("class", "block-rect")
 			.attr("x1", this.blockSideLength).attr("y1", 5)
 			.attr("x2", this.blockSideLength).attr("y2", blockPls5);
-		block.append("polygon").attr("class", "block-slct").style("display", "none")
+		block.append("polygon").attr("class", "block-slct")
 			.attr("points", shape1);
-		block.append("line").attr("class", "block-line").style("display", "none")
+		block.append("line").attr("class", "block-line")
 			.attr("x1", blockPlsY).attr("y1", blockLineY2)
 			.attr("x2", 0).attr("y2", blockLineY3);
-		block.append("polyline").attr("class", "block-line").style("display", "none")
+		block.append("polyline").attr("class", "block-rect")
 			.attr("points", shape3);
-		block.append("text").attr("class", "block-text").style("display", "none")
+		block.append("text").attr("class", "block-text")
 			.text(function(d) { return d; })
 			.attr("x", blockHalf)
-			.attr("y", blockHalf + 2).attr("text-anchor", "middle").attr("dominant-baseline", "middle")
-			.attr("transform", "skewY(7)");
+			.attr("y", blockHalf + 2).attr("text-anchor", "middle").attr("dominant-baseline", "middle");
+			//.attr("transform", "skewY(7)");
 
 		// Since the <g> element (variable 'block') does not receive mouse event, add this invisible box in between the blocks to allow dragging at these places
 		block.append("rect").attr("class", "overlay")
@@ -246,8 +246,6 @@ BlockIllustrator = function(chartId) {
 		blocks.transition().duration(duration).ease("linear")
 			.attr("transform", function(d, i) { return "translate(" + scaleX(i) + ", " + yPosn + ")"; })
 			.call(endAll, function() { callback(); });
-
-		blocks.selectAll(".block-rect, .block-line, .block-text, .block-slct").transition().delay(duration).style("display", "block");
 	};
 
 	// *** Util functions ***

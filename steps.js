@@ -4,6 +4,7 @@ const path = require('path');
 const url = require('url');
 const os = require('os');
 const fs = require('fs');
+const crypto = require('crypto');
 
 // TODO!!! Learn where to put config params in node.js!!!
 const protocol = 'http';
@@ -99,7 +100,7 @@ var buildUi = function(html, msg, user, yr, mn, dt, step, node, state, succ, fai
 };
 
 var node = -1;
-var ccid = {};
+var ccid = "";
 
 // Webservices
 var queryChain = function(node, succ, fail, blck) {
@@ -188,7 +189,7 @@ var write = function(node, key, value, succ, fail) {
 				"method": "invoke",
 				"params": {
 					"type": 1,
-					"chaincodeID": {"name": ccid[node]},
+					"chaincodeID": {"name": ccid},
 					"ctorMsg": {"function": "invoke", "args": [key, value]},
 					"secureContext": bcNodes[node].user
 				},
@@ -225,7 +226,7 @@ var read = function(node, key, succ, fail) {
 				"method": "query",
 				"params": {
 					"type": 1,
-					"chaincodeID": {"name": ccid[node]},
+					"chaincodeID": {"name": ccid},
 					"ctorMsg": {"function": "query", "args": [key]},
 					"secureContext": bcNodes[node].user
 				},
@@ -256,8 +257,9 @@ var read = function(node, key, succ, fail) {
 ccid = {"0":"00000000000000000000000",
 		"1":"11111111111111111111111",
 		"2":"22222222222222222222222",
-		"3":"33333333333333333333333"};
-var depth = 1;*/
+		"3":"33333333333333333333333"};*/
+ccid = "00000000000000000000000"
+var depth = 1;
 var count = 0;
 var hosts = ['tp0', 'tp1', 'tp2', 'tp3', 'tp4', 'tp5', 'tp6', 'tp7', 'tp8', 'tp9'];
 //!!!!!!!!!!!TEMP*/
@@ -305,7 +307,7 @@ http.createServer(function(req, res) {
 				console.log("Randomly choosing node " + node); //TODO TEMP!!!
 			}
 
-			if (!ccid[node]) {
+			if (ccid.length <= 0) {
 				enroll(node,
 					function(bdy) {
 						console.log(bdy.OK);
@@ -313,7 +315,7 @@ http.createServer(function(req, res) {
 							function(body) {
 								console.log('Chaincode deployment: ' + body.result.status);
 								if (body.result.status == 'OK') {
-									ccid[node] = body.result.message;
+									ccid = body.result.message;
 								}
 								buildUi('/dashb.html', bcNodes[node].name + " ready", userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1,
 									function(htmlBody) {
@@ -339,7 +341,7 @@ http.createServer(function(req, res) {
 				switch (rqst.pathname) {
 				case '/':
 					// Main page listing data
-					if (ccid) {
+					if (ccid.length > 0) {
 						buildUi('/dashb.html', 'Hello', userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1,
 							function(htmlBody) {
 								res.setHeader('Content-type', 'text/html');
@@ -373,7 +375,7 @@ http.createServer(function(req, res) {
 					});
 					break;
 
-				case '/ws/temp1':
+				case '/ws/temp1': // ************ TEMP ***************
 					var incr = 0;
 					switch (Math.floor(Math.random() * 6)) {
 					case 0:
@@ -391,7 +393,7 @@ http.createServer(function(req, res) {
 					res.end('{ "height" : ' + depth + ', "currentBlockHash" : "RrndKwuojRMjOz/rdD7rJD/NUupiuBuCtQwnZG7Vdi/XXcTd2MDyAMsFAZ1ntZL2/IIcSUeatIZAKS6ss7f' + depth + '"}');
 					break;
 
-				case '/ws/temp2':
+				case '/ws/temp2': // ************ TEMP ***************
 					var objt = { peers : []};
 					var lght = 0, j = 0;
 					if (count < 3) {
@@ -425,6 +427,23 @@ http.createServer(function(req, res) {
 								rspnErr(res, respStatus, errMsg);
 						});
 					} else {
+						// ************ TEMP ***************('0'+param['mnth']).slice(-2)
+						var regex = /.*[/]ws[/]temp3[/]([0-9]+)$/g;
+						var mth = regex.exec(rqst.pathname)
+						if (mth != null) {
+							var dttm = now.getFullYear() + '-' + ('0'+(now.getMonth() + 1)).slice(-2) + '-' + ('0'+now.getDate()).slice(-2) + 'T00:00:00'
+							var hash = crypto.createHash('sha256').update(mth[1]).digest('base64');
+							var blck = parseInt(mth[1]);
+							var stmp = Date.parse(dttm)/1000 + blck;
+							var rtrn = '{"nonHashData":{"localLedgerCommitTimestamp":{"seconds":' + stmp + '}}';
+							if (blck > 0) rtrn += ', "previousBlockHash":"' + hash + '"';
+							rtrn += '}';
+							res.setHeader('Content-type', 'application/json');
+							res.end(rtrn);
+							break;
+						}
+						// ************ TEMP ***************
+
 						serveFile(rqst.pathname, null,
 							function(key, hdr, ctn) {
 								res.setHeader(key, hdr);

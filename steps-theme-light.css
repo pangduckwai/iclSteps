@@ -18,7 +18,7 @@
 }
 
 .block-text {
-	color: black;
+	fill: black;
 	font-size: .7em;
 }
 
@@ -29,6 +29,13 @@
 }
 
 .peer-node {
+	fill: white;
+	stroke: black;
+	stroke-width: 2;
+}
+
+.peer-vnode {
+	fill: lightgreen;
 	stroke: black;
 	stroke-width: 2;
 }
@@ -44,6 +51,6 @@
 }
 
 .peer-text {
-	color: black;
+	fill: black;
 	font-size: 1.2em;
 }

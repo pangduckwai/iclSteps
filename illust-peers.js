@@ -3,10 +3,10 @@ PeersIllustrator = function(chartId) {
 	this.id = "illust-peers"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Peers illustrator";
-	this.url = "http://localhost:8080/ws/temp2"; //"%%%urlPeers%%%";
-	this.minGridWdth = 3;
-	this.minGridHght = 3;
-	this.updateInterval = 2000;
+	this.url = "http://192.168.14.130:8080/ws/temp2"; //"%%%urlPeers%%%";
+	this.minGridWdth = 2;
+	this.minGridHght = 2;
+	this.updateInterval = 6000;
 
 	var radius;
 	var arc;
@@ -18,6 +18,7 @@ PeersIllustrator = function(chartId) {
 
 	var rotat = 0;
 	var txtOff = 28;
+	var duration = 1000;
 
 	this.init = function() {
 		//this.chartWdth *= 0.5; // >>Perspective View<<
@@ -116,14 +117,13 @@ PeersIllustrator = function(chartId) {
 						pth = pline.append("path").attr("class", "peer-line f" + lines[i].fm + " t" + lines[i].to);
 						pth.attr("d", line([lines[i].points[0], px]));
 					}
-					pth.transition().duration(_this.updateInterval / 2).attr("d", line(lines[i].points));
+					pth.transition().duration(duration).attr("d", line(lines[i].points));
 				}
 
 				// Draw the nodes
 				var peer = peers.enter().append("g").attr("class", "peer");
-				peer.append("rect").attr("class", "peer-node")
-					.attr("x", -7).attr("y", -12).attr("width", 14).attr("height", 7)
-					.style("fill", function(d) { return (d.data.type == 1) ? "lightgreen" : "white"; });
+				peer.append("rect").attr("class", function(d) { return (d.data.type == 1) ? "peer-vnode" : "peer-node"; })
+					.attr("x", -7).attr("y", -12).attr("width", 14).attr("height", 7);
 				peer.append("line").attr("class", "peer-frme")
 					.attr("x1", 0).attr("y1", -5).attr("x2", 0).attr("y2", 0);
 				peer.append("line").attr("class", "peer-frme")
@@ -146,11 +146,11 @@ PeersIllustrator = function(chartId) {
 							}
 					}); //*/
 
-				peers.select("text").transition().duration(_this.updateInterval / 2)
+				peers.select("text").transition().duration(duration)
 					.attr("dx", function(d) { return  txtOff * Math.sin((d.endAngle - d.startAngle) / 2 + d.startAngle); })
 					.attr("dy", function(d) { return -txtOff * Math.cos((d.endAngle - d.startAngle) / 2 + d.startAngle); });
 
-				peers.transition().duration(_this.updateInterval / 2)
+				peers.transition().duration(duration)
 					.attrTween("transform", function(d) {
 						this._current = this._current || d;
 						var intr = d3.interpolate(this._current, d);
@@ -165,7 +165,7 @@ PeersIllustrator = function(chartId) {
 	};
 
 	this.buildUi = function(func) {
-		func('<div class="chart-title"></div><svg class="chart-viz"/>'); // >>Perspective View<<
+		func('<div class="chart-title">Network status</div><svg class="chart-viz"/>'); // >>Perspective View<<
 		//func('<div class="chart-title"></div><div style="perspective:500px"><svg class="chart-viz" style="transform:rotateX(45deg) translate(0, -200px)"/></div>');
 	};
 
