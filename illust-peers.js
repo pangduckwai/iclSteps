@@ -3,7 +3,7 @@ PeersIllustrator = function(chartId) {
 	this.id = "illust-peers"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Peers illustrator";
-	this.url = "http://192.168.14.130:8080/ws/temp2"; //"%%%urlPeers%%%";
+	this.url = "http://localhost:8080/ws/temp2"; //"%%%urlPeers%%%";
 	this.minGridWdth = 2;
 	this.minGridHght = 2;
 	this.updateInterval = 6000;
@@ -114,7 +114,8 @@ PeersIllustrator = function(chartId) {
 					px = (plast[lines[i].to]) ? plast[lines[i].to] : lines[i].points[1];
 					pth = pline.select(".peer-line.f" + lines[i].fm + ".t" + lines[i].to);
 					if (pth.empty()) {
-						pth = pline.append("path").attr("class", "peer-line f" + lines[i].fm + " t" + lines[i].to);
+						pth = pline.append("path").attr("class", "peer-line f" + lines[i].fm + " t" + lines[i].to)
+							.style("stroke", colors[i % colors.length]);
 						pth.attr("d", line([lines[i].points[0], px]));
 					}
 					pth.transition().duration(duration).attr("d", line(lines[i].points));

@@ -253,15 +253,12 @@ var read = function(node, key, succ, fail) {
 	});
 };
 
-/*TEMP!!!!!!!!!!!
-ccid = {"0":"00000000000000000000000",
-		"1":"11111111111111111111111",
-		"2":"22222222222222222222222",
-		"3":"33333333333333333333333"};*/
+/*TEMP!!!!!!!!!!!*/
 ccid = "00000000000000000000000"
 var depth = 1;
 var count = 0;
 var hosts = ['tp0', 'tp1', 'tp2', 'tp3', 'tp4', 'tp5', 'tp6', 'tp7', 'tp8', 'tp9'];
+var names = ['pete', 'mark', 'john', 'paul', 'phil', 'bill', 'greg', 'gary', 'andy', 'dave', 'josh', 'alan', 'jack', 'dick', 'alex', 'carl', 'cole', 'zach', 'dale', 'eric', 'gene', 'mike', 'nick', 'saul', 'will'];
 //!!!!!!!!!!!TEMP*/
 
 http.createServer(function(req, res) {
@@ -405,7 +402,7 @@ http.createServer(function(req, res) {
 					}
 					//lght = count; //TODO TEMP
 					for (var i = 0; i < lght; i ++) {
-						if ((count < hosts.length) || (Math.random() < 0.7)) {
+						if ((count < hosts.length) || ((i < 7) && (Math.random() < 0.9)) || ((i >= 7) && (Math.random() < 0.4))) {
 							objt.peers[j] = { ID : { name : hosts[i] }, address : "172.18.0." + i + ":7051", type : (i < 4 ? 1 : 2), pkiID : "VqDFpP5mW3dMkzK050rl/ax1otqRedEZRKA1o6E70Pk" + i };
 							j ++;
 						}
@@ -427,14 +424,14 @@ http.createServer(function(req, res) {
 								rspnErr(res, respStatus, errMsg);
 						});
 					} else {
-						// ************ TEMP ***************('0'+param['mnth']).slice(-2)
+						// ************ TEMP ***************
 						var regex = /.*[/]ws[/]temp3[/]([0-9]+)$/g;
 						var mth = regex.exec(rqst.pathname)
 						if (mth != null) {
-							var dttm = now.getFullYear() + '-' + ('0'+(now.getMonth() + 1)).slice(-2) + '-' + ('0'+now.getDate()).slice(-2) + 'T00:00:00'
+							var dttm = now.getFullYear() + '-' + ('0'+(now.getMonth() + 1)).slice(-2) + '-' + ('0'+(now.getDate() - 1)).slice(-2) + 'T00:00:00'
 							var hash = crypto.createHash('sha256').update(mth[1]).digest('base64');
 							var blck = parseInt(mth[1]);
-							var stmp = Date.parse(dttm)/1000 + blck;
+							var stmp = Date.parse(dttm)/1000 + (blck*100);
 							var rtrn = '{"nonHashData":{"localLedgerCommitTimestamp":{"seconds":' + stmp + '}}';
 							if (blck > 0) rtrn += ', "previousBlockHash":"' + hash + '"';
 							rtrn += '}';

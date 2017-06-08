@@ -3,7 +3,7 @@ BlockIllustrator = function(chartId) {
 	this.id = "block-illust"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Blockchain illustrator";
-	this.url = "http://192.168.14.130:8080/ws/temp1"; //"%%%urlChain%%%";
+	this.url = "http://localhost:8080/ws/temp1"; //"%%%urlChain%%%";
 	this.minGridWdth = 5;
 	this.minGridHght = 2;
 	this.updateInterval = 2000;
@@ -12,7 +12,7 @@ BlockIllustrator = function(chartId) {
 	this.selected = -1;
 	this.interactiveMode = false; // Default is scorll forward as new blocks arrive
 
-	var urlBlock = "http://192.168.14.130:8080/ws/temp3/"; //"%%%urlBlock%%%";
+	var urlBlock = "http://localhost:8080/ws/temp3/"; //"%%%urlBlock%%%";
 
 	var blockWidth;
 	var yPosn;
@@ -85,17 +85,11 @@ BlockIllustrator = function(chartId) {
 				}
 				chainDepth = rspn.height;
 
-				// *** Draw chain height text ***
-				if (grph.select("#txt-hght").empty()) {
-					grph.append("text").attr("id", "txt-hght").attr("class", "block-text")
-						.attr("x", 10).attr("y", 20).attr("text-anchor", "left").style("font-size", "1em");
-				}
-				grph.select("#txt-hght").text("Current chain depth: " + chainDepth);
-
 				// *** Draw the resume button ***
 				if (grph.select("#btn-end").empty()) {
 					grph.append("image").attr("id", "btn-end").attr("x", _this.chartWdth - 40).attr("y", 4).attr("width", 18).attr("height", 18).attr("xlink:href", IMG_PAUSE_S)
 						.on("click", function() {
+								if (!grph.select(".details").empty()) grph.selectAll(".details").remove();
 								if (_this.interactiveMode) {
 									_this.interactiveMode = false;
 									_this.selected = -1;
@@ -118,29 +112,73 @@ BlockIllustrator = function(chartId) {
 					});
 				}
 
-				// *** Selected ***
-				if (!grph.select(".selected").empty()) {
-					grph.selectAll(".selected").remove();
+				// *** Draw chain height text ***
+				if (grph.select("#txt-hght").empty()) {
+					grph.append("text").attr("id", "txt-hght").attr("class", "block-text")
+						.attr("x", 10).attr("y", 20).attr("text-anchor", "left").style("font-size", "1em");
 				}
+
+				// *** Selected ***
 				if (_this.selected >= 0) {
+					grph.select("#txt-hght").text("Current chain depth: " + chainDepth);
 					accessBlock(urlBlock + _this.selected, function(rspnBlock) {
 							//console.log(JSON.stringify(rspnBlock));//TODO TEMP
+							if (!grph.select(".details").empty()) grph.selectAll(".details").remove();
+
 							var time = new Date(0);
 							time.setUTCSeconds(rspnBlock.nonHashData.localLedgerCommitTimestamp.seconds);
 
-							var blk = grph.append("text").attr("class", "selected block-text")
+							var blk = grph.append("text").attr("class", "details block-text")
 								.attr("x", 10).attr("y", _this.chartHght - 40).attr("text-anchor", "left")
 								.text("Block " + _this.selected + " selected.");
 
-							grph.append("text").attr("class", "selected block-text")
+							grph.append("text").attr("class", "details block-text")
 								.attr("x", 20 + blk.node().getBBox().width).attr("y", _this.chartHght - 40).attr("text-anchor", "left")
 								.text("Added on " + timeFormatSrver(time));
 							if (rspnBlock.previousBlockHash) {
-								grph.append("text").attr("class", "selected block-text")
+								grph.append("text").attr("class", "details block-text")
 									.attr("x", 10).attr("y", _this.chartHght - 20).attr("text-anchor", "left")
 									.style("font-family", "monospace").style("font-size", "1em")
 									.text(rspnBlock.previousBlockHash);
 							}
+					});
+				} else {
+					accessBlock(urlBlock + (chainDepth-1), function(rspnBlock) {
+							var time = new Date(0);
+							time.setUTCSeconds(rspnBlock.nonHashData.localLedgerCommitTimestamp.seconds);
+							var posx = _this.chartWdth / 2;
+							var posy = _this.chartHght - 20;
+
+							var blk = grph.append("text").attr("class", "details block-text")
+								.text("Last block " + (chainDepth-1) + ".")
+								.node().getBBox().width;
+							grph.select("#txt-hght").transition().delay(_this.updateInterval)
+								.text("Current chain depth: " + chainDepth)
+								.each("end", function() {
+										grph.selectAll(".details").remove();
+
+										if (_this.selected < 0) {
+											if (rspnBlock.previousBlockHash) {
+												var hsh = grph.append("text").attr("class", "details block-text")
+													.attr("x", posx).attr("y", posy).attr("text-anchor", "left")
+													.style("font-family", "monospace").style("font-size", "1em")
+													.text(rspnBlock.previousBlockHash);
+												posx = _this.chartWdth - hsh.node().getBBox().width - 10;
+												hsh.attr("x", posx);
+											}
+
+											grph.append("text").attr("class", "details block-text")
+												.attr("x", posx).attr("y", posy).attr("dy", "-20")
+												.attr("text-anchor", "left")
+												.text("Last block " + (chainDepth-1) + ".");
+
+											grph.append("text").attr("class", "details block-text")
+												.attr("x", posx).attr("y", posy)
+												.attr("dx", 10 + blk).attr("dy", "-20")
+												.attr("text-anchor", "left")
+												.text("Added on " + timeFormatSrver(time));
+										}
+								});
 					});
 				}
 
@@ -205,17 +243,17 @@ BlockIllustrator = function(chartId) {
 			.attr("x1", this.blockSideLength).attr("y1", 5)
 			.attr("x2", this.blockSideLength).attr("y2", blockPls5);
 		block.append("polygon").attr("class", "block-slct")
-			.attr("points", shape1);
-		block.append("line").attr("class", "block-line")
+			.attr("points", shape1).style("opacity", "0.8");
+		block.append("line").attr("class", "block-line arrow")
 			.attr("x1", blockPlsY).attr("y1", blockLineY2)
-			.attr("x2", 0).attr("y2", blockLineY3);
-		block.append("polyline").attr("class", "block-rect")
-			.attr("points", shape3);
+			.attr("x2", 0).attr("y2", blockLineY3).style("display", "none");
+		block.append("polyline").attr("class", "block-rect arrow")
+			.attr("points", shape3).style("display", "none");
 		block.append("text").attr("class", "block-text")
 			.text(function(d) { return d; })
 			.attr("x", blockHalf)
-			.attr("y", blockHalf + 2).attr("text-anchor", "middle").attr("dominant-baseline", "middle");
-			//.attr("transform", "skewY(7)");
+			.attr("y", blockHalf + 2).attr("text-anchor", "middle").attr("dominant-baseline", "middle")
+			.attr("transform", "skewY(7)");
 
 		// Since the <g> element (variable 'block') does not receive mouse event, add this invisible box in between the blocks to allow dragging at these places
 		block.append("rect").attr("class", "overlay")
@@ -233,6 +271,7 @@ BlockIllustrator = function(chartId) {
 					}
 				})
 			.on("click", function(d) {
+					if (!grph.select(".details").empty()) grph.selectAll(".details").remove();
 					grph.selectAll(".block-slct").style("opacity", "0.0"); // Clear any other selections
 					grph.select("#btn-end").attr("xlink:href", IMG_PLAY_S);
 					_this.interactiveMode = true;
@@ -246,6 +285,9 @@ BlockIllustrator = function(chartId) {
 		blocks.transition().duration(duration).ease("linear")
 			.attr("transform", function(d, i) { return "translate(" + scaleX(i) + ", " + yPosn + ")"; })
 			.call(endAll, function() { callback(); });
+
+		blocks.selectAll(".block-slct").transition().delay(duration).style("opacity", "0.0");
+		blocks.selectAll(".arrow").transition().delay(duration).style("display", "block");
 	};
 
 	// *** Util functions ***

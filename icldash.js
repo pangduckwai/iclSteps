@@ -33,8 +33,8 @@ const cellGap = 5;
 
 const regex = new RegExp("^(?=.*[\\s]*r([0-9]+))(?=.*[\\s]*c([0-9]+))(?=.*[\\s]*w([0-9]+))(?=.*[\\s]*h([0-9]+)).*$", 'g');
 
-const colors1 = ["#ff8c00", "#d0743c", "#a05d56", "#98abc5", "#8a89a6", "#7b6888", "#6b486b"];
-const colors2 = ["#ffcc00", "#fda45c", "#f07d76", "#b8dbe5", "#aaa9d6", "#ab88b8", "#ab68ab"];
+//const colors = ["#ff8c00", "#d0743c", "#a05d56", "#98abc5", "#8a89a6", "#7b6888", "#6b486b"];
+const colors = ["#ffcc00", "#fda45c", "#f07d76", "#b8dbe5", "#aaa9d6", "#ab88b8", "#ab68ab"];
 
 var isIE = false;
 if ((/*@cc_on ! @*/ false) || navigator.userAgent.match(/Trident/g)) {
