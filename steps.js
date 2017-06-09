@@ -90,6 +90,7 @@ var buildUi = function(html, msg, user, yr, mn, dt, step, node, state, succ, fai
 				.replace(/%%%anchorVerify%%%/g, mnuVrfy)
 				.replace(/%%%returnLink%%%/g, vsbLink)
 				.replace(/%%%formButton%%%/g, vsbBttn)
+				.replace(/%%%nodeServer%%%/g, "192.168.14.130") //"localhost"
 				.replace(/%%%urlChain%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain')
 				.replace(/%%%urlBlock%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain/blocks/')
 				.replace(/%%%urlPeers%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/network/peers'));
@@ -255,11 +256,18 @@ var read = function(node, key, succ, fail) {
 
 /*TEMP!!!!!!!!!!!*/
 ccid = "00000000000000000000000"
-var depth = 1;
+var start = (new Date()).getTime();
+var depth = 2;
 var count = 0;
 var rtsts = [];
 var hosts = ['tp0', 'tp1', 'tp2', 'tp3', 'tp4', 'tp5', 'tp6', 'tp7', 'tp8', 'tp9'];
-var names = ['pete', 'mark', 'john', 'paul', 'phil', 'bill', 'greg', 'gary', 'andy', 'dave', 'josh', 'alan', 'jack', 'dick', 'alex', 'carl', 'cole', 'zach', 'dale', 'eric', 'gene', 'mike', 'nick', 'saul', 'will'];
+var names = {
+	"alan":[0, 3, 7, 0], "alex":[0, 6, 7, 0], "andy":[0, 2, 6, 2], "bill":[0, 4, 3, 1], "carl":[0, 3, 8, 1], "cole":[0, 6, 8, 1],
+	"dave":[0, 5, 6, 2], "dale":[0, 9, 3, 1], "dick":[0, 6, 1, 3], "eric":[0, 5, 8, 2], "gary":[0, 3, 6, 1], "gene":[0, 5, 7, 3],
+	"greg":[0, 8, 7, 3], "jack":[0, 3, 2, 3], "john":[0, 4, 2, 0], "josh":[0, 9, 7, 0], "kyle":[0, 9, 8, 1], "mark":[0, 1, 3, 1],
+	"mike":[0, 2, 8, 2], "nick":[0, 1, 2, 0], "paul":[0, 8, 8, 2], "pete":[0, 3, 3, 2], "phil":[0, 2, 7, 3], "saul":[0, 6, 6, 1],
+	"will":[0, 9, 6, 1], "zach":[0, 8, 6, 2]
+};
 //!!!!!!!!!!!TEMP*/
 
 http.createServer(function(req, res) {
@@ -352,7 +360,7 @@ http.createServer(function(req, res) {
 					break;
 
 				case '/time':
-					var dttm = now.getFullYear() + '-' + ('0'+(now.getMonth() + 1)).slice(-2) + '-' + ('0'+(now.getDate() - 1)).slice(-2) + ' ' +
+					var dttm = now.getFullYear() + '-' + ('0'+(now.getMonth() + 1)).slice(-2) + '-' + ('0'+now.getDate()).slice(-2) + ' ' +
 						('0'+now.getHours()).slice(-2) + ':' + ('0'+now.getMinutes()).slice(-2) + ':' + ('0'+now.getSeconds()).slice(-2)
 					res.setHeader('Content-type', 'application/json');
 					res.end('{"time":"' + dttm + '"}');
@@ -380,42 +388,26 @@ http.createServer(function(req, res) {
 					});
 					break;
 
-				case '/ws/temp1': // ************ TEMP ***************
-					var incr = 0;
-					switch (Math.floor(Math.random() * 6)) {
-					case 0:
-						incr = Math.floor(Math.random() * 15) - 5;
-						if (incr < 0) incr = 0;
-						break;
-					case 1:
-					case 2:
-					case 3:
-						incr = 1;
-						break;
-					}
-					depth += incr;
-					rtsts.push({"time": Math.round(now.getTime()/1000), "value": incr});
-					if (rtsts.length > 30) rtsts.shift();
-					res.setHeader('Content-type', 'application/json');
-					res.end('{ "height" : ' + depth + ', "currentBlockHash" : "RrndKwuojRMjOz/rdD7rJD/NUupiuBuCtQwnZG7Vdi/XXcTd2MDyAMsFAZ1ntZL2/IIcSUeatIZAKS6ss7f' + depth + '"}');
-					break;
-
-				case '/ws/temp4': // ************ TEMP ***************
-					if (rtsts.length > 1) {
-						var elpse = rtsts[rtsts.length-1].time - rtsts[0].time;
-						var total = 0, lgth = rtsts.length;
-						for (var i = 1; i < lgth; i ++) {
-							total += rtsts[i].value;
+				case '/ws/temp1': // ************ TEMP - block ***************
+					var latst = [];
+					for (var key in names) {
+						if (Math.random() < 0.1) {
+							names[key][0] ++;
+							latst.push(key);
 						}
-						res.setHeader('Content-type', 'application/json');
-						res.end('{"avg":' + (total/elpse) + '}');
-					} else {
-						res.setHeader('Content-type', 'application/json');
-						res.end('{"avg":0}');
 					}
+
+					depth += latst.length;
+
+					rtsts.push({"time": Math.round(now.getTime()/1000), "value": latst.length});
+					if (rtsts.length > 30) rtsts.shift();
+
+					var hash = crypto.createHash('sha256').update(depth.toString()).digest('base64');
+					res.setHeader('Content-type', 'application/json');
+					res.end('{ "height" : ' + depth + ', "currentBlockHash" : "' + hash + '"}');
 					break;
 
-				case '/ws/temp2': // ************ TEMP ***************
+				case '/ws/temp2': // ************ TEMP - peers ***************
 					var objt = { peers : []};
 					var lght = 0, j = 0;
 					if (count < 3) {
@@ -438,6 +430,21 @@ http.createServer(function(req, res) {
 					res.end(JSON.stringify(objt));
 					break;
 
+				case '/ws/temp4': // ************ TEMP - block rate ***************
+					if (rtsts.length > 1) {
+						var elpse = rtsts[rtsts.length-1].time - rtsts[0].time;
+						var total = 0, lgth = rtsts.length;
+						for (var i = 1; i < lgth; i ++) {
+							total += rtsts[i].value;
+						}
+						res.setHeader('Content-type', 'application/json');
+						res.end('{"avg":' + (total/elpse) + '}');
+					} else {
+						res.setHeader('Content-type', 'application/json');
+						res.end('{"avg":0}');
+					}
+					break;
+
 				default:
 					if (rqst.pathname.endsWith('.js')) {
 						buildUi(rqst.pathname, '', '', 0, 0, 0, 0, node, 0,
@@ -453,10 +460,9 @@ http.createServer(function(req, res) {
 						var regex = /.*[/]ws[/]temp3[/]([0-9]+)$/g;
 						var mth = regex.exec(rqst.pathname)
 						if (mth != null) {
-							var dttm = now.getFullYear() + '-' + ('0'+(now.getMonth() + 1)).slice(-2) + '-' + ('0'+(now.getDate() - 1)).slice(-2) + 'T00:00:00'
 							var hash = crypto.createHash('sha256').update(mth[1]).digest('base64');
 							var blck = parseInt(mth[1]);
-							var stmp = Date.parse(dttm)/1000 + (blck*1000);
+							var stmp = start / 1000 + blck;
 							var rtrn = '{"nonHashData":{"localLedgerCommitTimestamp":{"seconds":' + stmp + '}}';
 							if (blck > 0) rtrn += ', "previousBlockHash":"' + hash + '"';
 							rtrn += '}';

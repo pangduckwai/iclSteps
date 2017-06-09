@@ -2,7 +2,7 @@ BlockIllustrator = function(chartId) {
 	this.id = "block-illust"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Blockchain illustrator";
-	this.url = "http://localhost:8080/ws/temp1"; //"%%%urlChain%%%";
+	this.url = "http://%%%nodeServer%%%:8080/ws/temp1"; //"%%%urlChain%%%";
 	this.minGridWdth = 5;
 	this.minGridHght = 2;
 	this.updateInterval = 2000;
@@ -11,7 +11,7 @@ BlockIllustrator = function(chartId) {
 	this.selected = -1;
 	this.interactiveMode = false; // Default is scorll forward as new blocks arrive
 
-	var urlBlock = "http://localhost:8080/ws/temp3/"; //"%%%urlBlock%%%";
+	var urlBlock = "http://%%%nodeServer%%%:8080/ws/temp3/"; //"%%%urlBlock%%%";
 
 	var blockWidth;
 	var yPosn;
