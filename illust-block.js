@@ -1,9 +1,8 @@
-
 BlockIllustrator = function(chartId) {
 	this.id = "block-illust"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Blockchain illustrator";
-	this.url = "http://192.168.14.130:8080/ws/temp1"; //"%%%urlChain%%%";
+	this.url = "http://localhost:8080/ws/temp1"; //"%%%urlChain%%%";
 	this.minGridWdth = 5;
 	this.minGridHght = 2;
 	this.updateInterval = 2000;
@@ -12,7 +11,7 @@ BlockIllustrator = function(chartId) {
 	this.selected = -1;
 	this.interactiveMode = false; // Default is scorll forward as new blocks arrive
 
-	var urlBlock = "http://192.168.14.130:8080/ws/temp3/"; //"%%%urlBlock%%%";
+	var urlBlock = "http://localhost:8080/ws/temp3/"; //"%%%urlBlock%%%";
 
 	var blockWidth;
 	var yPosn;
@@ -22,9 +21,9 @@ BlockIllustrator = function(chartId) {
 	var blockArray = [];
 	var catchUp = false;
 
+	var _this = this;
 	var grph;
 	var line;
-	var _this = this;
 
 	var blockHalf;
 	var blockPls5, blockPlsX, blockPlsY, blockMnsY;
@@ -123,20 +122,20 @@ BlockIllustrator = function(chartId) {
 					grph.select("#txt-hght").text("Current chain depth: " + chainDepth);
 					accessBlock(urlBlock + _this.selected, function(rspnBlock) {
 							//console.log(JSON.stringify(rspnBlock));//TODO TEMP
-							if (!grph.select(".details").empty()) grph.selectAll(".details").remove();
+							if (!grph.select(".dtls-text").empty()) grph.selectAll(".dtls-text").remove();
 
 							var time = new Date(0);
 							time.setUTCSeconds(rspnBlock.nonHashData.localLedgerCommitTimestamp.seconds);
 
-							var blk = grph.append("text").attr("class", "details block-text")
+							var blk = grph.append("text").attr("class", "dtls-text")
 								.attr("x", 10).attr("y", _this.chartHght - 40).attr("text-anchor", "left")
 								.text("Block " + _this.selected + " selected.");
 
-							grph.append("text").attr("class", "details block-text")
-								.attr("x", 20 + blk.node().getBBox().width).attr("y", _this.chartHght - 40).attr("text-anchor", "left")
+							grph.append("text").attr("class", "dtls-text")
+								.attr("x", 15 + blk.node().getBBox().width).attr("y", _this.chartHght - 40).attr("text-anchor", "left")
 								.text("Added on " + timeFormatSrver(time));
 							if (rspnBlock.previousBlockHash) {
-								grph.append("text").attr("class", "details block-text")
+								grph.append("text").attr("class", "dtls-text")
 									.attr("x", 10).attr("y", _this.chartHght - 20).attr("text-anchor", "left")
 									.style("font-family", "monospace").style("font-size", "1em")
 									.text(rspnBlock.previousBlockHash);
@@ -149,32 +148,32 @@ BlockIllustrator = function(chartId) {
 							var posx = _this.chartWdth / 2;
 							var posy = _this.chartHght - 20;
 
-							var blk = grph.append("text").attr("class", "details block-text")
-								.text("Last block " + (chainDepth-1) + ".")
+							var blk = grph.append("text").attr("class", "dtls-text")
+								.text("Latest block: " + (chainDepth-1) + ".")
 								.node().getBBox().width;
 							grph.select("#txt-hght").transition().delay(_this.updateInterval)
 								.text("Current chain depth: " + chainDepth)
 								.each("end", function() {
-										grph.selectAll(".details").remove();
+										grph.selectAll(".dtls-text").remove();
 
 										if (_this.selected < 0) {
 											if (rspnBlock.previousBlockHash) {
-												var hsh = grph.append("text").attr("class", "details block-text")
+												var hsh = grph.append("text").attr("class", "dtls-text")
 													.attr("x", posx).attr("y", posy).attr("text-anchor", "left")
 													.style("font-family", "monospace").style("font-size", "1em")
 													.text(rspnBlock.previousBlockHash);
-												posx = _this.chartWdth - hsh.node().getBBox().width - 10;
+												posx = _this.chartWdth - hsh.node().getBBox().width - 35;
 												hsh.attr("x", posx);
 											}
 
-											grph.append("text").attr("class", "details block-text")
+											grph.append("text").attr("class", "dtls-text")
 												.attr("x", posx).attr("y", posy).attr("dy", "-20")
 												.attr("text-anchor", "left")
-												.text("Last block " + (chainDepth-1) + ".");
+												.text("Latest block: " + (chainDepth-1) + ".");
 
-											grph.append("text").attr("class", "details block-text")
+											grph.append("text").attr("class", "dtls-text")
 												.attr("x", posx).attr("y", posy)
-												.attr("dx", 10 + blk).attr("dy", "-20")
+												.attr("dx", 5 + blk).attr("dy", "-20")
 												.attr("text-anchor", "left")
 												.text("Added on " + timeFormatSrver(time));
 										}

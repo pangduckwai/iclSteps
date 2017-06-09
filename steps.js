@@ -257,6 +257,7 @@ var read = function(node, key, succ, fail) {
 ccid = "00000000000000000000000"
 var depth = 1;
 var count = 0;
+var rtsts = [];
 var hosts = ['tp0', 'tp1', 'tp2', 'tp3', 'tp4', 'tp5', 'tp6', 'tp7', 'tp8', 'tp9'];
 var names = ['pete', 'mark', 'john', 'paul', 'phil', 'bill', 'greg', 'gary', 'andy', 'dave', 'josh', 'alan', 'jack', 'dick', 'alex', 'carl', 'cole', 'zach', 'dale', 'eric', 'gene', 'mike', 'nick', 'saul', 'will'];
 //!!!!!!!!!!!TEMP*/
@@ -350,6 +351,13 @@ http.createServer(function(req, res) {
 					}
 					break;
 
+				case '/time':
+					var dttm = now.getFullYear() + '-' + ('0'+(now.getMonth() + 1)).slice(-2) + '-' + ('0'+(now.getDate() - 1)).slice(-2) + ' ' +
+						('0'+now.getHours()).slice(-2) + ':' + ('0'+now.getMinutes()).slice(-2) + ':' + ('0'+now.getSeconds()).slice(-2)
+					res.setHeader('Content-type', 'application/json');
+					res.end('{"time":"' + dttm + '"}');
+					break;
+
 				case '/submit':
 					buildUi('/steps.html', 'Please submit your record', userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, 0,
 						function(htmlBody) {
@@ -386,8 +394,25 @@ http.createServer(function(req, res) {
 						break;
 					}
 					depth += incr;
+					rtsts.push({"time": Math.round(now.getTime()/1000), "value": incr});
+					if (rtsts.length > 30) rtsts.shift();
 					res.setHeader('Content-type', 'application/json');
 					res.end('{ "height" : ' + depth + ', "currentBlockHash" : "RrndKwuojRMjOz/rdD7rJD/NUupiuBuCtQwnZG7Vdi/XXcTd2MDyAMsFAZ1ntZL2/IIcSUeatIZAKS6ss7f' + depth + '"}');
+					break;
+
+				case '/ws/temp4': // ************ TEMP ***************
+					if (rtsts.length > 1) {
+						var elpse = rtsts[rtsts.length-1].time - rtsts[0].time;
+						var total = 0, lgth = rtsts.length;
+						for (var i = 1; i < lgth; i ++) {
+							total += rtsts[i].value;
+						}
+						res.setHeader('Content-type', 'application/json');
+						res.end('{"avg":' + (total/elpse) + '}');
+					} else {
+						res.setHeader('Content-type', 'application/json');
+						res.end('{"avg":0}');
+					}
 					break;
 
 				case '/ws/temp2': // ************ TEMP ***************
@@ -431,7 +456,7 @@ http.createServer(function(req, res) {
 							var dttm = now.getFullYear() + '-' + ('0'+(now.getMonth() + 1)).slice(-2) + '-' + ('0'+(now.getDate() - 1)).slice(-2) + 'T00:00:00'
 							var hash = crypto.createHash('sha256').update(mth[1]).digest('base64');
 							var blck = parseInt(mth[1]);
-							var stmp = Date.parse(dttm)/1000 + (blck*100);
+							var stmp = Date.parse(dttm)/1000 + (blck*1000);
 							var rtrn = '{"nonHashData":{"localLedgerCommitTimestamp":{"seconds":' + stmp + '}}';
 							if (blck > 0) rtrn += ', "previousBlockHash":"' + hash + '"';
 							rtrn += '}';

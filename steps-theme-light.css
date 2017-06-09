@@ -28,6 +28,11 @@
 	opacity: 0.0;
 }
 
+.dtls-text {
+	fill: black;
+	font-size: .9em;
+}
+
 .peer-node {
 	fill: white;
 	stroke: black;

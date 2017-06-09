@@ -1,20 +1,18 @@
-
 PeersIllustrator = function(chartId) {
 	this.id = "illust-peers"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Peers illustrator";
-	this.url = "http://192.168.14.130:8080/ws/temp2"; //"%%%urlPeers%%%";
+	this.url = "http://localhost:8080/ws/temp2"; //"%%%urlPeers%%%";
 	this.minGridWdth = 2;
 	this.minGridHght = 2;
 	this.updateInterval = 6000;
 
+	var _this = this;
+	var grph;
+	var line;
 	var radius;
 	var arc;
 	var pie;
-	var line;
-
-	var grph;
-	var _this = this;
 
 	var rotat = 0;
 	var txtOff = 28;
@@ -130,6 +128,7 @@ PeersIllustrator = function(chartId) {
 				peer.append("line").attr("class", "peer-frme")
 					.attr("x1", -8).attr("y1", 0).attr("x2", 8).attr("y2", 0);
 				peer.append("text").attr("class", "peer-text").attr("text-anchor", "middle").attr("dominant-baseline", "middle")
+					.style("fill", "#9ecf9b")
 					.text(function(d, i) { return d.data.ID.name; });
 
 				peers.exit().remove();
@@ -166,7 +165,7 @@ PeersIllustrator = function(chartId) {
 	};
 
 	this.buildUi = function(func) {
-		func('<div class="chart-title">Network status</div><svg class="chart-viz"/>'); // >>Perspective View<<
+		func('<div class="chart-title" style="color:#9ecf9b">Network status</div><svg class="chart-viz"/>'); // >>Perspective View<<
 		//func('<div class="chart-title"></div><div style="perspective:500px"><svg class="chart-viz" style="transform:rotateX(45deg) translate(0, -200px)"/></div>');
 	};
 

@@ -21,7 +21,7 @@ a:active, a:link, a:visited {
 }
 
 .clock {
-	fill: black;
+	fill: #005285;
 }
 
 .axis path, .axis line, .tick line {

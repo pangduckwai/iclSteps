@@ -33,7 +33,6 @@ const cellGap = 5;
 
 const regex = new RegExp("^(?=.*[\\s]*r([0-9]+))(?=.*[\\s]*c([0-9]+))(?=.*[\\s]*w([0-9]+))(?=.*[\\s]*h([0-9]+)).*$", 'g');
 
-//const colors = ["#ff8c00", "#d0743c", "#a05d56", "#98abc5", "#8a89a6", "#7b6888", "#6b486b"];
 const colors = ["#ffcc00", "#fda45c", "#f07d76", "#b8dbe5", "#aaa9d6", "#ab88b8", "#ab68ab"];
 
 var isIE = false;
@@ -178,8 +177,9 @@ function init() {
 		console.log("Displaying default charts...");
 		//chrts = '[{"chartId":"sample-topten","row":1,"column":1,"width":4,"height":4,"topCnt":10,"sortBy":"out","sameSc":"yes"},{"chartId":"datetime-widget","row":1,"column":7,"width":1,"height":1,"source":"Server","format":"24","url":"https://dev.echeque.hkicl.com.hk/dashboard/datetime.json"},{"chartId":"sample-pie","row":1,"column":5,"width":2,"height":2,"topCnt":5},{"chartId":"sample-gauge","row":2,"column":7,"width":1,"height":1,"min":0,"max":50,"alert1":35,"alert2":45},{"chartId":"sample-candle","row":3,"column":5,"width":3,"height":3,"selected":"004"}]';
 		chrts = '[{"chartId":"block-illust","row":1,"column":1,"width":5,"height":2,"selected":"-1"},' +
-				' {"chartId":"illust-peers","row":1,"column":6,"width":2,"height":2},' +
-				' {"chartId":"datetime-widget","row":1,"column":8,"width":1,"height":1,"source":"Local","format":"24","url":""}]';
+				' {"chartId":"illust-peers","row":1,"column":7,"width":2,"height":2},' +
+				' {"chartId":"brate-illust","row":2,"column":6,"width":1,"height":1,"min":0,"max":10,"alert1":7,"alert2":9},' +
+				' {"chartId":"datetime-widget","row":1,"column":6,"width":1,"height":1,"source":"Server","format":"24","url":"http://localhost:8080/time"}]';
 	}
 
 	var startDelay = 1;
@@ -797,7 +797,7 @@ DateTimeWidget = function(chartId) {
 
 	this.source = "Server"; // 'Local' - PC time, 'Server' - Server time, require URL 
 	this.format = "12"; // '12' - 12 hour format with am/pm, '24' - 24 hour format from 00 to 23
-	this.url = "https://dev.echeque.hkicl.com.hk/dashboard/datetime.json";
+	this.url = "https://[dashboard]/time";
 
 	this.render = function() {
 		var neti = d3.select("#"+this.domId).select(".chart-indct");
@@ -860,7 +860,7 @@ DateTimeWidget = function(chartId) {
 		if (bbx1 && bbx3) {
 			var bbx2 = grph.select(".clock.clockSmall").node().getBBox();
 			var xfactor = (this.chartWdth - 20) / (bbx1.width + bbx2.width + 5);
-			var yfactor = (this.chartHght / 2) / bbx1.height;
+			var yfactor = (this.chartHght / 2) / bbx1.height * .85;
 
 			grph.select(".clock.clockBig").attr("transform", "scale(" + xfactor + ", " + yfactor + ")").attr("y", bbx1.height);
 			grph.select(".clock.clockSmall").attr("transform", "scale(" + xfactor + ", " + yfactor + ")").attr("y", bbx1.height);
