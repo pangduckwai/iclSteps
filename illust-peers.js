@@ -127,8 +127,8 @@ PeersIllustrator = function(chartId) {
 					.attr("x1", 0).attr("y1", -5).attr("x2", 0).attr("y2", 0);
 				peer.append("line").attr("class", "peer-frme")
 					.attr("x1", -8).attr("y1", 0).attr("x2", 8).attr("y2", 0);
-				peer.append("text").attr("class", "peer-text").attr("text-anchor", "middle").attr("dominant-baseline", "middle")
-					.style("fill", "#9ecf9b")
+				peer.append("text").attr("class", function(d) { return (d.data.type == 1) ? "peer-vtext" : "peer-text"; })
+					.attr("text-anchor", "middle").attr("dominant-baseline", "middle")
 					.text(function(d, i) { return d.data.ID.name; });
 
 				peers.exit().remove();

@@ -1,5 +1,5 @@
 RateIllustrator = function(chartId) {
-	this.id = "brate-illust"; //Chart ID
+	this.id = "illust-brate"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Block rate illustrator";
 	this.url = "http://%%%nodeServer%%%:8080/ws/temp4";

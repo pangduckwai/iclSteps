@@ -1,8 +1,8 @@
 BlockIllustrator = function(chartId) {
-	this.id = "block-illust"; //Chart ID
+	this.id = "illust-block"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Blockchain illustrator";
-	this.url = "http://%%%nodeServer%%%:8080/ws/temp1"; //"%%%urlChain%%%";
+	this.url = "http://%%%nodeServer%%%:8080/ws/temp5"; //"%%%urlChain%%%";
 	this.minGridWdth = 5;
 	this.minGridHght = 2;
 	this.updateInterval = 2000;
@@ -128,15 +128,15 @@ BlockIllustrator = function(chartId) {
 							time.setUTCSeconds(rspnBlock.nonHashData.localLedgerCommitTimestamp.seconds);
 
 							var blk = grph.append("text").attr("class", "dtls-text")
-								.attr("x", 10).attr("y", _this.chartHght - 40).attr("text-anchor", "left")
+								.attr("x", 10).attr("y", _this.chartHght - 80).attr("text-anchor", "left")
 								.text("Block " + _this.selected + " selected.");
 
 							grph.append("text").attr("class", "dtls-text")
-								.attr("x", 15 + blk.node().getBBox().width).attr("y", _this.chartHght - 40).attr("text-anchor", "left")
+								.attr("x", 15 + blk.node().getBBox().width).attr("y", _this.chartHght - 80).attr("text-anchor", "left")
 								.text("Added on " + timeFormatSrver(time));
 							if (rspnBlock.previousBlockHash) {
 								grph.append("text").attr("class", "dtls-text")
-									.attr("x", 10).attr("y", _this.chartHght - 20).attr("text-anchor", "left")
+									.attr("x", 10).attr("y", _this.chartHght - 60).attr("text-anchor", "left")
 									.style("font-family", "monospace").style("font-size", "1em")
 									.text(rspnBlock.previousBlockHash);
 							}
@@ -146,7 +146,7 @@ BlockIllustrator = function(chartId) {
 							var time = new Date(0);
 							time.setUTCSeconds(rspnBlock.nonHashData.localLedgerCommitTimestamp.seconds);
 							var posx = _this.chartWdth / 2;
-							var posy = _this.chartHght - 20;
+							var posy = _this.chartHght - 60;
 
 							var blk = grph.append("text").attr("class", "dtls-text")
 								.text("Latest block: " + (chainDepth-1) + ".")

@@ -261,13 +261,9 @@ var depth = 2;
 var count = 0;
 var rtsts = [];
 var hosts = ['tp0', 'tp1', 'tp2', 'tp3', 'tp4', 'tp5', 'tp6', 'tp7', 'tp8', 'tp9'];
-var names = {
-	"alan":[0, 3, 7, 0], "alex":[0, 6, 7, 0], "andy":[0, 2, 6, 2], "bill":[0, 4, 3, 1], "carl":[0, 3, 8, 1], "cole":[0, 6, 8, 1],
-	"dave":[0, 5, 6, 2], "dale":[0, 9, 3, 1], "dick":[0, 6, 1, 3], "eric":[0, 5, 8, 2], "gary":[0, 3, 6, 1], "gene":[0, 5, 7, 3],
-	"greg":[0, 8, 7, 3], "jack":[0, 3, 2, 3], "john":[0, 4, 2, 0], "josh":[0, 9, 7, 0], "kyle":[0, 9, 8, 1], "mark":[0, 1, 3, 1],
-	"mike":[0, 2, 8, 2], "nick":[0, 1, 2, 0], "paul":[0, 8, 8, 2], "pete":[0, 3, 3, 2], "phil":[0, 2, 7, 3], "saul":[0, 6, 6, 1],
-	"will":[0, 9, 6, 1], "zach":[0, 8, 6, 2]
-};
+var names =
+	{"alan":0, "alex":0, "andy":0, "bill":0, "carl":0, "cole":0, "dave":0, "dale":0, "dick":0, "eric":0, "gary":0, "gene":0, "greg":0,
+	 "jack":0, "john":0, "josh":0, "kyle":0, "mark":0, "mike":0, "nick":0, "paul":0, "pete":0, "phil":0, "saul":0, "will":0, "zach":0};
 //!!!!!!!!!!!TEMP*/
 
 http.createServer(function(req, res) {
@@ -392,7 +388,7 @@ http.createServer(function(req, res) {
 					var latst = [];
 					for (var key in names) {
 						if (Math.random() < 0.1) {
-							names[key][0] ++;
+							names[key] ++;
 							latst.push(key);
 						}
 					}
@@ -402,6 +398,10 @@ http.createServer(function(req, res) {
 					rtsts.push({"time": Math.round(now.getTime()/1000), "value": latst.length});
 					if (rtsts.length > 30) rtsts.shift();
 
+					res.setHeader('Content-type', 'application/json');
+					res.end(JSON.stringify(latst));
+					break;
+				case '/ws/temp5':
 					var hash = crypto.createHash('sha256').update(depth.toString()).digest('base64');
 					res.setHeader('Content-type', 'application/json');
 					res.end('{ "height" : ' + depth + ', "currentBlockHash" : "' + hash + '"}');
@@ -411,7 +411,7 @@ http.createServer(function(req, res) {
 					var objt = { peers : []};
 					var lght = 0, j = 0;
 					if (count < 3) {
-						lght = 3;
+						lght = 5;
 					} else if (count < hosts.length) {
 						lght = count;
 					} else {

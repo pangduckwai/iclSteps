@@ -176,9 +176,10 @@ function init() {
 	if ((chrts.trim() == "") || (chrts.trim() == "[]")) {
 		console.log("Displaying default charts...");
 		//chrts = '[{"chartId":"sample-topten","row":1,"column":1,"width":4,"height":4,"topCnt":10,"sortBy":"out","sameSc":"yes"},{"chartId":"datetime-widget","row":1,"column":7,"width":1,"height":1,"source":"Server","format":"24","url":"https://dev.echeque.hkicl.com.hk/dashboard/datetime.json"},{"chartId":"sample-pie","row":1,"column":5,"width":2,"height":2,"topCnt":5},{"chartId":"sample-gauge","row":2,"column":7,"width":1,"height":1,"min":0,"max":50,"alert1":35,"alert2":45},{"chartId":"sample-candle","row":3,"column":5,"width":3,"height":3,"selected":"004"}]';
-		chrts = '[{"chartId":"block-illust","row":1,"column":1,"width":5,"height":2,"selected":"-1"},' +
+		chrts = '[{"chartId":"illust-block","row":1,"column":1,"width":5,"height":2,"selected":"-1"},' +
 				' {"chartId":"illust-peers","row":1,"column":7,"width":2,"height":2},' +
-				' {"chartId":"brate-illust","row":2,"column":6,"width":1,"height":1,"min":0,"max":10,"alert1":7,"alert2":9},' +
+				' {"chartId":"illust-brate","row":2,"column":6,"width":1,"height":1,"min":0,"max":10,"alert1":7,"alert2":9},' +
+				' {"chartId":"illust-floor","row":3,"column":5,"width":4,"height":3},' +
 				' {"chartId":"datetime-widget","row":1,"column":6,"width":1,"height":1,"source":"Server","format":"24","url":"http://localhost:8080/time"}]';
 	}
 

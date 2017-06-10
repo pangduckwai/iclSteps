@@ -59,3 +59,24 @@
 	fill: white;
 	font-size: 1.2em;
 }
+
+.peer-vtext {
+	fill: lightgreen;
+	font-size: 1.2em;
+}
+
+.floor-text {
+	fill: white;
+}
+
+.floor-wall {
+	fill: none;
+	stroke: white;
+	stroke-width: 3;
+}
+
+.floor-desk {
+	fill: #333333;
+	stroke: white;
+	stroke-width: 1;
+}
