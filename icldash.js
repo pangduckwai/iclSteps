@@ -714,6 +714,48 @@ function buildFramework() {
 	tcll.append("input").attr("type", "hidden").attr("id", "setting-charts").attr("name", "setting-charts");
 }
 
+// **** Channel prototype ****
+function Channel(id, name, url, interval) {
+	this.id = id;
+	this.name = name;
+
+	this.url = url;
+	this.runInterval = interval;
+
+	this.subscribedCharts = [];
+
+	var elapse = this.runInterval;
+	this.shouldRun = function() {
+		elapse -= RUN_INTERVAL;
+		if (elapse <= 0) {
+			elapse = this.runInterval;
+			return true;
+		} else {
+			return false;
+		}
+	};
+
+	var _this = this;
+	this.run = function() {
+		if (!this.shouldRun()) {
+			return;
+		}
+
+		accessData(this.url, function(rspn) {
+				if (!rspn) {
+					return;
+				}
+
+				for (var idx = 0; idx < _this.subscribedCharts.length; idx ++) {
+					if (_this.subscribedCharts[idx] && (typeof _this.subscribedCharts[idx].render === "function") && 
+						_this.subscribedCharts[idx].shouldRun()) {
+						_this.subscribedCharts[idx].render(rspn);
+					}
+				}
+		});
+	};
+};
+
 // **** Chart prototype ****
 function Chart(chartId) {
 	this.id = "chart-proto"; //Chart ID
@@ -779,7 +821,7 @@ function Chart(chartId) {
 	this.fromCookie = function(cook) { };
 	this.toCookie = function(row, col, wdth, hght) { };
 	*/
-}
+};
 
 var timeFormatSrver = d3.time.format("%Y-%m-%d %H:%M:%S");
 var timeFormatClk12 = d3.time.format("%I:%M");
