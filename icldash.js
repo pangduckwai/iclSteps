@@ -316,6 +316,19 @@ addEventListener('click', function(event) {
 			case "channel-okay":
 				var cid, nmn, itv, url;
 				for (idx = 0; idx < channels.length; idx ++) {
+					cid = d3.select(".channel-id-" + (idx+1)).node().value;
+					nmn = d3.select(".channel-name-" + (idx+1)).node().value;
+					itv = parseInt(d3.select(".channel-intv-" + (idx+1)).node().value);
+					url = d3.select(".channel-url-" + (idx+1)).node().value;
+					if ((nmn.trim().length <= 0) || (url.trim().length <= 0) || isNaN(itv)) continue;
+					updateChannel(cid, nmn, url, itv);
+				}
+				cid = 'chnl' + ('00' + (idx+1)).slice(-3);
+				nmn = d3.select(".channel-name-0").node().value;
+				itv = parseInt(d3.select(".channel-intv-0").node().value);
+				url = d3.select(".channel-url-0").node().value;
+				if ((nmn.trim().length > 0) || (url.trim().length > 0) || !isNaN(itv)) {
+					addChannel(cid, nmn, url, itv);
 				}
 				// Don't need to break here...
 			case "channel-cancel":
@@ -875,7 +888,15 @@ function addChannel(id, name, url, interval) {
 	channels[len] = new Channel(id, name, url, (interval) ? interval : 2000);
 	addCookieChannel(id, name, url, (interval) ? interval : 2000);
 };
-
+function updateChannel(id, name, url, interval) {
+	var idx = getChannels(id);
+	if (idx >= 0) {
+		channels[idx].name = name;
+		channels[idx].url = url;
+		channels[idx].runInterval = interval;
+		updateCookieChannel(id);
+	}
+}
 function removeChannel(id) {
 	var idx = getChannels(id);
 	if (idx >= 0) {
