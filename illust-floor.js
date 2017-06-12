@@ -24,7 +24,7 @@ FloorIllustrator = function(chartId) {
 
 	this.init = function() {
 		gridSizeX = (this.chartWdth - 20) / 10;
-		gridSizeY = (this.chartHght - 20) / 7;
+		gridSizeY = (this.chartHght - 20) / 8;
 		gridHalfX = gridSizeX / 4;
 		gridHalfY = gridSizeY / 4;
 
@@ -34,8 +34,8 @@ FloorIllustrator = function(chartId) {
 				, [gridSizeX * 6, 0].join(",")
 				, [gridSizeX * 6, gridSizeY * 2].join(",")
 				, [gridSizeX * 10, gridSizeY * 2].join(",")
-				, [gridSizeX * 10, gridSizeY * 7].join(",")
-				, [0, gridSizeY * 7].join(",")].join(" ");
+				, [gridSizeX * 10, gridSizeY * 8].join(",")
+				, [0, gridSizeY * 8].join(",")].join(" ");
 		shape0 = [[0, 0].join(",")
 				, [gridHalfX, 0].join(",")
 				, [gridHalfX, gridHalfY * 2].join(",")

@@ -223,7 +223,7 @@ function init() {
 
 	setTimeout(function() {
 			start();
-			showChannels(true);
+			showChannels();
 	}, 100 * startDelay);
 }
 
@@ -254,6 +254,8 @@ addEventListener('click', function(event) {
 				break;
 
 			case "doc-channel":
+				d3.select("#channel-dialog").style("display", "block");
+				d3.select("#disable-bg").style("display", "block");
 				break;
 
 			case "doc-charts":
@@ -301,18 +303,23 @@ addEventListener('click', function(event) {
 		case "INPUT":
 			switch (event.target.name) {
 			case "channel-clear":
-				if (confirm("Remove all charts?")) {
+				if (confirm("Remove all channels?")) {
 					while (channels.length > 0) {
 						removeChannel(channels[0].id);
 					}
+					showChannels();
 				}
 				d3.select("#channel-dialog").style("display", "none");
 				d3.select("#disable-bg").style("display", "none");
 				break;
 
 			case "channel-okay":
+				var cid, nmn, itv, url;
+				for (idx = 0; idx < channels.length; idx ++) {
+				}
 				// Don't need to break here...
 			case "channel-cancel":
+				showChannels();
 				d3.select("#channel-dialog").style("display", "none");
 				d3.select("#disable-bg").style("display", "none");
 				break;
@@ -713,13 +720,34 @@ function buildFramework() {
 	body.append("div").attr("id", "disable-bg"); // Transparent dark background when dialog boxes displayed
 
 	// Channel dialog
-	showChannels(false);
+	var tabl = body.append("div").attr("id", "channel-dialog")
+		.append("form").attr("id", "channel-form").attr("name", "channel-form")
+		.append("table").attr("id", "channel-tbl").attr("class", "dialog");
+	tabl.append("th").html("");
+	tabl.append("th").html("Channel");
+	tabl.append("th").html("ID");
+	tabl.append("th").html("Run Interval");
+	tabl.append("th").html("URL");
+	var trow = tabl.append("tr").attr("id", "channel-insertHere");
+	trow.append("td").attr("valign", "top").append("input").attr("type", "checkbox").attr("class", "channel-slct-0").attr("name", "channel-slct-0");
+	trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-name-0").attr("name", "channel-name-0");
+	trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-id-0 ronly").attr("name", "channel-id-0")
+		.attr("readonly", "");
+	trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-intv-0").attr("name", "channel-intv-0");
+	trow.append("td").append("textarea").attr("class", "channel-url-0").style("width", "300px");
+	trow = tabl.append("tr");
+	trow.append("td")
+	var tcll = trow.append("td").attr("colspan", "2");
+	tcll.append("input").attr("type", "button").attr("name", "channel-clear").attr("value", "Remove all channels");
+	tcll = trow.append("td").attr("colspan", "2").style("text-align", "right").style("padding-right", "20px");
+	tcll.append("input").attr("type", "button").attr("name", "channel-okay").attr("value", "Okay");
+	tcll.append("input").attr("type", "button").attr("name", "channel-cancel").attr("value", "Cancel");
 
 	// Charts dialog
-	var tabl = body.append("div").attr("id", "charts-dialog")
+	tabl = body.append("div").attr("id", "charts-dialog")
 		.append("form").attr("id", "charts-form").attr("name", "charts-form")
 		.append("table").attr("class", "dialog");
-	var trow = tabl.append("tr");
+	trow = tabl.append("tr");
 	trow.append("td").style("text-align", "right").html("Charts:");
 	trow.append("td")
 		.append("select").attr("id", "charts-list").attr("name", "charts-list")
@@ -745,7 +773,7 @@ function buildFramework() {
 	tabl.append("tbody").attr("id", "setting-init");
 	tabl.append("tbody").attr("class", "hrule").style("display", "none")
 		.append("tr").append("td").attr("colspan", "2").style("text-align", "center").append("hr");
-	var tcll = tabl.append("tr").append("td").attr("colspan", "2").style("text-align", "right");
+	tcll = tabl.append("tr").append("td").attr("colspan", "2").style("text-align", "right");
 	tcll.append("input").attr("type", "button").attr("name", "charts-clear").attr("value", "Remove all charts");
 	tcll.append("span").html("&nbsp;&nbsp;");
 	tcll.append("input").attr("type", "button").attr("name", "charts-okay").attr("value", "Okay");
@@ -846,7 +874,7 @@ function addChannel(id, name, url, interval) {
 
 	channels[len] = new Channel(id, name, url, (interval) ? interval : 2000);
 	addCookieChannel(id, name, url, (interval) ? interval : 2000);
-}
+};
 
 function removeChannel(id) {
 	var idx = getChannels(id);
@@ -854,56 +882,35 @@ function removeChannel(id) {
 		removeCookieChannel(channels[idx].id);
 		channels.splice(idx, 1);
 	}
-}
+};
 
-function showChannels(isInit) {
+function showChannels() {
+	var insrt = d3.select("#channel-tbl");
+
+	insrt.selectAll(".channels").remove();
+	insrt.select(".channel-slct-0").node().checked = false;
+	insrt.select(".channel-name-0").node().value = "";
+	insrt.select(".channel-id-0").node().value = "";
+	insrt.select(".channel-intv-0").node().value = "";
+	insrt.select(".channel-url-0").node().value = ""
+
 	var trow;
-	if (flag) {
-		var insrt = d3.select("#channel-tbl");
-		if (insrt.empty()) {
-			console.log("EMPTY!");
-		} else {
-			console.log("Channel: " + channels.length);
-		}
-		for (var i = 0; i < channels.length; i ++) {
-			trow = insrt.insert("tr", "#channel-fristrow");
-			trow.append("td").attr("valign", "top").append("input").attr("type", "checkbox")
-				.attr("class", "channel-slct-" + (i+1)).attr("name", "channel-slct-" + (i+1));
-			trow.append("td").attr("valign", "top")
-				.append("input").attr("type", "text").attr("class", "channel-name-" + (i+1)).attr("name", "channel-name-" + (i+1))
-				.node().value = channels[i].name;
-			trow.append("td").attr("valign", "top")
-				.append("input").attr("type", "text").attr("class", "channel-id-" + (i+1)).attr("name", "channel-id-" + (i+1))
-				.node().value = channels[i].id;
-			trow.append("td").attr("valign", "top")
-				.append("input").attr("type", "text").attr("class", "channel-intv-" + (i+1)).attr("name", "channel-intv-" + (i+1))
-				.node().value = channels[i].runInterval;
-			trow.append("td")
-				.append("textarea").attr("class", "channel-url-" + (i+1)).style("width", "300px")
-				.node().value = channels[i].url;
-		}
-	} else {
-		var tabl = body.append("div").attr("id", "channel-dialog")
-			.append("form").attr("id", "channel-form").attr("name", "channel-form")
-			.append("table").attr("id", "channel-tbl").attr("class", "dialog");
-		tabl.append("th").html("");
-		tabl.append("th").html("Channel");
-		tabl.append("th").html("ID");
-		tabl.append("th").html("Run Interval");
-		tabl.append("th").html("URL");
-		trow = tabl.append("tr").attr("id", "channel-fristrow");
-		trow.append("td").attr("valign", "top").append("input").attr("type", "checkbox").attr("class", "channel-slct-0").attr("name", "channel-slct-0");
-		trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-name-0").attr("name", "channel-name-0");
-		trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-id-0").attr("name", "channel-id-0");
-		trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-intv-0").attr("name", "channel-intv-0");
-		trow.append("td").append("textarea").attr("class", "channel-url-0").style("width", "300px");
-		trow = tabl.append("tr");
-		trow.append("td")
-		var tcll = trow.append("td").attr("colspan", "2");
-		tcll.append("input").attr("type", "button").attr("name", "channel-clear").attr("value", "Remove all channels");
-		tcll = trow.append("td").attr("colspan", "2").style("text-align", "right").style("padding-right", "20px");
-		tcll.append("input").attr("type", "button").attr("name", "channel-okay").attr("value", "Okay");
-		tcll.append("input").attr("type", "button").attr("name", "channel-cancel").attr("value", "Cancel");
+	for (var i = 0; i < channels.length; i ++) {
+		trow = insrt.insert("tr", "#channel-insertHere").attr("class", "channels");
+		trow.append("td").attr("valign", "top").append("input").attr("type", "checkbox")
+			.attr("class", "channel-slct-" + (i+1)).attr("name", "channel-slct-" + (i+1));
+		trow.append("td").attr("valign", "top")
+			.append("input").attr("type", "text").attr("class", "channel-name-" + (i+1)).attr("name", "channel-name-" + (i+1))
+			.node().value = channels[i].name;
+		trow.append("td").attr("valign", "top")
+			.append("input").attr("type", "text").attr("class", "ronly channel-id-" + (i+1)).attr("name", "channel-id-" + (i+1)).attr("readonly", "")
+			.node().value = channels[i].id;
+		trow.append("td").attr("valign", "top")
+			.append("input").attr("type", "text").attr("class", "channel-intv-" + (i+1)).attr("name", "channel-intv-" + (i+1))
+			.node().value = channels[i].runInterval;
+		trow.append("td").attr("valign", "top")
+			.append("textarea").attr("class", "channel-url-" + (i+1)).style("width", "300px")
+			.node().value = channels[i].url;
 	}
 }
 

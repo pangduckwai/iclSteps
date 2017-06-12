@@ -99,6 +99,21 @@ a:active, a:link, a:visited {
 .dialog td {
 	padding: 2px;
 }
+.dialog input[type=text] {
+	border-width: 1px;
+	border-style: solid;
+	border-color: white;
+	margin-top: 1px;
+}
+.dialog textarea {
+	border-width: 1px;
+	border-style: solid;
+	border-color: white;
+}}
+.ronly {
+	background-color: lightgrey;
+	border-color: lightgrey;
+}
 #disable-bg {
 	position: absolute;
 	top: 0;
@@ -109,9 +124,9 @@ a:active, a:link, a:visited {
 	display: none;
 }
 #channel-dialog {
-	float: none;
 	margin: 20% auto;
 	width: 900px;
+	display: none;
 }
 #charts-dialog {
 	margin: 20% auto;
