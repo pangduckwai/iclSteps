@@ -9,7 +9,7 @@ FloorIllustrator = function(chartId) {
 
 	const fplan = {
 		"alan":[3, 6, 1], "alex":[6, 6, 1], "andy":[2, 5, 3], "bill":[4, 3, 1], "carl":[3, 7, 1], "cole":[6, 7, 1],
-		"dave":[5, 5, 3], "dale":[9, 3, 1], "dick":[6, 2, 3], "eric":[5, 7, 2], "gary":[3, 5, 0], "gene":[5, 6, 2],
+		"dave":[5, 5, 3], "dale":[8, 3, 1], "dick":[6, 2, 3], "eric":[5, 7, 2], "gary":[3, 5, 0], "gene":[5, 6, 2],
 		"greg":[8, 6, 2], "jack":[3, 2, 3], "john":[4, 2, 0], "josh":[9, 6, 1], "kyle":[9, 7, 1], "mark":[1, 3, 1],
 		"mike":[2, 7, 2], "nick":[1, 2, 0], "paul":[8, 7, 2], "pete":[3, 3, 2], "phil":[2, 6, 2], "saul":[6, 5, 0],
 		"will":[9, 5, 0], "zach":[8, 5, 3]

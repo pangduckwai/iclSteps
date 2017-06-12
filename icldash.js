@@ -1,10 +1,14 @@
 // **** Constants ****
-const COK_PFX = "dashcook=";
+const COOK_PFX = "dashcook=";
 const KEY_CHART = "chartId";
 const KEY_ROW = "row";
 const KEY_COL = "column";
 const KEY_WDTH = "width"
 const KEY_HGHT = "height";
+const KEY_CHNLID = "channelId";
+const KEY_CHNLNAME = "name";
+const KEY_CHNLINTV = "interval";
+const KEY_CHNLURL = "url";
 
 const DRAG_CHART_ENABLED = false;
 
@@ -21,6 +25,8 @@ const IMG_PAUSE = "icon_pause" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
 const IMG_PAUSE_S = "icon_pause1" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
 const IMG_CONFIG = "icon_more" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
 const IMG_SETTING = "icon_more1" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
+const IMG_CHANNEL = "icon_channel" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
+const IMG_CHARTS = "icon_chart" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
 const IMG_NETWORK = "icon_net1" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
 const IMG_REFRESH = "icon_refresh" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
 const IMG_TOEND = "icon_end1" + (THEME_IS_DARK ? 'w' : 'b') + ".png";
@@ -108,6 +114,16 @@ function getCfgdCharts(elmId) {
 	return -1;
 }
 
+var channels = [];
+function getChannels(id) {
+	for (var i = 0; i < channels.length; i ++) {
+		if (id == channels[i].id) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 var cfgdCookie = [];
 
 var intervalId = null;
@@ -136,8 +152,8 @@ function init() {
 		}
 	}
 
-	// Add available charts to the config drop-down list
-	l1st = d3.select("#config-charts");
+	// Add available charts to the charts drop-down list
+	l1st = d3.select("#charts-list");
 	for (var key in avlbCharts) {
 		if (avlbCharts[key].id && avlbCharts[key].name) {
 			l1st.append("option").attr("value", avlbCharts[key].id).html(avlbCharts[key].name);
@@ -145,16 +161,16 @@ function init() {
 	}
 
 	// Add options of no. of rows to drop down boxes.
-	l1st = d3.select("#config-row");
-	var l2st = d3.select("#config-height");
+	l1st = d3.select("#charts-row");
+	var l2st = d3.select("#charts-height");
 	for (var i = 1; i <= MAX_ROW; i ++) {
 		l1st.append("option").attr("value", i).html(i);
 		l2st.append("option").attr("value", i).html(i);
 	}
 
 	// Add options of no. of column to drop down boxes.
-	l1st = d3.select("#config-col");
-	l2st = d3.select("#config-width");
+	l1st = d3.select("#charts-col");
+	l2st = d3.select("#charts-width");
 	for (var i = 1; i <= MAX_COL; i ++) {
 		l1st.append("option").attr("value", i).html(i);
 		l2st.append("option").attr("value", i).html(i);
@@ -162,34 +178,44 @@ function init() {
 
 	// Start configured charts
 	var cooks = document.cookie.split(";");
-	var chrts = "";
+	var confg = "";
 	for (var idx = 0; idx < cooks.length; idx ++) {
 		var cok = cooks[idx].trim();
-		var pos = cok.indexOf(COK_PFX);
+		var pos = cok.indexOf(COOK_PFX);
 		if (pos >= 0) {
-			chrts = cok.substring(pos + COK_PFX.length, cok.length);
+			confg = cok.substring(pos + COOK_PFX.length, cok.length);
 			break;
 		}
 	}
 
-	// Default charts
-	if ((chrts.trim() == "") || (chrts.trim() == "[]")) {
-		console.log("Displaying default charts...");
-		//chrts = '[{"chartId":"sample-topten","row":1,"column":1,"width":4,"height":4,"topCnt":10,"sortBy":"out","sameSc":"yes"},{"chartId":"datetime-widget","row":1,"column":7,"width":1,"height":1,"source":"Server","format":"24","url":"https://dev.echeque.hkicl.com.hk/dashboard/datetime.json"},{"chartId":"sample-pie","row":1,"column":5,"width":2,"height":2,"topCnt":5},{"chartId":"sample-gauge","row":2,"column":7,"width":1,"height":1,"min":0,"max":50,"alert1":35,"alert2":45},{"chartId":"sample-candle","row":3,"column":5,"width":3,"height":3,"selected":"004"}]';
-		chrts = '[{"chartId":"illust-block","row":1,"column":1,"width":5,"height":2,"selected":"-1"},' +
-				' {"chartId":"illust-peers","row":1,"column":7,"width":2,"height":2},' +
-				' {"chartId":"illust-brate","row":2,"column":6,"width":1,"height":1,"min":0,"max":10,"alert1":7,"alert2":9},' +
-				' {"chartId":"illust-floor","row":3,"column":5,"width":4,"height":3},' +
-				' {"chartId":"datetime-widget","row":1,"column":6,"width":1,"height":1,"source":"Server","format":"24","url":"http://localhost:8080/time"}]';
+	// Default channels and charts
+	if ((confg.trim() == "") || (confg.trim() == "[]")) {
+		if (dfltCfgCook && (dfltCfgCook.trim().length > 0)) {
+			console.log("Displaying default charts...");
+			confg = dfltCfgCook;
+		} else {
+			confg = "";
+		}
 	}
 
+	// Build channels and charts from cookie
 	var startDelay = 1;
-	if (chrts.trim() != "") {
-		var last = JSON.parse(chrts);
+	if (confg.trim() != "") {
+		var last = JSON.parse(confg);
 		for (var idx = 0; idx < last.length; idx ++) {
-			setTimeout(function(obj) {
-					showChart(obj.chartId, obj.row, obj.column, obj.width, obj.height, obj);
-			}, 100 * (idx + 1), last[idx]);
+			if (last[idx].channelId) {
+				setTimeout(function(obj) {
+						if (obj.interval) {
+							addChannel(obj.channelId, obj.name, obj.url, obj.interval);
+						} else {
+							addChannel(obj.channelId, obj.name, obj.url);
+						}
+				}, 100 * (idx + 1), last[idx]);
+			} else if (last[idx].chartId) {
+				setTimeout(function(obj) {
+						showChart(obj.chartId, obj.row, obj.column, obj.width, obj.height, obj);
+				}, 100 * (idx + 1), last[idx]);
+			}
 		}
 		startDelay = last.length;
 		if (startDelay < 1) startDelay = 1;
@@ -197,6 +223,7 @@ function init() {
 
 	setTimeout(function() {
 			start();
+			showChannels(true);
 	}, 100 * startDelay);
 }
 
@@ -226,14 +253,17 @@ addEventListener('click', function(event) {
 				location.reload(true);
 				break;
 
-			case "doc-config":
-				d3.select("#config-dialog").style("display", "block");
+			case "doc-channel":
+				break;
+
+			case "doc-charts":
+				d3.select("#charts-dialog").style("display", "block");
 				d3.select("#disable-bg").style("display", "block");
-				d3.select("#config-form").node().reset();
-				d3.select("#config-row").node().value = 1;
-				d3.select("#config-row").attr("disabled", null);
-				d3.select("#config-col").node().value = 1;
-				d3.select("#config-col").attr("disabled", null);
+				d3.select("#charts-form").node().reset();
+				d3.select("#charts-row").node().value = 1;
+				d3.select("#charts-row").attr("disabled", null);
+				d3.select("#charts-col").node().value = 1;
+				d3.select("#charts-col").attr("disabled", null);
 				break;
 
 			case "doc-control":
@@ -270,24 +300,41 @@ addEventListener('click', function(event) {
 
 		case "INPUT":
 			switch (event.target.name) {
-			case "config-clear":
+			case "channel-clear":
+				if (confirm("Remove all charts?")) {
+					while (channels.length > 0) {
+						removeChannel(channels[0].id);
+					}
+				}
+				d3.select("#channel-dialog").style("display", "none");
+				d3.select("#disable-bg").style("display", "none");
+				break;
+
+			case "channel-okay":
+				// Don't need to break here...
+			case "channel-cancel":
+				d3.select("#channel-dialog").style("display", "none");
+				d3.select("#disable-bg").style("display", "none");
+				break;
+
+			case "charts-clear":
 				if (confirm("Remove all charts?")) {
 					while (cfgdCharts.length > 0) {
 						removeChart(cfgdCharts[0].domId);
 					}
 				}
-				d3.select("#config-dialog").style("display", "none");
+				d3.select("#charts-dialog").style("display", "none");
 				d3.select("#disable-bg").style("display", "none");
 				d3.select("#setting-init").html("");
 				d3.selectAll(".hrule").style("display", "none");
 				break;
 
-			case "config-okay":
-				var row = parseInt(d3.select("#config-row").node().value);
-				var col = parseInt(d3.select("#config-col").node().value);
-				var wdt = parseInt(d3.select("#config-width").node().value);
-				var hgt = parseInt(d3.select("#config-height").node().value);
-				var eid = d3.select("#config-charts").node().value; // This is the chart's id, not the DOM id.
+			case "charts-okay":
+				var row = parseInt(d3.select("#charts-row").node().value);
+				var col = parseInt(d3.select("#charts-col").node().value);
+				var wdt = parseInt(d3.select("#charts-width").node().value);
+				var hgt = parseInt(d3.select("#charts-height").node().value);
+				var eid = d3.select("#charts-list").node().value; // This is the chart's id, not the DOM id.
 
 				if (eid != "-") {
 					if (typeof avlbCharts[eid].configed === "function") {
@@ -300,8 +347,8 @@ addEventListener('click', function(event) {
 					}
 				}
 				// Don't need to break here...
-			case "config-cancel":
-				d3.select("#config-dialog").style("display", "none");
+			case "charts-cancel":
+				d3.select("#charts-dialog").style("display", "none");
 				d3.select("#disable-bg").style("display", "none");
 				d3.select("#setting-init").html("");
 				d3.selectAll(".hrule").style("display", "none");
@@ -320,7 +367,7 @@ addEventListener('click', function(event) {
 				if (idx >= 0) {
 					if (typeof cfgdCharts[idx].configed === "function") {
 						cfgdCharts[idx].configed(rid, function() {
-								updateCookie(rid);
+								updateCookieCharts(rid);
 								if (typeof cfgdCharts[idx].render === "function") {
 									cfgdCharts[idx].render();
 								}
@@ -343,26 +390,26 @@ addEventListener('dblclick', function(event) {
 		// No chart setup at this position yet, show add charts dialog
 		var grid = getGrid(event.target);
 		if (grid) {
-			d3.select("#config-dialog").style("display", "block");
+			d3.select("#charts-dialog").style("display", "block");
 			d3.select("#disable-bg").style("display", "block");
-			d3.select("#config-form").node().reset();
-			d3.select("#config-row").node().value = grid.row;
-			d3.select("#config-row").attr("disabled", "");
-			d3.select("#config-col").node().value = grid.column;
-			d3.select("#config-col").attr("disabled", "");
+			d3.select("#charts-form").node().reset();
+			d3.select("#charts-row").node().value = grid.row;
+			d3.select("#charts-row").attr("disabled", "");
+			d3.select("#charts-col").node().value = grid.column;
+			d3.select("#charts-col").attr("disabled", "");
 		}
 });
 
 addEventListener('change', function(event) {
 		if (event.target.id) {
 			switch (event.target.id) {
-			case "config-charts":
+			case "charts-list":
 				event.preventDefault();
 				if (avlbCharts[event.target.value].minGridWdth) {
-					d3.select("#config-width").node().value = avlbCharts[event.target.value].minGridWdth;
+					d3.select("#charts-width").node().value = avlbCharts[event.target.value].minGridWdth;
 				}
 				if (avlbCharts[event.target.value].minGridHght) {
-					d3.select("#config-height").node().value = avlbCharts[event.target.value].minGridHght;
+					d3.select("#charts-height").node().value = avlbCharts[event.target.value].minGridHght;
 				}
 				if (typeof avlbCharts[event.target.value].config === "function") {
 					avlbCharts[event.target.value].config(d3.select("#setting-init"));
@@ -421,7 +468,7 @@ function showChart(elmId, row, col, wdth, hght, cook) {
 						}
 
 						cfgdCharts[cfgdCharts.length] = objt;
-						addCookie(domId, elmId, row, col, wdth, hght);
+						addCookieCharts(domId, elmId, row, col, wdth, hght);
 				});
 			} else {
 				setPositions(row, col, wdth, hght, 1, true);
@@ -435,7 +482,7 @@ function showChart(elmId, row, col, wdth, hght, cook) {
 				}
 
 				cfgdCharts[cfgdCharts.length] = objt;
-				addCookie(domId, elmId, row, col, wdth, hght);
+				addCookieCharts(domId, elmId, row, col, wdth, hght);
 			}
 			break;
 		}
@@ -451,7 +498,7 @@ function removeChart(rid) {
 		if (grid) {
 			var idx = getCfgdCharts(rid);
 			if (idx >= 0) {
-				removeCookie(cfgdCharts[idx].id, grid.row, grid.column);
+				removeCookieCharts(cfgdCharts[idx].id, grid.row, grid.column);
 				cfgdCharts.splice(idx, 1);
 			}
 			chart.remove();
@@ -460,7 +507,7 @@ function removeChart(rid) {
 	}
 }
 
-function addCookie(domId, elmId, row, col, wdth, hght) {
+function addCookieCharts(domId, elmId, row, col, wdth, hght) {
 	var cook = {};
 	var idx = getCfgdCharts(domId);
 	if ((idx >= 0) && (typeof cfgdCharts[idx].toCookie === "function")) {
@@ -476,12 +523,12 @@ function addCookie(domId, elmId, row, col, wdth, hght) {
 
 	var expr = new Date();
 	expr.setYear(expr.getFullYear() + 1);
-	document.cookie = COK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
+	document.cookie = COOK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
 
 	return cook;
 }
 
-function updateCookie(domId) {
+function updateCookieCharts(domId) {
 	var cook = {};
 	var i = getCfgdCharts(domId);
 	if ((i >= 0) && (typeof cfgdCharts[i].toCookie === "function")) {
@@ -495,14 +542,14 @@ function updateCookie(domId) {
 
 				var expr = new Date();
 				expr.setYear(expr.getFullYear() + 1);
-				document.cookie = COK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
+				document.cookie = COOK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
 				break;
 			}
 		}
 	}
 }
 
-function removeCookie(elmId, row, col) {
+function removeCookieCharts(elmId, row, col) {
 	var cook = {};
 	for (var idx = 0; idx < cfgdCookie.length; idx ++) {
 		if ((cfgdCookie[idx].chartId == elmId) && (cfgdCookie[idx].row == row) && (cfgdCookie[idx].column == col)) {
@@ -514,7 +561,7 @@ function removeCookie(elmId, row, col) {
 
 	var expr = new Date();
 	expr.setYear(expr.getFullYear() + 1);
-	document.cookie = COK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
+	document.cookie = COOK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
 
 	return cook;
 }
@@ -569,7 +616,7 @@ function drop(event) {
 	var obj = JSON.parse(event.dataTransfer.getData("text"));
 	var grd = getGrid(event.target);
 	if (hasEnoughRoom(grd[KEY_ROW], grd[KEY_COL], obj[KEY_WDTH], obj[KEY_HGHT]) == 0) {
-		var cook = removeCookie(obj.id, obj.row, obj.column);
+		var cook = removeCookieCharts(obj.id, obj.row, obj.column);
 		cook.row = grd.row;
 		cook.column = grd.column;
 		removeChart(obj.domId);
@@ -659,45 +706,50 @@ function buildFramework() {
 	ctrl.append("span").html("&nbsp;");
 	ctrl.append("a").attr("href", "javascript:;").append("img").attr("id", "doc-control").attr("src", IMG_PAUSE);
 	ctrl.append("span").html("&nbsp;");
-	ctrl.append("a").attr("href", "javascript:;").append("img").attr("id", "doc-config").attr("src", IMG_CONFIG);
+	ctrl.append("a").attr("href", "javascript:;").append("img").attr("id", "doc-channel").attr("src", IMG_CHANNEL);
+	ctrl.append("span").html("&nbsp;");
+	ctrl.append("a").attr("href", "javascript:;").append("img").attr("id", "doc-charts").attr("src", IMG_CHARTS);
 
 	body.append("div").attr("id", "disable-bg"); // Transparent dark background when dialog boxes displayed
 
-	// Control dialog
-	var tabl = body.append("div").attr("id", "config-dialog")
-		.append("form").attr("id", "config-form").attr("name", "config-form")
+	// Channel dialog
+	showChannels(false);
+
+	// Charts dialog
+	var tabl = body.append("div").attr("id", "charts-dialog")
+		.append("form").attr("id", "charts-form").attr("name", "charts-form")
 		.append("table").attr("class", "dialog");
 	var trow = tabl.append("tr");
 	trow.append("td").style("text-align", "right").html("Charts:");
 	trow.append("td")
-		.append("select").attr("id", "config-charts").attr("name", "config-charts")
+		.append("select").attr("id", "charts-list").attr("name", "charts-list")
 		.append("option").attr("value", "-").html("-- Select --");
 	trow = tabl.append("tr");
 	trow.append("td").style("text-align", "right").html("Row:");
 	trow.append("td").style("padding-left", "15px")
-		.append("select").attr("id", "config-row").attr("name", "config-row");
+		.append("select").attr("id", "charts-row").attr("name", "charts-row");
 	trow = tabl.append("tr");
 	trow.append("td").style("text-align", "right").html("Column:");
 	trow.append("td").style("padding-left", "15px")
-		.append("select").attr("id", "config-col").attr("name", "config-col");
+		.append("select").attr("id", "charts-col").attr("name", "charts-col");
 	trow = tabl.append("tr");
 	trow.append("td").style("text-align", "right").html("Width:");
 	trow.append("td").style("padding-left", "15px")
-		.append("select").attr("id", "config-width").attr("name", "config-width");
+		.append("select").attr("id", "charts-width").attr("name", "charts-width");
 	trow = tabl.append("tr");
 	trow.append("td").style("text-align", "right").html("Height:");
 	trow.append("td").style("padding-left", "15px")
-		.append("select").attr("id", "config-height").attr("name", "config-height");
+		.append("select").attr("id", "charts-height").attr("name", "charts-height");
 	tabl.append("tbody").attr("class", "hrule").style("display", "none")
 		.append("tr").append("td").attr("colspan", "2").style("text-align", "center").append("hr");
 	tabl.append("tbody").attr("id", "setting-init");
 	tabl.append("tbody").attr("class", "hrule").style("display", "none")
 		.append("tr").append("td").attr("colspan", "2").style("text-align", "center").append("hr");
 	var tcll = tabl.append("tr").append("td").attr("colspan", "2").style("text-align", "right");
-	tcll.append("input").attr("type", "button").attr("name", "config-clear").attr("value", "Remove all");
+	tcll.append("input").attr("type", "button").attr("name", "charts-clear").attr("value", "Remove all charts");
 	tcll.append("span").html("&nbsp;&nbsp;");
-	tcll.append("input").attr("type", "button").attr("name", "config-okay").attr("value", "Okay");
-	tcll.append("input").attr("type", "button").attr("name", "config-cancel").attr("value", "Cancel");
+	tcll.append("input").attr("type", "button").attr("name", "charts-okay").attr("value", "Okay");
+	tcll.append("input").attr("type", "button").attr("name", "charts-cancel").attr("value", "Cancel");
 
 	// Setting dialog
 	tabl = body.append("div").attr("id", "setting-dialog")
@@ -713,48 +765,6 @@ function buildFramework() {
 	tcll.append("input").attr("type", "button").attr("name", "setting-cancel").attr("value", "Cancel");
 	tcll.append("input").attr("type", "hidden").attr("id", "setting-charts").attr("name", "setting-charts");
 }
-
-// **** Channel prototype ****
-function Channel(id, name, url, interval) {
-	this.id = id;
-	this.name = name;
-
-	this.url = url;
-	this.runInterval = interval;
-
-	this.subscribedCharts = [];
-
-	var elapse = this.runInterval;
-	this.shouldRun = function() {
-		elapse -= RUN_INTERVAL;
-		if (elapse <= 0) {
-			elapse = this.runInterval;
-			return true;
-		} else {
-			return false;
-		}
-	};
-
-	var _this = this;
-	this.run = function() {
-		if (!this.shouldRun()) {
-			return;
-		}
-
-		accessData(this.url, function(rspn) {
-				if (!rspn) {
-					return;
-				}
-
-				for (var idx = 0; idx < _this.subscribedCharts.length; idx ++) {
-					if (_this.subscribedCharts[idx] && (typeof _this.subscribedCharts[idx].render === "function") && 
-						_this.subscribedCharts[idx].shouldRun()) {
-						_this.subscribedCharts[idx].render(rspn);
-					}
-				}
-		});
-	};
-};
 
 // **** Chart prototype ****
 function Chart(chartId) {
@@ -823,6 +833,179 @@ function Chart(chartId) {
 	*/
 };
 
+// *****************
+// **** Channel ****
+function addChannel(id, name, url, interval) {
+	var len = channels.length;
+	for (var i = 0; i < len; i ++) {
+		if ((id == channels[i].id) || (name == channels[i].name) || (url == channels[i].url)) {
+			console.log("Channel", id, name, url, "already exists");
+			return;
+		}
+	}
+
+	channels[len] = new Channel(id, name, url, (interval) ? interval : 2000);
+	addCookieChannel(id, name, url, (interval) ? interval : 2000);
+}
+
+function removeChannel(id) {
+	var idx = getChannels(id);
+	if (idx >= 0) {
+		removeCookieChannel(channels[idx].id);
+		channels.splice(idx, 1);
+	}
+}
+
+function showChannels(isInit) {
+	var trow;
+	if (flag) {
+		var insrt = d3.select("#channel-tbl");
+		if (insrt.empty()) {
+			console.log("EMPTY!");
+		} else {
+			console.log("Channel: " + channels.length);
+		}
+		for (var i = 0; i < channels.length; i ++) {
+			trow = insrt.insert("tr", "#channel-fristrow");
+			trow.append("td").attr("valign", "top").append("input").attr("type", "checkbox")
+				.attr("class", "channel-slct-" + (i+1)).attr("name", "channel-slct-" + (i+1));
+			trow.append("td").attr("valign", "top")
+				.append("input").attr("type", "text").attr("class", "channel-name-" + (i+1)).attr("name", "channel-name-" + (i+1))
+				.node().value = channels[i].name;
+			trow.append("td").attr("valign", "top")
+				.append("input").attr("type", "text").attr("class", "channel-id-" + (i+1)).attr("name", "channel-id-" + (i+1))
+				.node().value = channels[i].id;
+			trow.append("td").attr("valign", "top")
+				.append("input").attr("type", "text").attr("class", "channel-intv-" + (i+1)).attr("name", "channel-intv-" + (i+1))
+				.node().value = channels[i].runInterval;
+			trow.append("td")
+				.append("textarea").attr("class", "channel-url-" + (i+1)).style("width", "300px")
+				.node().value = channels[i].url;
+		}
+	} else {
+		var tabl = body.append("div").attr("id", "channel-dialog")
+			.append("form").attr("id", "channel-form").attr("name", "channel-form")
+			.append("table").attr("id", "channel-tbl").attr("class", "dialog");
+		tabl.append("th").html("");
+		tabl.append("th").html("Channel");
+		tabl.append("th").html("ID");
+		tabl.append("th").html("Run Interval");
+		tabl.append("th").html("URL");
+		trow = tabl.append("tr").attr("id", "channel-fristrow");
+		trow.append("td").attr("valign", "top").append("input").attr("type", "checkbox").attr("class", "channel-slct-0").attr("name", "channel-slct-0");
+		trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-name-0").attr("name", "channel-name-0");
+		trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-id-0").attr("name", "channel-id-0");
+		trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-intv-0").attr("name", "channel-intv-0");
+		trow.append("td").append("textarea").attr("class", "channel-url-0").style("width", "300px");
+		trow = tabl.append("tr");
+		trow.append("td")
+		var tcll = trow.append("td").attr("colspan", "2");
+		tcll.append("input").attr("type", "button").attr("name", "channel-clear").attr("value", "Remove all channels");
+		tcll = trow.append("td").attr("colspan", "2").style("text-align", "right").style("padding-right", "20px");
+		tcll.append("input").attr("type", "button").attr("name", "channel-okay").attr("value", "Okay");
+		tcll.append("input").attr("type", "button").attr("name", "channel-cancel").attr("value", "Cancel");
+	}
+}
+
+function Channel(id, name, url, interval) {
+	this.id = id;
+	this.name = name;
+
+	this.url = url;
+	this.runInterval = interval;
+
+	this.subscribedCharts = [];
+
+	var elapse = this.runInterval;
+	this.shouldRun = function() {
+		elapse -= RUN_INTERVAL;
+		if (elapse <= 0) {
+			elapse = this.runInterval;
+			return true;
+		} else {
+			return false;
+		}
+	};
+
+	var _this = this;
+	this.run = function() {
+		if (!this.shouldRun()) {
+			return;
+		}
+
+		accessData(this.url, function(rspn) {
+				if (!rspn) {
+					return;
+				}
+
+				for (var idx = 0; idx < _this.subscribedCharts.length; idx ++) {
+					if (_this.subscribedCharts[idx] && (typeof _this.subscribedCharts[idx].render === "function") && 
+						_this.subscribedCharts[idx].shouldRun()) {
+						_this.subscribedCharts[idx].render(rspn);
+					}
+				}
+		});
+	};
+};
+
+function addCookieChannel(id, name, url, interval) {
+	var cook = {};
+
+	cook[KEY_CHNLID] = id;
+	cook[KEY_CHNLNAME] = name;
+	cook[KEY_CHNLINTV] = interval;
+	cook[KEY_CHNLURL] = url;
+
+	cfgdCookie[cfgdCookie.length] = cook;
+
+	var expr = new Date();
+	expr.setYear(expr.getFullYear() + 1);
+	document.cookie = COOK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
+
+	return cook;
+}
+
+function updateCookieChannel(id) {
+	var cook = {};
+	var idx = getChannels(id);
+
+	if (idx >= 0) {
+		cook[KEY_CHNLID] = channels[idx].id;
+		cook[KEY_CHNLNAME] = channels[idx].name;
+		cook[KEY_CHNLINTV] = channels[idx].runInterval;
+		cook[KEY_CHNLURL] = channels[idx].url;
+		for (var j = 0; j < cfgdCookie.length; j ++) {
+			if (cfgdCookie[j].channelId == id) {
+				cfgdCookie[j] = cook;
+
+				var expr = new Date();
+				expr.setYear(expr.getFullYear() + 1);
+				document.cookie = COOK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
+				break;
+			}
+		}
+	}
+}
+
+function removeCookieChannel(id) {
+	var cook = {};
+	for (var idx = 0; idx < cfgdCookie.length; idx ++) {
+		if ((cfgdCookie[idx].channelId == id)) {
+			cook = cfgdCookie[idx];
+			cfgdCookie.splice(idx, 1);
+			break;
+		}
+	}
+
+	var expr = new Date();
+	expr.setYear(expr.getFullYear() + 1);
+	document.cookie = COOK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
+
+	return cook;
+}
+
+
+// **** Sample chart implementation - date time widget ****
 var timeFormatSrver = d3.time.format("%Y-%m-%d %H:%M:%S");
 var timeFormatClk12 = d3.time.format("%I:%M");
 var timeFormatClk13 = d3.time.format("%p");

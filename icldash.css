@@ -108,14 +108,19 @@ a:active, a:link, a:visited {
 	overflow: hidden;
 	display: none;
 }
-#config-dialog {
+#channel-dialog {
+	float: none;
 	margin: 20% auto;
-	width: 20%;
+	width: 900px;
+}
+#charts-dialog {
+	margin: 20% auto;
+	width: 270px;
 	display: none;
 }
 #setting-dialog {
 	margin: 20% auto;
-	width: 25%;
+	width: 335px;
 	display: none;
 }
 #setting-form .tbl-cll {

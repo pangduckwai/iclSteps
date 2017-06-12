@@ -90,7 +90,7 @@ var buildUi = function(html, msg, user, yr, mn, dt, step, node, state, succ, fai
 				.replace(/%%%anchorVerify%%%/g, mnuVrfy)
 				.replace(/%%%returnLink%%%/g, vsbLink)
 				.replace(/%%%formButton%%%/g, vsbBttn)
-				.replace(/%%%nodeServer%%%/g, "192.168.14.130") //"localhost"
+				.replace(/%%%nodeServer%%%/g, "localhost") //"192.168.14.130"
 				.replace(/%%%urlChain%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain')
 				.replace(/%%%urlBlock%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain/blocks/')
 				.replace(/%%%urlPeers%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/network/peers'));
@@ -319,7 +319,7 @@ http.createServer(function(req, res) {
 								if (body.result.status == 'OK') {
 									ccid = body.result.message;
 								}
-								buildUi('/dashb.html', bcNodes[node].name + " ready", userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1,
+								buildUi('/stepsdsh.html', bcNodes[node].name + " ready", userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1,
 									function(htmlBody) {
 										res.setHeader('Content-type', 'text/html');
 										res.end(htmlBody);
@@ -344,7 +344,7 @@ http.createServer(function(req, res) {
 				case '/':
 					// Main page listing data
 					if (ccid.length > 0) {
-						buildUi('/dashb.html', 'Hello', userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1,
+						buildUi('/stepsdsh.html', 'Hello', userName, now.getFullYear(), (now.getMonth() + 1), (now.getDate() - 1), 0, node, -1,
 							function(htmlBody) {
 								res.setHeader('Content-type', 'text/html');
 								res.end(htmlBody);
