@@ -231,9 +231,14 @@ function init() {
 function start() {
 	var obj = this;
 	intervalId = setInterval(function() {
-			for (var idx = 0; idx < cfgdCharts.length; idx ++) {
-				if (cfgdCharts[idx] && (typeof cfgdCharts[idx].render === "function") && cfgdCharts[idx].shouldRun()) {
-					cfgdCharts[idx].render();
+//			for (var idx = 0; idx < cfgdCharts.length; idx ++) {
+//				if (cfgdCharts[idx] && (typeof cfgdCharts[idx].render === "function") && cfgdCharts[idx].shouldRun()) {
+//					cfgdCharts[idx].render();
+//				}
+//			}
+			for (var idx = 0; idx < channels.length; idx ++) {
+				if (channels[idx] && typeof channels[idx].run === "function") && channels[idx].shouldRun()) {
+					channels[idx].run();
 				}
 			}
 	}, RUN_INTERVAL);
@@ -877,7 +882,18 @@ function buildFramework() {
 	tcll.append("input").attr("type", "hidden").attr("id", "setting-charts").attr("name", "setting-charts");
 }
 
-// **** Chart prototype ****
+// *************************
+// **  Chart prototype    **
+// Life cycle:
+//  onLoad() (html)
+//    init() (framework)
+//      addChannel() (framework)
+//      showChart() (framework)
+//        start() (charts)
+//          init() (charts)
+//      start() (framework)
+//        run() (channel)
+//          render() (charts)
 function Chart(chartId) {
 	this.id = "chart-proto"; //Chart ID
 	this.name = "Chart Prototype";
@@ -914,9 +930,9 @@ function Chart(chartId) {
 			this.init();
 		}
 
-		if (typeof this.render === "function") {
+		/*if (typeof this.render === "function") {
 			this.render();
-		}
+		}*/
 	};
 
 	var elapse = this.updateInterval;
@@ -1029,9 +1045,9 @@ function Channel(id, name, url, interval) {
 
 	var _this = this;
 	this.run = function() {
-		if (!this.shouldRun()) {
+		/*if (!this.shouldRun()) {
 			return;
-		}
+		}*/
 
 		accessData(this.url, function(rspn) {
 				if (!rspn) {
