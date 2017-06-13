@@ -2,7 +2,6 @@ RateIllustrator = function(chartId) {
 	this.id = "illust-brate"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Block rate illustrator";
-	this.url = "http://%%%nodeServer%%%:8080/ws/temp4";
 	this.minGridWdth = 1;
 	this.minGridHght = 1;
 	this.updateInterval = 2000;
@@ -16,7 +15,7 @@ RateIllustrator = function(chartId) {
 	var _this = this;
 	var scale;
 
-	this.init = function() {
+	this.start = function() {
 		scale = d3.scale.log().domain([1, 11]).range([0, 10]);
 
 		var config = {
@@ -34,14 +33,12 @@ RateIllustrator = function(chartId) {
 		this.gauge.render();
 	};
 
-	this.render = function() {
-		accessData(this.url, function(rspn) {
-			if (!rspn || (rspn.length <= 0)) {
-				return;
-			}
+	this.render = function(rspn) {
+		if (!rspn || !rspn.rate) {
+			return;
+		}
 
-			_this.gauge.redraw(scale(rspn.avg + 1), rspn.avg);
-		});
+		_this.gauge.redraw(scale(rspn.rate.avg + 1), rspn.rate.avg);
 	}
 
 	this.buildUi = function(func) {
@@ -110,7 +107,7 @@ RateIllustrator = function(chartId) {
 				elm.selectAll("text").remove();
 				elm.selectAll(".pointerContainer").remove();
 				if (domId != this.id) {
-					this.init();
+					this.start();
 				}
 
 				/*func();*/

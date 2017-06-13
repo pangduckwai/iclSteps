@@ -2,7 +2,6 @@ BlockIllustrator = function(chartId) {
 	this.id = "illust-block"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Blockchain illustrator";
-	this.url = "http://%%%nodeServer%%%:8080/ws/temp5"; //"%%%urlChain%%%";
 	this.minGridWdth = 5;
 	this.minGridHght = 2;
 	this.updateInterval = 2000;
@@ -36,7 +35,7 @@ BlockIllustrator = function(chartId) {
 	var shape3;
 
 	// *** Called by dashboard main thread once at the begining ***
-	this.init = function() {
+	this.start = function() {
 		blockWidth = this.chartWdth / this.maxBlockDisplay;
 		yPosn = this.chartHght / 3;
 		grph = d3.select("#"+this.domId).select(".chart-viz");
@@ -72,145 +71,143 @@ BlockIllustrator = function(chartId) {
 	};
 
 	// *** Called by dashboard main thread repeatedly ***
-	this.render = function() {
+	this.render = function(rspn) {
 		if (catchUp) {
 			//console.log("Catching up, normal run interrupted"); //TODO TEMP
 			return;
 		}
 
-		accessData(this.url, function(rspn) {
-				if (!rspn || (rspn.length <= 0)) {
-					return;
-				}
-				chainDepth = rspn.height;
+		if (!rspn || !rspn.blocks) {
+			return;
+		}
+		chainDepth = rspn.blocks.height;
 
-				// *** Draw the resume button ***
-				if (grph.select("#btn-end").empty()) {
-					grph.append("image").attr("id", "btn-end").attr("x", _this.chartWdth - 40).attr("y", 4).attr("width", 18).attr("height", 18).attr("xlink:href", IMG_PAUSE_S)
-						.on("click", function() {
-								if (!grph.select(".details").empty()) grph.selectAll(".details").remove();
-								if (_this.interactiveMode) {
-									_this.interactiveMode = false;
-									_this.selected = -1;
-									_this.runNow();
-									grph.selectAll(".block-slct").style("opacity", "0.0");
-									grph.select("#btn-end").attr("xlink:href", IMG_PAUSE_S);
-								} else {
-									_this.interactiveMode = true;
-									_this.selected = -1;
-									_this.runNow();
-									grph.selectAll(".block-slct").style("opacity", "0.0");
-									grph.select("#btn-end").attr("xlink:href", IMG_PLAY_S);
-								}
-						})
-						.on("mouseover", function() {
-								grph.select("#btn-end").node().style.cursor = "pointer";
-						})
-						.on("mouseout", function() {
-								grph.select("#btn-end").node().style.cursor = "auto";
-					});
-				}
-
-				// *** Draw chain height text ***
-				if (grph.select("#txt-hght").empty()) {
-					grph.append("text").attr("id", "txt-hght").attr("class", "block-text")
-						.attr("x", 10).attr("y", 20).attr("text-anchor", "left").style("font-size", "1em");
-				}
-
-				// *** Selected ***
-				if (_this.selected >= 0) {
-					grph.select("#txt-hght").text("Current chain depth: " + chainDepth);
-					accessBlock(urlBlock + _this.selected, function(rspnBlock) {
-							//console.log(JSON.stringify(rspnBlock));//TODO TEMP
-							if (!grph.select(".dtls-text").empty()) grph.selectAll(".dtls-text").remove();
-
-							var time = new Date(0);
-							time.setUTCSeconds(rspnBlock.nonHashData.localLedgerCommitTimestamp.seconds);
-
-							var blk = grph.append("text").attr("class", "dtls-text")
-								.attr("x", 10).attr("y", _this.chartHght - 80).attr("text-anchor", "left")
-								.text("Block " + _this.selected + " selected.");
-
-							grph.append("text").attr("class", "dtls-text")
-								.attr("x", 15 + blk.node().getBBox().width).attr("y", _this.chartHght - 80).attr("text-anchor", "left")
-								.text("Added on " + timeFormatSrver(time));
-							if (rspnBlock.previousBlockHash) {
-								grph.append("text").attr("class", "dtls-text")
-									.attr("x", 10).attr("y", _this.chartHght - 60).attr("text-anchor", "left")
-									.style("font-family", "monospace").style("font-size", "1em")
-									.text(rspnBlock.previousBlockHash);
-							}
-					});
-				} else {
-					accessBlock(urlBlock + (chainDepth-1), function(rspnBlock) {
-							var time = new Date(0);
-							time.setUTCSeconds(rspnBlock.nonHashData.localLedgerCommitTimestamp.seconds);
-							var posx = _this.chartWdth / 2;
-							var posy = _this.chartHght - 60;
-
-							var blk = grph.append("text").attr("class", "dtls-text")
-								.text("Latest block: " + (chainDepth-1) + ".")
-								.node().getBBox().width;
-							grph.select("#txt-hght").transition().delay(_this.updateInterval)
-								.text("Current chain depth: " + chainDepth)
-								.each("end", function() {
-										grph.selectAll(".dtls-text").remove();
-
-										if (_this.selected < 0) {
-											if (rspnBlock.previousBlockHash) {
-												var hsh = grph.append("text").attr("class", "dtls-text")
-													.attr("x", posx).attr("y", posy).attr("text-anchor", "left")
-													.style("font-family", "monospace").style("font-size", "1em")
-													.text(rspnBlock.previousBlockHash);
-												posx = _this.chartWdth - hsh.node().getBBox().width - 35;
-												hsh.attr("x", posx);
-											}
-
-											grph.append("text").attr("class", "dtls-text")
-												.attr("x", posx).attr("y", posy).attr("dy", "-20")
-												.attr("text-anchor", "left")
-												.text("Latest block: " + (chainDepth-1) + ".");
-
-											grph.append("text").attr("class", "dtls-text")
-												.attr("x", posx).attr("y", posy)
-												.attr("dx", 5 + blk).attr("dy", "-20")
-												.attr("text-anchor", "left")
-												.text("Added on " + timeFormatSrver(time));
-										}
-								});
-					});
-				}
-
-				// *** Draw the ticking chain ***
-				if (!_this.interactiveMode) {
-					var lastVal = (blockArray.length > 0) ? blockArray[blockArray.length - 1] : -1;
-					var nextVal = chainDepth - 1;
-					var itr = nextVal - lastVal;
-					if (itr > 100) {
-						itr = 100;
-						lastVal = nextVal - 100;
-					}
-
-					if (itr > 1) {
-						var idx = 0;
-						var dur;
-						function _redraw() {
-							if (idx < itr) {
-								catchUp = true;
-								dur = calcDuration(itr, idx ++, _this.updateInterval);
-								_this.addBlock(++ lastVal);
-								_this.redraw(dur, _redraw, 0); // Catching up
-							} else {
-								catchUp = false;
-							}
+		// *** Draw the resume button ***
+		if (grph.select("#btn-end").empty()) {
+			grph.append("image").attr("id", "btn-end").attr("x", _this.chartWdth - 40).attr("y", 4).attr("width", 18).attr("height", 18).attr("xlink:href", IMG_PAUSE_S)
+				.on("click", function() {
+						if (!grph.select(".details").empty()) grph.selectAll(".details").remove();
+						if (_this.interactiveMode) {
+							_this.interactiveMode = false;
+							_this.selected = -1;
+							_this.runNow();
+							grph.selectAll(".block-slct").style("opacity", "0.0");
+							grph.select("#btn-end").attr("xlink:href", IMG_PAUSE_S);
+						} else {
+							_this.interactiveMode = true;
+							_this.selected = -1;
+							_this.runNow();
+							grph.selectAll(".block-slct").style("opacity", "0.0");
+							grph.select("#btn-end").attr("xlink:href", IMG_PLAY_S);
 						}
-						_redraw();
-					} else if (itr == 1) {
-						_this.addBlock(nextVal);
-						_this.redraw(_this.updateInterval, function() {}, 0); // Normal ticking
+				})
+				.on("mouseover", function() {
+						grph.select("#btn-end").node().style.cursor = "pointer";
+				})
+				.on("mouseout", function() {
+						grph.select("#btn-end").node().style.cursor = "auto";
+			});
+		}
+
+		// *** Draw chain height text ***
+		if (grph.select("#txt-hght").empty()) {
+			grph.append("text").attr("id", "txt-hght").attr("class", "block-text")
+				.attr("x", 10).attr("y", 20).attr("text-anchor", "left").style("font-size", "1em");
+		}
+
+		// *** Selected ***
+		if (_this.selected >= 0) {
+			grph.select("#txt-hght").text("Current chain depth: " + chainDepth);
+			accessBlock(urlBlock + _this.selected, function(rspnBlock) {
+					//console.log(JSON.stringify(rspnBlock));//TODO TEMP
+					if (!grph.select(".dtls-text").empty()) grph.selectAll(".dtls-text").remove();
+
+					var time = new Date(0);
+					time.setUTCSeconds(rspnBlock.nonHashData.localLedgerCommitTimestamp.seconds);
+
+					var blk = grph.append("text").attr("class", "dtls-text")
+						.attr("x", 10).attr("y", _this.chartHght - 80).attr("text-anchor", "left")
+						.text("Block " + _this.selected + " selected.");
+
+					grph.append("text").attr("class", "dtls-text")
+						.attr("x", 15 + blk.node().getBBox().width).attr("y", _this.chartHght - 80).attr("text-anchor", "left")
+						.text("Added on " + timeFormatSrver(time));
+					if (rspnBlock.previousBlockHash) {
+						grph.append("text").attr("class", "dtls-text")
+							.attr("x", 10).attr("y", _this.chartHght - 60).attr("text-anchor", "left")
+							.style("font-family", "monospace").style("font-size", "1em")
+							.text(rspnBlock.previousBlockHash);
+					}
+			});
+		} else {
+			accessBlock(urlBlock + (chainDepth-1), function(rspnBlock) {
+					var time = new Date(0);
+					time.setUTCSeconds(rspnBlock.nonHashData.localLedgerCommitTimestamp.seconds);
+					var posx = _this.chartWdth / 2;
+					var posy = _this.chartHght - 60;
+
+					var blk = grph.append("text").attr("class", "dtls-text")
+						.text("Latest block: " + (chainDepth-1) + ".")
+						.node().getBBox().width;
+					grph.select("#txt-hght").transition().delay(_this.updateInterval)
+						.text("Current chain depth: " + chainDepth)
+						.each("end", function() {
+								grph.selectAll(".dtls-text").remove();
+
+								if (_this.selected < 0) {
+									if (rspnBlock.previousBlockHash) {
+										var hsh = grph.append("text").attr("class", "dtls-text")
+											.attr("x", posx).attr("y", posy).attr("text-anchor", "left")
+											.style("font-family", "monospace").style("font-size", "1em")
+											.text(rspnBlock.previousBlockHash);
+										posx = _this.chartWdth - hsh.node().getBBox().width - 35;
+										hsh.attr("x", posx);
+									}
+
+									grph.append("text").attr("class", "dtls-text")
+										.attr("x", posx).attr("y", posy).attr("dy", "-20")
+										.attr("text-anchor", "left")
+										.text("Latest block: " + (chainDepth-1) + ".");
+
+									grph.append("text").attr("class", "dtls-text")
+										.attr("x", posx).attr("y", posy)
+										.attr("dx", 5 + blk).attr("dy", "-20")
+										.attr("text-anchor", "left")
+										.text("Added on " + timeFormatSrver(time));
+								}
+						});
+			});
+		}
+
+		// *** Draw the ticking chain ***
+		if (!_this.interactiveMode) {
+			var lastVal = (blockArray.length > 0) ? blockArray[blockArray.length - 1] : -1;
+			var nextVal = chainDepth - 1;
+			var itr = nextVal - lastVal;
+			if (itr > 100) {
+				itr = 100;
+				lastVal = nextVal - 100;
+			}
+
+			if (itr > 1) {
+				var idx = 0;
+				var dur;
+				function _redraw() {
+					if (idx < itr) {
+						catchUp = true;
+						dur = calcDuration(itr, idx ++, _this.updateInterval);
+						_this.addBlock(++ lastVal);
+						_this.redraw(dur, _redraw, 0); // Catching up
+					} else {
+						catchUp = false;
 					}
 				}
-		});
+				_redraw();
+			} else if (itr == 1) {
+				_this.addBlock(nextVal);
+				_this.redraw(_this.updateInterval, function() {}, 0); // Normal ticking
+			}
+		}
 	};
 
 	this.redraw = function(duration, callback, dirn) {

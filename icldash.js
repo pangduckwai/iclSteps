@@ -231,13 +231,13 @@ function init() {
 function start() {
 	var obj = this;
 	intervalId = setInterval(function() {
-//			for (var idx = 0; idx < cfgdCharts.length; idx ++) {
-//				if (cfgdCharts[idx] && (typeof cfgdCharts[idx].render === "function") && cfgdCharts[idx].shouldRun()) {
-//					cfgdCharts[idx].render();
-//				}
-//			}
+			/*for (var idx = 0; idx < cfgdCharts.length; idx ++) {
+				if (cfgdCharts[idx] && (typeof cfgdCharts[idx].render === "function") && cfgdCharts[idx].shouldRun()) {
+					cfgdCharts[idx].render();
+				}
+			}*/
 			for (var idx = 0; idx < channels.length; idx ++) {
-				if ((channels[idx] && typeof channels[idx].run === "function") && channels[idx].shouldRun()) {
+				if (channels[idx] && (typeof channels[idx].run === "function")) {
 					channels[idx].run();
 				}
 			}
@@ -550,8 +550,8 @@ function showChart(elmId, row, col, wdth, hght, cook) {
 							objt.fromCookie(cook);
 						}
 
-						if (typeof objt.start === "function") {
-							objt.start();
+						if (typeof objt.init === "function") {
+							objt.init();
 						}
 
 						cfgdCharts[cfgdCharts.length] = objt;
@@ -564,8 +564,8 @@ function showChart(elmId, row, col, wdth, hght, cook) {
 					objt.fromCookie(cook);
 				}
 
-				if (typeof objt.start === "function") {
-					objt.start();
+				if (typeof objt.init === "function") {
+					objt.init();
 				}
 
 				cfgdCharts[cfgdCharts.length] = objt;
@@ -804,15 +804,15 @@ function buildFramework() {
 		.append("form").attr("id", "channel-form").attr("name", "channel-form")
 		.append("table").attr("id", "channel-tbl").attr("class", "dialog");
 	tabl.append("th").html("");
-	tabl.append("th").html("Channel");
 	tabl.append("th").html("ID");
+	tabl.append("th").html("Channel");
 	tabl.append("th").html("Run Interval");
 	tabl.append("th").html("URL");
 	var trow = tabl.append("tr").attr("id", "channel-insertHere");
 	trow.append("td").attr("valign", "top").append("input").attr("type", "checkbox").attr("class", "channel-slct-0").attr("name", "channel-slct-0");
-	trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-name-0").attr("name", "channel-name-0");
 	trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-id-0 ronly").attr("name", "channel-id-0")
 		.attr("readonly", "").attr("tabindex", "-1");
+	trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-name-0").attr("name", "channel-name-0");
 	trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-intv-0").attr("name", "channel-intv-0");
 	trow.append("td").append("textarea").attr("class", "channel-url-0").style("width", "300px");
 	trow = tabl.append("tr");
@@ -869,7 +869,7 @@ function buildFramework() {
 	tcll.append("span").attr("id", "setting-name");
 	tcll.append("span").html("&nbsp;");
 	tcll.append("input").attr("type", "button").attr("name", "setting-remove").attr("value","Remove");
-	tcll = tbdy.append("tr").append("td").attr("colspan", "2").style("text-align", "right");
+	tcll = tbdy.append("tr").attr("class", "chnllist").append("td").attr("colspan", "2").style("text-align", "right");
 	tcll.append("span").html("Channel:");
 	tcll.append("span").html("&nbsp;");
 	tcll.append("select").attr("id", "channel-list").attr("name", "channel-list")
@@ -889,11 +889,11 @@ function buildFramework() {
 //    init() (framework)
 //      addChannel() (framework)
 //      showChart() (framework)
-//        start() (charts)
-//          init() (charts)
+//        init() (charts - parent)
+//          start() (charts - implementation)
 //      start() (framework)
 //        run() (channel)
-//          render() (charts)
+//          render() (charts - implementation)
 function Chart(chartId) {
 	this.id = "chart-proto"; //Chart ID
 	this.name = "Chart Prototype";
@@ -908,7 +908,7 @@ function Chart(chartId) {
 	this.updateInterval = 5000;
 
 	// Interface
-	this.start = function() {
+	this.init = function() {
 		var elmId = "#"+this.domId;
 		var size = d3.select(elmId).node().getBoundingClientRect(); //'node()' get the actual DOM object
 		var ttld = d3.select(elmId).select(".chart-title");
@@ -926,8 +926,8 @@ function Chart(chartId) {
 			d3.select(elmId).select(".chart-ctnt").style("height", this.chartHght + "px");
 		}
 
-		if (typeof this.init === "function") {
-			this.init();
+		if (typeof this.start === "function") {
+			this.start();
 		}
 
 		/*if (typeof this.render === "function") {
@@ -936,8 +936,8 @@ function Chart(chartId) {
 	};
 
 	var elapse = this.updateInterval;
-	this.shouldRun = function() {
-		elapse -= RUN_INTERVAL;
+	this.shouldRun = function(runInterval) {
+		elapse -= runInterval;
 		if (elapse <= 0) {
 			elapse = this.updateInterval;
 			return true;
@@ -950,7 +950,7 @@ function Chart(chartId) {
 	};
 
 	/*
-	this.init = function() { };
+	this.start = function() { };
 	this.render = function() { };
 	this.config = function(element) { };
 	this.configed = function(domId, func) { };
@@ -1008,18 +1008,19 @@ function showChannels() {
 		trow.append("td").attr("valign", "top").append("input").attr("type", "checkbox")
 			.attr("class", "channel-slct-" + (i+1)).attr("name", "channel-slct-" + (i+1));
 		trow.append("td").attr("valign", "top")
-			.append("input").attr("type", "text").attr("class", "channel-name-" + (i+1)).attr("name", "channel-name-" + (i+1))
-			.node().value = channels[i].name;
-		trow.append("td").attr("valign", "top")
 			.append("input").attr("type", "text").attr("class", "ronly channel-id-" + (i+1)).attr("name", "channel-id-" + (i+1))
 			.attr("readonly", "").attr("tabindex", "-1")
 			.node().value = channels[i].id;
+		trow.append("td").attr("valign", "top")
+			.append("input").attr("type", "text").attr("class", "channel-name-" + (i+1)).attr("name", "channel-name-" + (i+1))
+			.node().value = channels[i].name;
 		trow.append("td").attr("valign", "top")
 			.append("input").attr("type", "text").attr("class", "channel-intv-" + (i+1)).attr("name", "channel-intv-" + (i+1))
 			.node().value = channels[i].runInterval;
 		trow.append("td").attr("valign", "top")
 			.append("textarea").attr("class", "channel-url-" + (i+1)).style("width", "300px")
 			.node().value = channels[i].url;
+			//.node().value = JSON.stringify(channels[i].subscribedCharts);
 	}
 }
 
@@ -1045,21 +1046,23 @@ function Channel(id, name, url, interval) {
 
 	var _this = this;
 	this.run = function() {
-		/*if (!this.shouldRun()) {
+		if (!this.shouldRun()) {
 			return;
-		}*/
+		}
 
 		accessData(this.url, function(rspn) {
 				if (!rspn) {
 					return;
 				}
 
-				for (var idx = 0; idx < _this.subscribedCharts.length; idx ++) {
-					/*if (_this.subscribedCharts[idx] && (typeof _this.subscribedCharts[idx].render === "function") && 
-						_this.subscribedCharts[idx].shouldRun()) {
-						_this.subscribedCharts[idx].render(rspn);
-					}*/
-					console.log(this.name, "calling subscribed chart", _this.subscribedCharts[idx], JSON.stringify(rspn)); 
+				var idx;
+				for (var i = 0; i < _this.subscribedCharts.length; i ++) {
+					idx = getCfgdCharts(_this.subscribedCharts[i]);
+					if (idx >= 0) {
+						if (cfgdCharts[idx] && (typeof cfgdCharts[idx].render === "function") && cfgdCharts[idx].shouldRun(_this.runInterval)) {
+							cfgdCharts[idx].render(rspn);
+						}
+					}
 				}
 		});
 	};
@@ -1146,6 +1149,13 @@ DateTimeWidget = function(chartId) {
 	this.format = "12"; // '12' - 12 hour format with am/pm, '24' - 24 hour format from 00 to 23
 	this.url = "https://[dashboard]/time";
 
+	var _this = this;
+	this.start = function() {
+		setInterval(function() {
+				_this.render();
+		}, this.updateInterval);
+	}
+
 	this.render = function() {
 		var neti = d3.select("#"+this.domId).select(".chart-indct");
 		if (neti.empty()) {
@@ -1159,9 +1169,9 @@ DateTimeWidget = function(chartId) {
 			neti.style("display", null);
 			var obj = this;
 			accessData(this.url, function(rspn) {
-				if (rspn) {
-					obj.redraw(timeFormatSrver.parse(rspn["time"]));
-				}
+					if (rspn) {
+						obj.redraw(timeFormatSrver.parse(rspn["time"]));
+					}
 			});
 		}
 	};
@@ -1239,6 +1249,7 @@ DateTimeWidget = function(chartId) {
 
 	this.config = function(element) {
 		element.html("");
+		d3.select(".chnllist").style("display", "none");
 
 		var trow = element.append("tr");
 		trow.append("td").attr("class", "cfgDateTimeWidget").style("text-align", "right")
@@ -1272,6 +1283,7 @@ DateTimeWidget = function(chartId) {
 
 	this.configed = function(domId, func) {
 		if (domId == this.domId) {
+			d3.select(".chnllist").style("display", null);
 			var ctrls = d3.selectAll(".cfgDateTimeWidget");
 
 			if (ctrls.select(".cfgFormat").node().checked) {

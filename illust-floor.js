@@ -2,7 +2,6 @@ FloorIllustrator = function(chartId) {
 	this.id = "illust-floor"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Floor plan illustrator";
-	this.url = "http://%%%nodeServer%%%:8080/ws/temp1"; //"%%%urlChain%%%";
 	this.minGridWdth = 4;
 	this.minGridHght = 3;
 	this.updateInterval = 3500;
@@ -22,7 +21,7 @@ FloorIllustrator = function(chartId) {
 
 	var shapew, shape0, shape1, shape2, shape3;
 
-	this.init = function() {
+	this.start = function() {
 		gridSizeX = (this.chartWdth - 20) / 10;
 		gridSizeY = (this.chartHght - 20) / 8;
 		gridHalfX = gridSizeX / 4;
@@ -117,20 +116,18 @@ FloorIllustrator = function(chartId) {
 			.attr("transform", "translate(10, 10)");
 	}
 
-	this.render = function() {
-		accessData(this.url, function(rspn) {
-				if (!rspn || (rspn.length <= 0)) {
-					return;
-				}
+	this.render = function(rspn) {
+		if (!rspn || !rspn.records || (rspn.records.length <= 0)) {
+			return;
+		}
 
-				for (var i = 0; i < rspn.length; i ++) {
-					grph.select("."+rspn[i]).select("text")
-						.transition().duration(500)
-						.attr('font-size', '2em')
-						.transition().duration(2100)
-						.attr('font-size', '0.8em');
-				}
-		});
+		for (var i = 0; i < rspn.records.length; i ++) {
+			grph.select("."+rspn.records[i]).select("text")
+				.transition().duration(500)
+				.attr('font-size', '2em')
+				.transition().duration(2100)
+				.attr('font-size', '0.8em');
+		}
 	};
 
 };

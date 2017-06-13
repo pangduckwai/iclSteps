@@ -90,7 +90,7 @@ var buildUi = function(html, msg, user, yr, mn, dt, step, node, state, succ, fai
 				.replace(/%%%anchorVerify%%%/g, mnuVrfy)
 				.replace(/%%%returnLink%%%/g, vsbLink)
 				.replace(/%%%formButton%%%/g, vsbBttn)
-				.replace(/%%%nodeServer%%%/g, "localhost") //"192.168.14.130"
+				.replace(/%%%nodeServer%%%/g, "192.168.14.130") //"localhost"
 				.replace(/%%%urlChain%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain')
 				.replace(/%%%urlBlock%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain/blocks/')
 				.replace(/%%%urlPeers%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/network/peers'));
@@ -257,6 +257,7 @@ var read = function(node, key, succ, fail) {
 /*TEMP!!!!!!!!!!!*/
 ccid = "00000000000000000000000"
 var start = (new Date()).getTime();
+var accnt = 0;
 var depth = 2;
 var count = 0;
 var rtsts = [];
@@ -386,25 +387,46 @@ http.createServer(function(req, res) {
 
 				case '/ws/temp1': // ************ TEMP - block ***************
 					var latst = [];
-					for (var key in names) {
+					/*for (var key in names) {
 						if (Math.random() < 0.1) {
 							names[key] ++;
 							latst.push(key);
 						}
-					}
-
-					depth += latst.length;
-
+					}*/
+					//accnt ++; // TEMP TEST!!!
+					accnt = 0;
+					for (var key in names) {
+						names[key] ++;
+						latst.push(key);
+						accnt ++;
+						if ((accnt % 4) == 0) {
+							accnt = 0;
+							break;
+						}
+					} // TEMP TEST!!!
 					rtsts.push({"time": Math.round(now.getTime()/1000), "value": latst.length});
 					if (rtsts.length > 30) rtsts.shift();
 
-					res.setHeader('Content-type', 'application/json');
-					res.end(JSON.stringify(latst));
-					break;
-				case '/ws/temp5':
+					depth += latst.length;
 					var hash = crypto.createHash('sha256').update(depth.toString()).digest('base64');
+
+					var rate;
+					if (rtsts.length > 1) {
+						var elpse = rtsts[rtsts.length-1].time - rtsts[0].time;
+						var total = 0, lgth = rtsts.length;
+						for (var i = 1; i < lgth; i ++) {
+							total += rtsts[i].value;
+						}
+						rate = '{"avg":' + (total/elpse) + '}';
+					} else {
+						rate = '{"avg":0}';
+					}
+
 					res.setHeader('Content-type', 'application/json');
-					res.end('{ "height" : ' + depth + ', "currentBlockHash" : "' + hash + '"}');
+					res.end(
+						'{"records": ' + JSON.stringify(latst) + ',' +
+						' "blocks": { "height" : ' + depth + ', "currentBlockHash" : "' + hash + '"},' +
+						' "rate": ' + rate + '}');
 					break;
 
 				case '/ws/temp2': // ************ TEMP - peers ***************
@@ -428,21 +450,6 @@ http.createServer(function(req, res) {
 					//if (count > 5) count = 3; //TODO TEMP
 					res.setHeader('Content-type', 'application/json');
 					res.end(JSON.stringify(objt));
-					break;
-
-				case '/ws/temp4': // ************ TEMP - block rate ***************
-					if (rtsts.length > 1) {
-						var elpse = rtsts[rtsts.length-1].time - rtsts[0].time;
-						var total = 0, lgth = rtsts.length;
-						for (var i = 1; i < lgth; i ++) {
-							total += rtsts[i].value;
-						}
-						res.setHeader('Content-type', 'application/json');
-						res.end('{"avg":' + (total/elpse) + '}');
-					} else {
-						res.setHeader('Content-type', 'application/json');
-						res.end('{"avg":0}');
-					}
 					break;
 
 				default:
