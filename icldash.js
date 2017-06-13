@@ -9,6 +9,7 @@ const KEY_CHNLID = "channelId";
 const KEY_CHNLNAME = "name";
 const KEY_CHNLINTV = "interval";
 const KEY_CHNLURL = "url";
+const KEY_CHNLSUB = "subscribed";
 
 const DRAG_CHART_ENABLED = false;
 
@@ -206,9 +207,9 @@ function init() {
 			if (last[idx].channelId) {
 				setTimeout(function(obj) {
 						if (obj.interval) {
-							addChannel(obj.channelId, obj.name, obj.url, obj.interval);
+							addChannel(obj.channelId, obj.name, obj.url, obj.interval, obj.subscribed);
 						} else {
-							addChannel(obj.channelId, obj.name, obj.url);
+							addChannel(obj.channelId, obj.name, obj.url, 2000, obj.subscribed);
 						}
 				}, 100 * (idx + 1), last[idx]);
 			} else if (last[idx].chartId) {
@@ -286,14 +287,27 @@ addEventListener('click', function(event) {
 						if (typeof cfgdCharts[idx].config === "function") {
 							// Show chart setup dialog
 							cfgdCharts[idx].config(d3.select("#setting-custom"));
-							d3.select("#setting-okay").style("display", null);
-						} else {
-							d3.select("#setting-okay").style("display", "none");
+							//d3.select("#setting-okay").style("display", null);
 						}
 						d3.select("#setting-name").html(cfgdCharts[idx].name);
 						d3.select("#setting-charts").node().value = cfgdCharts[idx].domId;
 						d3.select("#setting-dialog").style("display", "block");
 						d3.select("#disable-bg").style("display", "block");
+
+						// Add available channels to the channel drop-down list
+						d3.selectAll(".chnl-optn").remove();
+						var optn = d3.select("#channel-list");
+						var cid = '';
+						for (var i = 0; i < channels.length; i ++) {
+							optn.append("option").attr("class", "chnl-optn").attr("value", channels[i].id).html(channels[i].name);
+							for (var j = 0; j < channels[i].subscribedCharts.length; j ++) {
+								if (channels[i].subscribedCharts[j] == cfgdCharts[idx].domId) {
+									cid = channels[i].id;
+									break;
+								}
+							}
+						}
+						if (cid != '') d3.select("#channel-list").node().value = cid;
 					}
 				}
 				break;
@@ -303,34 +317,55 @@ addEventListener('click', function(event) {
 		case "INPUT":
 			switch (event.target.name) {
 			case "channel-clear":
-				if (confirm("Remove all channels?")) {
+				if (confirm("Remove all channels and charts?")) {
 					while (channels.length > 0) {
 						removeChannel(channels[0].id);
 					}
 					showChannels();
+
+					while (cfgdCharts.length > 0) {
+						removeChart(cfgdCharts[0].domId);
+					}
 				}
 				d3.select("#channel-dialog").style("display", "none");
 				d3.select("#disable-bg").style("display", "none");
+				d3.select("#setting-init").html("");
+				d3.selectAll(".hrule").style("display", "none");
+				break;
+
+			case "channel-delete":
+				for (idx = 0; idx < channels.length; idx ++) {
+					if (d3.select(".channel-slct-" + (idx+1)).node().checked) {
+						removeChannel(d3.select(".channel-id-" + (idx+1)).node().value);
+					}
+				}
+				showChannels();
 				break;
 
 			case "channel-okay":
-				var cid, nmn, itv, url;
+				var cid, nmn, itv, url, val, max = 0;
 				for (idx = 0; idx < channels.length; idx ++) {
 					cid = d3.select(".channel-id-" + (idx+1)).node().value;
+					val = parseInt(cid.slice(-3));
+					if (val > max) max = val;
+
 					nmn = d3.select(".channel-name-" + (idx+1)).node().value;
 					itv = parseInt(d3.select(".channel-intv-" + (idx+1)).node().value);
 					url = d3.select(".channel-url-" + (idx+1)).node().value;
 					if ((nmn.trim().length <= 0) || (url.trim().length <= 0) || isNaN(itv)) continue;
 					updateChannel(cid, nmn, url, itv);
 				}
-				cid = 'chnl' + ('00' + (idx+1)).slice(-3);
+
+				cid = 'chnl' + ('00' + (max+1)).slice(-3);
 				nmn = d3.select(".channel-name-0").node().value;
 				itv = parseInt(d3.select(".channel-intv-0").node().value);
 				url = d3.select(".channel-url-0").node().value;
 				if ((nmn.trim().length > 0) || (url.trim().length > 0) || !isNaN(itv)) {
 					addChannel(cid, nmn, url, itv);
 				}
-				// Don't need to break here...
+				showChannels();
+				break;
+
 			case "channel-cancel":
 				showChannels();
 				d3.select("#channel-dialog").style("display", "none");
@@ -385,6 +420,33 @@ addEventListener('click', function(event) {
 				var rid = d3.select("#setting-charts").node().value;
 				idx = getCfgdCharts(rid);
 				if (idx >= 0) {
+					// Defult setting(s)
+					var chnl = d3.select("#channel-list").node().value;
+					var count;
+					for (var i = 0; i < channels.length; i ++) {
+						if (channels[i].id == chnl) {
+							// Chart 'rid' subscribed to channel 'chnl' just now
+							count = 0;
+							for (var j = 0; j < channels[i].subscribedCharts.length; j ++) {
+								if (channels[i].subscribedCharts[j] == rid) count ++;
+							}
+							if (count == 0) {
+								channels[i].subscribedCharts[channels[i].subscribedCharts.length] = rid;
+								updateCookieChannel(channels[i].id);
+							}
+						} else {
+							// Remove 'rid' from any previously subscribed channels
+							for (var j = 0; j < channels[i].subscribedCharts.length; j ++) {
+								if (channels[i].subscribedCharts[j] == rid) {
+									channels[i].subscribedCharts.splice(j, 1);
+									updateCookieChannel(channels[i].id);
+								}
+							}
+						}
+					}
+					showChannels();
+
+					// Custom settings
 					if (typeof cfgdCharts[idx].configed === "function") {
 						cfgdCharts[idx].configed(rid, function() {
 								updateCookieCharts(rid);
@@ -745,16 +807,17 @@ function buildFramework() {
 	trow.append("td").attr("valign", "top").append("input").attr("type", "checkbox").attr("class", "channel-slct-0").attr("name", "channel-slct-0");
 	trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-name-0").attr("name", "channel-name-0");
 	trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-id-0 ronly").attr("name", "channel-id-0")
-		.attr("readonly", "");
+		.attr("readonly", "").attr("tabindex", "-1");
 	trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-intv-0").attr("name", "channel-intv-0");
 	trow.append("td").append("textarea").attr("class", "channel-url-0").style("width", "300px");
 	trow = tabl.append("tr");
 	trow.append("td")
 	var tcll = trow.append("td").attr("colspan", "2");
-	tcll.append("input").attr("type", "button").attr("name", "channel-clear").attr("value", "Remove all channels");
-	tcll = trow.append("td").attr("colspan", "2").style("text-align", "right").style("padding-right", "20px");
-	tcll.append("input").attr("type", "button").attr("name", "channel-okay").attr("value", "Okay");
-	tcll.append("input").attr("type", "button").attr("name", "channel-cancel").attr("value", "Cancel");
+	tcll.append("input").attr("type", "button").attr("name", "channel-clear").attr("value", "Remove all channels").style("margin-right", "2px");
+	tcll.append("input").attr("type", "button").attr("name", "channel-delete").attr("value", "Delete selected");
+	tcll = trow.append("td").attr("colspan", "2").style("text-align", "right").style("padding-right", "10px");
+	tcll.append("input").attr("type", "button").attr("name", "channel-okay").attr("value", "Apply").style("margin-right", "2px");
+	tcll.append("input").attr("type", "button").attr("name", "channel-cancel").attr("value", "Close");
 
 	// Charts dialog
 	tabl = body.append("div").attr("id", "charts-dialog")
@@ -789,20 +852,27 @@ function buildFramework() {
 	tcll = tabl.append("tr").append("td").attr("colspan", "2").style("text-align", "right");
 	tcll.append("input").attr("type", "button").attr("name", "charts-clear").attr("value", "Remove all charts");
 	tcll.append("span").html("&nbsp;&nbsp;");
-	tcll.append("input").attr("type", "button").attr("name", "charts-okay").attr("value", "Okay");
+	tcll.append("input").attr("type", "button").attr("name", "charts-okay").attr("value", "Okay").style("margin-right", "2px");
 	tcll.append("input").attr("type", "button").attr("name", "charts-cancel").attr("value", "Cancel");
 
 	// Setting dialog
 	tabl = body.append("div").attr("id", "setting-dialog")
 		.append("form").attr("id", "setting-form").attr("name", "setting-form")
 		.append("table").attr("class", "dialog");
-	tcll = tabl.append("tbody").append("tr").append("td").attr("colspan", "2");
+	var tbdy = tabl.append("tbody");
+	tcll = tbdy.append("tr").append("td").attr("colspan", "2").style("text-align", "right");
 	tcll.append("span").attr("id", "setting-name");
 	tcll.append("span").html("&nbsp;");
 	tcll.append("input").attr("type", "button").attr("name", "setting-remove").attr("value","Remove");
+	tcll = tbdy.append("tr").append("td").attr("colspan", "2").style("text-align", "right");
+	tcll.append("span").html("Channel:");
+	tcll.append("span").html("&nbsp;");
+	tcll.append("select").attr("id", "channel-list").attr("name", "channel-list")
+		.append("option").attr("value", "-").html("-- Select --");
 	tabl.append("tbody").attr("id", "setting-custom");
 	tcll = tabl.append("tr").append("td").attr("colspan", "2").style("text-align", "right");
-	tcll.append("input").attr("type", "button").attr("name", "setting-okay").attr("id", "setting-okay").attr("value", "Okay");
+	tcll.append("input").attr("type", "button").attr("name", "setting-okay").attr("id", "setting-okay").attr("value", "Okay")
+		.style("margin-right", "2px");
 	tcll.append("input").attr("type", "button").attr("name", "setting-cancel").attr("value", "Cancel");
 	tcll.append("input").attr("type", "hidden").attr("id", "setting-charts").attr("name", "setting-charts");
 }
@@ -876,7 +946,7 @@ function Chart(chartId) {
 
 // *****************
 // **** Channel ****
-function addChannel(id, name, url, interval) {
+function addChannel(id, name, url, interval, subscribed) {
 	var len = channels.length;
 	for (var i = 0; i < len; i ++) {
 		if ((id == channels[i].id) || (name == channels[i].name) || (url == channels[i].url)) {
@@ -885,8 +955,9 @@ function addChannel(id, name, url, interval) {
 		}
 	}
 
-	channels[len] = new Channel(id, name, url, (interval) ? interval : 2000);
-	addCookieChannel(id, name, url, (interval) ? interval : 2000);
+	channels[len] = new Channel(id, name, url, interval);
+	if (subscribed && (subscribed.length > 0)) channels[len].subscribedCharts = subscribed;
+	addCookieChannel(id);
 };
 function updateChannel(id, name, url, interval) {
 	var idx = getChannels(id);
@@ -924,7 +995,8 @@ function showChannels() {
 			.append("input").attr("type", "text").attr("class", "channel-name-" + (i+1)).attr("name", "channel-name-" + (i+1))
 			.node().value = channels[i].name;
 		trow.append("td").attr("valign", "top")
-			.append("input").attr("type", "text").attr("class", "ronly channel-id-" + (i+1)).attr("name", "channel-id-" + (i+1)).attr("readonly", "")
+			.append("input").attr("type", "text").attr("class", "ronly channel-id-" + (i+1)).attr("name", "channel-id-" + (i+1))
+			.attr("readonly", "").attr("tabindex", "-1")
 			.node().value = channels[i].id;
 		trow.append("td").attr("valign", "top")
 			.append("input").attr("type", "text").attr("class", "channel-intv-" + (i+1)).attr("name", "channel-intv-" + (i+1))
@@ -976,19 +1048,22 @@ function Channel(id, name, url, interval) {
 	};
 };
 
-function addCookieChannel(id, name, url, interval) {
+function addCookieChannel(id) {
 	var cook = {};
+	var idx = getChannels(id);
 
-	cook[KEY_CHNLID] = id;
-	cook[KEY_CHNLNAME] = name;
-	cook[KEY_CHNLINTV] = interval;
-	cook[KEY_CHNLURL] = url;
+	if (idx >= 0) {
+		cook[KEY_CHNLID] = channels[idx].id;
+		cook[KEY_CHNLNAME] = channels[idx].name;
+		cook[KEY_CHNLINTV] = channels[idx].runInterval;
+		cook[KEY_CHNLURL] = channels[idx].url;
+		cook[KEY_CHNLSUB] = channels[idx].subscribedCharts;
+		cfgdCookie[cfgdCookie.length] = cook;
 
-	cfgdCookie[cfgdCookie.length] = cook;
-
-	var expr = new Date();
-	expr.setYear(expr.getFullYear() + 1);
-	document.cookie = COOK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
+		var expr = new Date();
+		expr.setYear(expr.getFullYear() + 1);
+		document.cookie = COOK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
+	}
 
 	return cook;
 }
@@ -1002,6 +1077,7 @@ function updateCookieChannel(id) {
 		cook[KEY_CHNLNAME] = channels[idx].name;
 		cook[KEY_CHNLINTV] = channels[idx].runInterval;
 		cook[KEY_CHNLURL] = channels[idx].url;
+		cook[KEY_CHNLSUB] = channels[idx].subscribedCharts;
 		for (var j = 0; j < cfgdCookie.length; j ++) {
 			if (cfgdCookie[j].channelId == id) {
 				cfgdCookie[j] = cook;

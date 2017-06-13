@@ -104,12 +104,16 @@ RateIllustrator = function(chartId) {
 				this.alert1 = lyew;
 				this.alert2 = lred;
 
-				d3.select("#" + this.domId + "Container").select("svg").remove();
+				var elm = d3.select("#" + this.domId + "Container").select("svg");
+				elm.selectAll("path").remove();
+				elm.selectAll("line").remove();
+				elm.selectAll("text").remove();
+				elm.selectAll(".pointerContainer").remove();
 				if (domId != this.id) {
 					this.init();
 				}
 
-				func();
+				/*func();*/
 			}
 		}
 	};

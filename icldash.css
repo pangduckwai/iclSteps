@@ -124,7 +124,7 @@ a:active, a:link, a:visited {
 	display: none;
 }
 #channel-dialog {
-	margin: 20% auto;
+	margin: 10% auto;
 	width: 900px;
 	display: none;
 }
@@ -141,6 +141,9 @@ a:active, a:link, a:visited {
 #setting-form .tbl-cll {
 	width: 100%;
 	padding: 5px;
+}
+#setting-name {
+	font-size: 1.1em;
 }
 
 text.ctxt, .tick text {
