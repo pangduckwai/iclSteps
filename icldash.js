@@ -237,7 +237,7 @@ function start() {
 //				}
 //			}
 			for (var idx = 0; idx < channels.length; idx ++) {
-				if (channels[idx] && typeof channels[idx].run === "function") && channels[idx].shouldRun()) {
+				if ((channels[idx] && typeof channels[idx].run === "function") && channels[idx].shouldRun()) {
 					channels[idx].run();
 				}
 			}
@@ -1055,10 +1055,11 @@ function Channel(id, name, url, interval) {
 				}
 
 				for (var idx = 0; idx < _this.subscribedCharts.length; idx ++) {
-					if (_this.subscribedCharts[idx] && (typeof _this.subscribedCharts[idx].render === "function") && 
+					/*if (_this.subscribedCharts[idx] && (typeof _this.subscribedCharts[idx].render === "function") && 
 						_this.subscribedCharts[idx].shouldRun()) {
 						_this.subscribedCharts[idx].render(rspn);
-					}
+					}*/
+					console.log(this.name, "calling subscribed chart", _this.subscribedCharts[idx], JSON.stringify(rspn)); 
 				}
 		});
 	};
