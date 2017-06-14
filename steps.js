@@ -90,7 +90,7 @@ var buildUi = function(html, msg, user, yr, mn, dt, step, node, state, succ, fai
 				.replace(/%%%anchorVerify%%%/g, mnuVrfy)
 				.replace(/%%%returnLink%%%/g, vsbLink)
 				.replace(/%%%formButton%%%/g, vsbBttn)
-				.replace(/%%%nodeServer%%%/g, "192.168.14.130") //"localhost"
+				.replace(/%%%nodeServer%%%/g, "localhost") //"192.168.14.130"
 				.replace(/%%%urlChain%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain')
 				.replace(/%%%urlBlock%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain/blocks/')
 				.replace(/%%%urlPeers%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/network/peers'));
@@ -257,7 +257,6 @@ var read = function(node, key, succ, fail) {
 /*TEMP!!!!!!!!!!!*/
 ccid = "00000000000000000000000"
 var start = (new Date()).getTime();
-var accnt = 0;
 var depth = 2;
 var count = 0;
 var rtsts = [];
@@ -265,6 +264,7 @@ var hosts = ['tp0', 'tp1', 'tp2', 'tp3', 'tp4', 'tp5', 'tp6', 'tp7', 'tp8', 'tp9
 var names =
 	{"alan":0, "alex":0, "andy":0, "bill":0, "carl":0, "cole":0, "dave":0, "dale":0, "dick":0, "eric":0, "gary":0, "gene":0, "greg":0,
 	 "jack":0, "john":0, "josh":0, "kyle":0, "mark":0, "mike":0, "nick":0, "paul":0, "pete":0, "phil":0, "saul":0, "will":0, "zach":0};
+var times = [];
 //!!!!!!!!!!!TEMP*/
 
 http.createServer(function(req, res) {
@@ -386,29 +386,34 @@ http.createServer(function(req, res) {
 					break;
 
 				case '/ws/temp1': // ************ TEMP - block ***************
+					if (times.length < 1) {
+						var mill = now.getTime() - 3540000;
+						for (var i = 0; i < 60; i ++) {
+						times[i] = { "time": Math.round(mill/60000)*60, "count": 0 }; //Math.floor(Math.random()*81 + 20) };
+							mill += 60000;
+						}
+					}
+
 					var latst = [];
-					/*for (var key in names) {
+					for (var key in names) {
 						if (Math.random() < 0.1) {
 							names[key] ++;
 							latst.push(key);
 						}
-					}*/
-					//accnt ++; // TEMP TEST!!!
-					accnt = 0;
-					for (var key in names) {
-						names[key] ++;
-						latst.push(key);
-						accnt ++;
-						if ((accnt % 4) == 0) {
-							accnt = 0;
-							break;
-						}
-					} // TEMP TEST!!!
+					}
 					rtsts.push({"time": Math.round(now.getTime()/1000), "value": latst.length});
 					if (rtsts.length > 30) rtsts.shift();
 
 					depth += latst.length;
 					var hash = crypto.createHash('sha256').update(depth.toString()).digest('base64');
+
+					var curr = Math.round(now.getTime()/60000)*60;
+					if (curr > times[times.length-1].time) {
+						times.push({"time": curr, "count": latst.length});
+						if (times.length > 60) times.shift();
+					} else {
+						times[times.length-1].count += latst.length;
+					}
 
 					var rate;
 					if (rtsts.length > 1) {
@@ -426,7 +431,9 @@ http.createServer(function(req, res) {
 					res.end(
 						'{"records": ' + JSON.stringify(latst) + ',' +
 						' "blocks": { "height" : ' + depth + ', "currentBlockHash" : "' + hash + '"},' +
-						' "rate": ' + rate + '}');
+						' "rate": ' + rate + ',' +
+						' "names": ' + JSON.stringify(names) + ',' +
+						' "times": ' + JSON.stringify(times) + '}');
 					break;
 
 				case '/ws/temp2': // ************ TEMP - peers ***************

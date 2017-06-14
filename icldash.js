@@ -11,12 +11,8 @@ const KEY_CHNLINTV = "interval";
 const KEY_CHNLURL = "url";
 const KEY_CHNLSUB = "subscribed";
 
-const DRAG_CHART_ENABLED = false;
-
 // **** Configurables ****
 const RUN_INTERVAL = 250; //2500 is 2.5 seconds
-const MAX_ROW = 5; // Number of rows available in the dashboard grid
-const MAX_COL = 8; // Number of columns available in the dashboard grid
 
 // **** Themes ****
 const THEME_IS_DARK = true; // false means theme lis 'light'
@@ -41,6 +37,10 @@ const cellGap = 5;
 const regex = new RegExp("^(?=.*[\\s]*r([0-9]+))(?=.*[\\s]*c([0-9]+))(?=.*[\\s]*w([0-9]+))(?=.*[\\s]*h([0-9]+)).*$", 'g');
 
 const colors = ["#ffcc00", "#fda45c", "#f07d76", "#b8dbe5", "#aaa9d6", "#ab88b8", "#ab68ab"];
+
+var MAX_ROW = 5; // Number of rows available in the dashboard grid
+var MAX_COL = 7; // Number of columns available in the dashboard grid
+var DRAG_CHART_ENABLED = true;
 
 var isIE = false;
 if ((/*@cc_on ! @*/ false) || navigator.userAgent.match(/Trident/g)) {
@@ -130,6 +130,10 @@ var cfgdCookie = [];
 var intervalId = null;
 
 function init() {
+	if (typeof DFLT_ROW != 'undefined') MAX_ROW = DFLT_ROW;
+	if (typeof DFLT_COL != 'undefined') MAX_COL = DFLT_COL;
+	if (typeof DFLT_DRAG_ENABLED != 'undefined') DRAG_CHART_ENABLED = DFLT_DRAG_ENABLED;
+
 	// Initialize the 2-d array marking available space on the grid
 	avlbPosition = new Array(MAX_ROW);
 	for (var i = 0; i < MAX_ROW; i ++) {
@@ -191,9 +195,9 @@ function init() {
 
 	// Default channels and charts
 	if ((confg.trim() == "") || (confg.trim() == "[]")) {
-		if (dfltCfgCook && (dfltCfgCook.trim().length > 0)) {
+		if ((typeof DFLT_CFG_COOKIE != 'undefined') && (DFLT_CFG_COOKIE.trim().length > 0)) {
 			console.log("Displaying default charts...");
-			confg = dfltCfgCook;
+			confg = DFLT_CFG_COOKIE;
 		} else {
 			confg = "";
 		}
@@ -466,6 +470,14 @@ addEventListener('click', function(event) {
 				d3.select("#setting-dialog").style("display", "none");
 				d3.select("#disable-bg").style("display", "none");
 				d3.select("#setting-custom").html("");
+
+				var rid = d3.select("#setting-charts").node().value;
+				idx = getCfgdCharts(rid);
+				if (idx >= 0) {
+					if (typeof cfgdCharts[idx].configCancel === "function") {
+						cfgdCharts[idx].configCancel(rid);
+					}
+				}
 				break;
 			}
 
@@ -865,10 +877,10 @@ function buildFramework() {
 		.append("form").attr("id", "setting-form").attr("name", "setting-form")
 		.append("table").attr("class", "dialog");
 	var tbdy = tabl.append("tbody");
-	tcll = tbdy.append("tr").append("td").attr("colspan", "2").style("text-align", "right");
+	tcll = tbdy.append("tr").append("td").attr("class", "sttttl").attr("colspan", "2").style("text-align", "right");
 	tcll.append("span").attr("id", "setting-name");
 	tcll.append("span").html("&nbsp;");
-	tcll.append("input").attr("type", "button").attr("name", "setting-remove").attr("value","Remove");
+	tcll.append("input").attr("type", "button").attr("name", "setting-remove").attr("value","Remove").style("margin-left", "10px");
 	tcll = tbdy.append("tr").attr("class", "chnllist").append("td").attr("colspan", "2").style("text-align", "right");
 	tcll.append("span").html("Channel:");
 	tcll.append("span").html("&nbsp;");
@@ -954,6 +966,7 @@ function Chart(chartId) {
 	this.render = function() { };
 	this.config = function(element) { };
 	this.configed = function(domId, func) { };
+	this.configCancel = function(domId) { };
 	this.buildUi = function(func) { };
 	this.fromCookie = function(cook) { };
 	this.toCookie = function(row, col, wdth, hght) { };
@@ -1140,7 +1153,7 @@ var timeFormatWeekn = d3.time.format("%A");
 
 DateTimeWidget = function(chartId) {
 	this.id = "datetime-widget"; //Chart ID
-	this.name = "Date and Time";
+	this.name = "Clock widget";
 	this.updateInterval = 1000;
 
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
@@ -1250,6 +1263,7 @@ DateTimeWidget = function(chartId) {
 	this.config = function(element) {
 		element.html("");
 		d3.select(".chnllist").style("display", "none");
+		d3.select(".sttttl").style("text-align", "left");
 
 		var trow = element.append("tr");
 		trow.append("td").attr("class", "cfgDateTimeWidget").style("text-align", "right")
@@ -1284,6 +1298,7 @@ DateTimeWidget = function(chartId) {
 	this.configed = function(domId, func) {
 		if (domId == this.domId) {
 			d3.select(".chnllist").style("display", null);
+			d3.select(".sttttl").style("text-align", "right");
 			var ctrls = d3.selectAll(".cfgDateTimeWidget");
 
 			if (ctrls.select(".cfgFormat").node().checked) {
@@ -1305,6 +1320,13 @@ DateTimeWidget = function(chartId) {
 			func();
 		}
 	};
+
+	this.configCancel = function(domId) {
+		if (domId == this.domId) {
+			d3.select(".chnllist").style("display", null);
+			d3.select(".sttttl").style("text-align", "right");
+		}
+	}
 };
 DateTimeWidget.prototype = new Chart();
 DateTimeWidget.prototype.constructor = DateTimeWidget;

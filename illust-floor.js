@@ -3,7 +3,7 @@ FloorIllustrator = function(chartId) {
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Floor plan illustrator";
 	this.minGridWdth = 4;
-	this.minGridHght = 3;
+	this.minGridHght = 4;
 	this.updateInterval = 3500;
 
 	const fplan = {
@@ -77,7 +77,24 @@ FloorIllustrator = function(chartId) {
 		}
 		// **** TEMP ****/
 
-		// Draw names
+		// Draw shade
+		var x0 = gridSizeX * 6 + 25;
+		var dx = gridSizeX * 2;
+		var y0 = gridSizeY * 2 + 10;
+		for (var i = 1; i < 27; i ++) {
+			grph.append("line").attr("class", "floor-desk")
+				.attr("x1", x0).attr("y1", y0).attr("x2", x0 - dx).attr("y2", 20);
+			x0 += 15;
+		}
+		grph.append("rect").attr("class", "floor-fill")
+			.attr("x", gridSizeX * 10).attr("y", 20).attr("width", 21).attr("height", y0);
+
+		// Draw floor
+		grph.append("polygon").attr("class", "floor-fill")
+			.attr("points", shapew).attr("shape-rendering", "geometricPrecision")
+			.attr("transform", "translate(10, 10)");
+
+		// Draw seats
 		for (var key in fplan) {
 			grph.append("g").attr("class", "seat " + key)
 				.attr("transform", "translate(" + ((fplan[key][0]-1) * gridSizeX + 10) + ", " + ((fplan[key][1]-1) * gridSizeY + 10) + ")")
@@ -111,7 +128,7 @@ FloorIllustrator = function(chartId) {
 		}
 
 		// Draw walls
-		grph.append("polygon").attr("class", "floor-wall")
+		grph.append("polygon").attr("class", "floor-wall").style("fill", "none")
 			.attr("points", shapew).attr("shape-rendering", "geometricPrecision")
 			.attr("transform", "translate(10, 10)");
 	}

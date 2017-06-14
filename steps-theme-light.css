@@ -69,8 +69,11 @@
 	fill: black;
 }
 
+.floor-fill {
+	fill: #DDDDDD;
+}
+
 .floor-wall {
-	fill: none;
 	stroke: black;
 	stroke-width: 3;
 }
