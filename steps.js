@@ -90,7 +90,7 @@ var buildUi = function(html, msg, user, yr, mn, dt, step, node, state, succ, fai
 				.replace(/%%%anchorVerify%%%/g, mnuVrfy)
 				.replace(/%%%returnLink%%%/g, vsbLink)
 				.replace(/%%%formButton%%%/g, vsbBttn)
-				.replace(/%%%nodeServer%%%/g, "localhost") //"192.168.14.130"
+				.replace(/%%%nodeServer%%%/g, "192.168.14.130") //"localhost"
 				.replace(/%%%urlChain%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain')
 				.replace(/%%%urlBlock%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain/blocks/')
 				.replace(/%%%urlPeers%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/network/peers'));
@@ -389,7 +389,7 @@ http.createServer(function(req, res) {
 					if (times.length < 1) {
 						var mill = now.getTime() - 3540000;
 						for (var i = 0; i < 60; i ++) {
-						times[i] = { "time": Math.round(mill/60000)*60, "count": 0 }; //Math.floor(Math.random()*81 + 20) };
+						times[i] = { "time": Math.round(mill/60000)*60, "count": 0 }; //Math.floor(Math.random()*80 + 20) };
 							mill += 60000;
 						}
 					}

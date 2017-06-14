@@ -5,9 +5,9 @@ const KEY_ROW = "row";
 const KEY_COL = "column";
 const KEY_WDTH = "width"
 const KEY_HGHT = "height";
+const KEY_INTV = "interval";
 const KEY_CHNLID = "channelId";
 const KEY_CHNLNAME = "name";
-const KEY_CHNLINTV = "interval";
 const KEY_CHNLURL = "url";
 const KEY_CHNLSUB = "subscribed";
 
@@ -218,7 +218,7 @@ function init() {
 				}, 100 * (idx + 1), last[idx]);
 			} else if (last[idx].chartId) {
 				setTimeout(function(obj) {
-						showChart(obj.chartId, obj.row, obj.column, obj.width, obj.height, obj);
+						showChart(obj.chartId, obj.row, obj.column, obj.width, obj.height, obj.interval, obj);
 				}, 100 * (idx + 1), last[idx]);
 			}
 		}
@@ -233,16 +233,16 @@ function init() {
 }
 
 function start() {
-	var obj = this;
 	intervalId = setInterval(function() {
-			/*for (var idx = 0; idx < cfgdCharts.length; idx ++) {
-				if (cfgdCharts[idx] && (typeof cfgdCharts[idx].render === "function") && cfgdCharts[idx].shouldRun()) {
-					cfgdCharts[idx].render();
+			for (var i = 0; i < cfgdCharts.length; i ++) {
+				if (cfgdCharts[i] && (typeof cfgdCharts[i].refresh === "function") && cfgdCharts[i].shouldRun()) {
+					cfgdCharts[i].refresh();
 				}
-			}*/
-			for (var idx = 0; idx < channels.length; idx ++) {
-				if (channels[idx] && (typeof channels[idx].run === "function")) {
-					channels[idx].run();
+			}
+
+			for (var j = 0; j < channels.length; j ++) {
+				if (channels[j] && (typeof channels[j].run === "function")) {
+					channels[j].run();
 				}
 			}
 	}, RUN_INTERVAL);
@@ -394,6 +394,7 @@ addEventListener('click', function(event) {
 				break;
 
 			case "charts-okay":
+				var itv = parseInt(d3.select("#charts-intv").node().value);
 				var row = parseInt(d3.select("#charts-row").node().value);
 				var col = parseInt(d3.select("#charts-col").node().value);
 				var wdt = parseInt(d3.select("#charts-width").node().value);
@@ -403,11 +404,11 @@ addEventListener('click', function(event) {
 				if (eid != "-") {
 					if (typeof avlbCharts[eid].configed === "function") {
 						avlbCharts[eid].configed(eid, function() {
-								var cook = avlbCharts[eid].toCookie(row, col, wdt, hgt);
-								showChart(eid, row, col, wdt, hgt, cook);
+								var cook = avlbCharts[eid].toCookie(row, col, wdt, hgt, itv);
+								showChart(eid, row, col, wdt, hgt, itv, cook);
 						});
 					} else {
-						showChart(eid, row, col, wdt, hgt);
+						showChart(eid, row, col, wdt, hgt, itv);
 					}
 				}
 				// Don't need to break here...
@@ -504,6 +505,9 @@ addEventListener('change', function(event) {
 			switch (event.target.id) {
 			case "charts-list":
 				event.preventDefault();
+				if (avlbCharts[event.target.value].updateInterval) {
+					d3.select("#charts-intv").node().value = avlbCharts[event.target.value].updateInterval;
+				}
 				if (avlbCharts[event.target.value].minGridWdth) {
 					d3.select("#charts-width").node().value = avlbCharts[event.target.value].minGridWdth;
 				}
@@ -526,7 +530,7 @@ addEventListener('change', function(event) {
  * Clone, display and start a chart on the specific position.
  * elmId - Unique ID of the chart object, not the ID used in DOM.
  */
-function showChart(elmId, row, col, wdth, hght, cook) {
+function showChart(elmId, row, col, wdth, hght, intv, cook) {
 	var domId = elmId + row + col;
 	if (getCfgdCharts(domId) < 0) {
 		switch (hasEnoughRoom(row, col, wdth, hght)) {
@@ -544,6 +548,7 @@ function showChart(elmId, row, col, wdth, hght, cook) {
 			break;
 		case 0:
 			var objt = new avlbCharts[elmId].constructor(domId);
+			objt.updateInterval = intv;
 			var cntr = d3.select(".charts")
 				.append("li")
 					.attr("id", domId).attr("class", "chart tbl r" + row + " c" + col + " w" + wdth + " h" + hght)
@@ -567,7 +572,7 @@ function showChart(elmId, row, col, wdth, hght, cook) {
 						}
 
 						cfgdCharts[cfgdCharts.length] = objt;
-						addCookieCharts(domId, elmId, row, col, wdth, hght);
+						addCookieCharts(domId, elmId, row, col, wdth, hght, intv);
 				});
 			} else {
 				setPositions(row, col, wdth, hght, 1, true);
@@ -581,7 +586,7 @@ function showChart(elmId, row, col, wdth, hght, cook) {
 				}
 
 				cfgdCharts[cfgdCharts.length] = objt;
-				addCookieCharts(domId, elmId, row, col, wdth, hght);
+				addCookieCharts(domId, elmId, row, col, wdth, hght, intv);
 			}
 			break;
 		}
@@ -606,17 +611,11 @@ function removeChart(rid) {
 	}
 }
 
-function addCookieCharts(domId, elmId, row, col, wdth, hght) {
+function addCookieCharts(domId, elmId, row, col, wdth, hght, intv) {
 	var cook = {};
 	var idx = getCfgdCharts(domId);
-	if ((idx >= 0) && (typeof cfgdCharts[idx].toCookie === "function")) {
-		cook = cfgdCharts[idx].toCookie(row, col, wdth, hght);
-	} else {
-		cook[KEY_CHART] = elmId;
-		cook[KEY_ROW] = row;
-		cook[KEY_COL] = col;
-		cook[KEY_WDTH] = wdth;
-		cook[KEY_HGHT] = hght;
+	if (idx >= 0) {
+		cook = cfgdCharts[idx].toCookie(row, col, wdth, hght, intv);
 	}
 	cfgdCookie[cfgdCookie.length] = cook;
 
@@ -630,14 +629,15 @@ function addCookieCharts(domId, elmId, row, col, wdth, hght) {
 function updateCookieCharts(domId) {
 	var cook = {};
 	var i = getCfgdCharts(domId);
-	if ((i >= 0) && (typeof cfgdCharts[i].toCookie === "function")) {
+	if (i >= 0) {
 		for (var j = 0; j < cfgdCookie.length; j ++) {
 			var row = cfgdCookie[j].row;
 			var col = cfgdCookie[j].column;
 			var wdth = cfgdCookie[j].width;
 			var hght = cfgdCookie[j].height;
+			var intv = cfgdCookie[j].interval;
 			if ((cfgdCookie[j].chartId + row + col) == domId) {
-				cfgdCookie[j] = cfgdCharts[i].toCookie(row, col, wdth, hght);
+				cfgdCookie[j] = cfgdCharts[i].toCookie(row, col, wdth, hght, intv);
 
 				var expr = new Date();
 				expr.setYear(expr.getFullYear() + 1);
@@ -697,6 +697,7 @@ function drag(event) {
 		obj.idx = idx;
 		obj.id = cfgdCharts[idx].id;
 		obj.domId = cfgdCharts[idx].domId;
+		obj.interval = cfgdCharts[idx].updateInterval;
 		event.dataTransfer.setData("text", JSON.stringify(obj));
 
 		setTimeout(function() {
@@ -719,7 +720,7 @@ function drop(event) {
 		cook.row = grd.row;
 		cook.column = grd.column;
 		removeChart(obj.domId);
-		showChart(obj.id, grd.row, grd.column, obj.width, obj.height, cook);
+		showChart(obj.id, grd.row, grd.column, obj.width, obj.height, obj.interval, cook);
 	} else {
 		dragCanceled(obj.domId, obj[KEY_ROW], obj[KEY_COL], obj[KEY_WDTH], obj[KEY_HGHT]);
 	}
@@ -846,6 +847,10 @@ function buildFramework() {
 		.append("select").attr("id", "charts-list").attr("name", "charts-list")
 		.append("option").attr("value", "-").html("-- Select --");
 	trow = tabl.append("tr");
+	trow.append("td").style("text-align", "right").html("Update interval:");
+	trow.append("td").style("padding-left", "15px")
+		.append("input").attr("type", "text").attr("id", "charts-intv").attr("name", "charts-intv");
+	trow = tabl.append("tr");
 	trow.append("td").style("text-align", "right").html("Row:");
 	trow.append("td").style("padding-left", "15px")
 		.append("select").attr("id", "charts-row").attr("name", "charts-row");
@@ -948,8 +953,8 @@ function Chart(chartId) {
 	};
 
 	var elapse = this.updateInterval;
-	this.shouldRun = function(runInterval) {
-		elapse -= runInterval;
+	this.shouldRun = function() {
+		elapse -= RUN_INTERVAL;
 		if (elapse <= 0) {
 			elapse = this.updateInterval;
 			return true;
@@ -961,15 +966,32 @@ function Chart(chartId) {
 		elapse = 0;
 	};
 
+	this.fromCookie = function(cook) {
+		if (cook) {
+			var v = parseInt(cook[KEY_INTV]);
+			if (!isNaN(v)) this.updateInterval = v;
+		}
+	};
+
+	this.toCookie = function(row, col, wdth, hght, intv) {
+		var cook = {};
+		cook[KEY_CHART] = this.id;
+		cook[KEY_ROW] = row;
+		cook[KEY_COL] = col;
+		cook[KEY_WDTH] = wdth;
+		cook[KEY_HGHT] = hght;
+		cook[KEY_INTV] = intv;
+		return cook;
+	};
+
 	/*
 	this.start = function() { };
-	this.render = function() { };
+	this.render = function(rspn) { };
+	this.refresh = function() { };
 	this.config = function(element) { };
 	this.configed = function(domId, func) { };
 	this.configCancel = function(domId) { };
 	this.buildUi = function(func) { };
-	this.fromCookie = function(cook) { };
-	this.toCookie = function(row, col, wdth, hght) { };
 	*/
 };
 
@@ -1088,7 +1110,7 @@ function addCookieChannel(id) {
 	if (idx >= 0) {
 		cook[KEY_CHNLID] = channels[idx].id;
 		cook[KEY_CHNLNAME] = channels[idx].name;
-		cook[KEY_CHNLINTV] = channels[idx].runInterval;
+		cook[KEY_INTV] = channels[idx].runInterval;
 		cook[KEY_CHNLURL] = channels[idx].url;
 		cook[KEY_CHNLSUB] = channels[idx].subscribedCharts;
 		cfgdCookie[cfgdCookie.length] = cook;
@@ -1108,7 +1130,7 @@ function updateCookieChannel(id) {
 	if (idx >= 0) {
 		cook[KEY_CHNLID] = channels[idx].id;
 		cook[KEY_CHNLNAME] = channels[idx].name;
-		cook[KEY_CHNLINTV] = channels[idx].runInterval;
+		cook[KEY_INTV] = channels[idx].runInterval;
 		cook[KEY_CHNLURL] = channels[idx].url;
 		cook[KEY_CHNLSUB] = channels[idx].subscribedCharts;
 		for (var j = 0; j < cfgdCookie.length; j ++) {
@@ -1152,6 +1174,8 @@ var timeFormatClndr = d3.time.format("%d %b %Y");
 var timeFormatWeekn = d3.time.format("%A");
 
 DateTimeWidget = function(chartId) {
+	Chart.call(this);
+
 	this.id = "datetime-widget"; //Chart ID
 	this.name = "Clock widget";
 	this.updateInterval = 1000;
@@ -1162,14 +1186,11 @@ DateTimeWidget = function(chartId) {
 	this.format = "12"; // '12' - 12 hour format with am/pm, '24' - 24 hour format from 00 to 23
 	this.url = "https://[dashboard]/time";
 
-	var _this = this;
 	this.start = function() {
-		setInterval(function() {
-				_this.render();
-		}, this.updateInterval);
+		this.refresh();
 	}
 
-	this.render = function() {
+	this.refresh = function() {
 		var neti = d3.select("#"+this.domId).select(".chart-indct");
 		if (neti.empty()) {
 			neti = d3.select("#"+this.domId).append("img").attr("src", IMG_NETWORK).attr("class", "chart-indct");
@@ -1239,7 +1260,9 @@ DateTimeWidget = function(chartId) {
 		}
 	};
 
+	var superFromCookie = this.fromCookie;
 	this.fromCookie = function(cook) {
+		superFromCookie.call(this, cook);
 		if (cook) {
 			this.source = cook["source"];
 			this.format = cook["format"];
@@ -1247,13 +1270,9 @@ DateTimeWidget = function(chartId) {
 		}
 	};
 
-	this.toCookie = function(row, col, wdth, hght) {
-		var cook = {};
-		cook[KEY_CHART] = this.id;
-		cook[KEY_ROW] = row;
-		cook[KEY_COL] = col;
-		cook[KEY_WDTH] = wdth;
-		cook[KEY_HGHT] = hght;
+	var superToCookie = this.toCookie;
+	this.toCookie = function(row, col, wdth, hght, intv) {
+		var cook = superToCookie.call(this, row, col, wdth, hght, intv);
 		cook["source"] = this.source;
 		cook["format"] = this.format;
 		cook["url"] = this.url;
