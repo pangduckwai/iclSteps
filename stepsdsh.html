@@ -13,17 +13,24 @@
 		<link type="text/css" rel="stylesheet" href="icldash-theme-dark.css" />
 		<link type="text/css" rel="stylesheet" href="steps-theme-dark.css"/>
 		<script type="text/javascript">
-			const DFLT_CFG_COOKIE =
+			/*const DFLT_CFG_COOKIE =
 				'[{"channelId":"chnl001","name":"Blocks channel","url":"http://%%%nodeServer%%%:8080/ws/temp1","subscribed":["illust-block11","illust-floor35","illust-brate27"]},' +
 				' {"channelId":"chnl002","name":"Peers channel","url":"http://%%%nodeServer%%%:8080/ws/temp2","interval":6000,"subscribed":["illust-peers18"]},' +
-				' {"chartId":"illust-block","row":1,"column":1,"width":6,"height":2,"selected":"-1"},' +
-				' {"chartId":"illust-peers","row":1,"column":8,"width":2,"height":2},' +
-				' {"chartId":"illust-brate","row":2,"column":7,"width":1,"height":1,"min":0,"max":10,"alert1":7,"alert2":9},' +
-				' {"chartId":"illust-floor","row":3,"column":5,"width":5,"height":4},' +
-				' {"chartId":"datetime-widget","row":1,"column":7,"width":1,"height":1,"source":"Server","format":"24","url":"http://localhost:8080/time"}]';
+				' {"chartId":"illust-block","row":1,"column":1,"width":6,"height":2,"interval":2500,"selected":"-1"},' +
+				' {"chartId":"illust-peers","row":1,"column":8,"width":2,"height":2,"interval":5500},' +
+				' {"chartId":"illust-brate","row":2,"column":7,"width":1,"height":1,"interval":2500,"min":0,"max":10,"alert1":7,"alert2":9},' +
+				' {"chartId":"illust-floor","row":3,"column":5,"width":5,"height":4,"interval":3500},' +
+				' {"chartId":"datetime-widget","row":1,"column":7,"width":1,"height":1,"interval":1000,"source":"Server","format":"24","url":"http://localhost:8080/time"}]';*/
+			const DFLT_CFG_COOKIE =
+				'[{"channelId":"chnl001","name":"Blocks channel","url":"http://%%%nodeServer%%%:8080/ws/temp1","subscribed":["illust-block11","illust-floor35","illust-brate27"]},' +
+				' {"channelId":"chnl002","name":"Peers channel","url":"http://%%%nodeServer%%%:8080/ws/temp2","interval":5000,"subscribed":["illust-peers18"]},' +
+				' {"chartId":"illust-peers","row":1,"column":8,"width":2,"height":2,"interval":5000},' +
+				' {"chartId":"illust-brate","row":2,"column":7,"width":1,"height":1,"interval":2500,"min":0,"max":10,"alert1":7,"alert2":9},' +
+				' {"chartId":"illust-floor","row":3,"column":5,"width":5,"height":4,"interval":3500},' +
+				' {"chartId":"datetime-widget","row":1,"column":7,"width":1,"height":1,"interval":1000,"source":"Server","format":"24","url":"http://localhost:8080/time"}]';
 			const DFLT_ROW = 6;
 			const DFLT_COL = 9;
-			const DFLT_DRAG_ENABLED = true;
+			const DFLT_DRAG_ENABLED = false;
 		</script>
 	</head>
 	<body onLoad="init()">

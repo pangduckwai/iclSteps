@@ -166,7 +166,7 @@ PeersIllustrator = function(chartId) {
 		//func('<div class="chart-title"></div><div style="perspective:500px"><svg class="chart-viz" style="transform:rotateX(45deg) translate(0, -200px)"/></div>');
 	};
 
-	this.fromCookie = function(cook) {
+	/*this.fromCookie = function(cook) {
 	};
 
 	this.toCookie = function(row, col, wdth, hght) {
@@ -177,7 +177,7 @@ PeersIllustrator = function(chartId) {
 		cook[KEY_WDTH] = wdth;
 		cook[KEY_HGHT] = hght;
 		return cook;
-	};
+	};*/
 
 };
 PeersIllustrator.prototype = new Chart();

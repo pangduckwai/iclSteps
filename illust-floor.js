@@ -2,9 +2,9 @@ FloorIllustrator = function(chartId) {
 	this.id = "illust-floor"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Floor plan illustrator";
-	this.minGridWdth = 4;
+	this.minGridWdth = 5;
 	this.minGridHght = 4;
-	this.updateInterval = 3500;
+	this.updateInterval = 4000;
 
 	const fplan = {
 		"alan":[3, 6, 1], "alex":[6, 6, 1], "andy":[2, 5, 3], "bill":[4, 3, 1], "carl":[3, 7, 1], "cole":[6, 7, 1],

@@ -1,4 +1,6 @@
 RateIllustrator = function(chartId) {
+	Chart.call(this);
+
 	this.id = "illust-brate"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Block rate illustrator";
@@ -45,7 +47,9 @@ RateIllustrator = function(chartId) {
 		func('<div class="chart-title" style="color:#dda700">Avg block rate</div><svg class="chart-viz gauge"/>');
 	};
 
+	var superFromCookie = this.fromCookie;
 	this.fromCookie = function(cook) {
+		superFromCookie.call(this, cook);
 		if (cook) {
 			this.min = cook["min"];
 			this.max = cook["max"];
@@ -115,20 +119,15 @@ RateIllustrator = function(chartId) {
 		}
 	};
 
-	this.toCookie = function(row, col, wdth, hght) {
-		var cook = {};
-		cook[KEY_CHART] = this.id;
-		cook[KEY_ROW] = row;
-		cook[KEY_COL] = col;
-		cook[KEY_WDTH] = wdth;
-		cook[KEY_HGHT] = hght;
+	var superToCookie = this.toCookie;
+	this.toCookie = function(row, col, wdth, hght, intv) {
+		var cook = superToCookie.call(this, row, col, wdth, hght, intv);
 		cook["min"] = parseInt(this.min);
 		cook["max"] = parseInt(this.max);
 		cook["alert1"] = parseInt(this.alert1);
 		cook["alert2"] = parseInt(this.alert2);
 		return cook;
 	};
-
 };
 RateIllustrator.prototype = new Chart();
 RateIllustrator.prototype.constructor = RateIllustrator;
@@ -288,7 +287,7 @@ function Gauge(placeholderName, configuration) {
 							.enter()
 								.append("svg:text")
 									.attr("x", this.config.cx)
-									.attr("y", this.config.cy + 17) //this.config.size - this.config.cy / 4 - fontSize)
+									.attr("y", this.config.cy + 30) //this.config.size - this.config.cy / 4 - fontSize)
 									.attr("dy", fontSize / 2)
 									.attr("text-anchor", "middle")
 									.style("font-size", fontSize + "px")

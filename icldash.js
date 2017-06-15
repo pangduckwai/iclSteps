@@ -317,6 +317,7 @@ addEventListener('click', function(event) {
 							}
 						}
 						if (cid != '') d3.select("#channel-list").node().value = cid;
+						d3.select("#updt-intv").node().value = cfgdCharts[idx].updateInterval;
 					}
 				}
 				break;
@@ -431,6 +432,11 @@ addEventListener('click', function(event) {
 				idx = getCfgdCharts(rid);
 				if (idx >= 0) {
 					// Defult setting(s)
+					var intv = parseInt(d3.select("#updt-intv").node().value);
+					if (!isNaN(intv)) {
+						cfgdCharts[idx].updateInterval = intv;
+					}
+
 					var chnl = d3.select("#channel-list").node().value;
 					var count;
 					for (var i = 0; i < channels.length; i ++) {
@@ -689,6 +695,7 @@ function getGrid(element) {
 }
 
 // **** Drag & Drop functions ****
+// TODO: After drag/drop, need to update the channel subscription list with new domId!!!
 function drag(event) {
 	var domId = event.target.id;
 	var idx = getCfgdCharts(domId);
@@ -891,6 +898,10 @@ function buildFramework() {
 	tcll.append("span").html("&nbsp;");
 	tcll.append("select").attr("id", "channel-list").attr("name", "channel-list")
 		.append("option").attr("value", "-").html("-- Select --");
+	tcll = tbdy.append("tr").append("td").attr("class", "sttttl").attr("colspan", "2").style("text-align", "right");
+	tcll.append("span").html("Refresh (ms)");
+	tcll.append("span").html("&nbsp;");
+	tcll.append("input").attr("type", "text").attr("id", "updt-intv").attr("name", "updt-intv").style("width", "80px");
 	tabl.append("tbody").attr("id", "setting-custom");
 	tcll = tabl.append("tr").append("td").attr("colspan", "2").style("text-align", "right");
 	tcll.append("input").attr("type", "button").attr("name", "setting-okay").attr("id", "setting-okay").attr("value", "Okay")
@@ -922,7 +933,7 @@ function Chart(chartId) {
 	// Default values
 	this.minGridWdth = 1;
 	this.minGridHght = 1;
-	this.updateInterval = 5000;
+	this.updateInterval = 500;
 
 	// Interface
 	this.init = function() {
@@ -953,8 +964,8 @@ function Chart(chartId) {
 	};
 
 	var elapse = this.updateInterval;
-	this.shouldRun = function() {
-		elapse -= RUN_INTERVAL;
+	this.shouldRun = function(runInterval) {
+		elapse -= runInterval;
 		if (elapse <= 0) {
 			elapse = this.updateInterval;
 			return true;
@@ -1190,6 +1201,17 @@ DateTimeWidget = function(chartId) {
 		this.refresh();
 	}
 
+	var elapse = this.updateInterval;
+	this.shouldRun = function() {
+		elapse -= RUN_INTERVAL;
+		if (elapse <= 0) {
+			elapse = this.updateInterval;
+			return true;
+		} else {
+			return false;
+		}
+	};
+
 	this.refresh = function() {
 		var neti = d3.select("#"+this.domId).select(".chart-indct");
 		if (neti.empty()) {
@@ -1281,8 +1303,8 @@ DateTimeWidget = function(chartId) {
 
 	this.config = function(element) {
 		element.html("");
-		d3.select(".chnllist").style("display", "none");
-		d3.select(".sttttl").style("text-align", "left");
+		d3.selectAll(".chnllist").style("display", "none");
+		d3.selectAll(".sttttl").style("text-align", "left");
 
 		var trow = element.append("tr");
 		trow.append("td").attr("class", "cfgDateTimeWidget").style("text-align", "right")
@@ -1316,8 +1338,8 @@ DateTimeWidget = function(chartId) {
 
 	this.configed = function(domId, func) {
 		if (domId == this.domId) {
-			d3.select(".chnllist").style("display", null);
-			d3.select(".sttttl").style("text-align", "right");
+			d3.selectAll(".chnllist").style("display", null);
+			d3.selectAll(".sttttl").style("text-align", "right");
 			var ctrls = d3.selectAll(".cfgDateTimeWidget");
 
 			if (ctrls.select(".cfgFormat").node().checked) {
@@ -1342,8 +1364,8 @@ DateTimeWidget = function(chartId) {
 
 	this.configCancel = function(domId) {
 		if (domId == this.domId) {
-			d3.select(".chnllist").style("display", null);
-			d3.select(".sttttl").style("text-align", "right");
+			d3.selectAll(".chnllist").style("display", null);
+			d3.selectAll(".sttttl").style("text-align", "right");
 		}
 	}
 };

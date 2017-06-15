@@ -1,8 +1,10 @@
 BlockIllustrator = function(chartId) {
+	Chart.call(this);
+
 	this.id = "illust-block"; //Chart ID
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 	this.name = "Blockchain illustrator";
-	this.minGridWdth = 5;
+	this.minGridWdth = 6;
 	this.minGridHght = 2;
 	this.updateInterval = 2000;
 	this.maxBlockDisplay = 10; // Maximum number of blocks to display at one time
@@ -365,19 +367,17 @@ BlockIllustrator = function(chartId) {
 		func('<div class="chart-title"></div><svg class="chart-viz" />');
 	};
 
+	var superFromCookie = this.fromCookie;
 	this.fromCookie = function(cook) {
+		superFromCookie.call(this, cook);
 		if (cook) {
 			this.selected = parseInt(cook["selected"]);
 		}
 	};
 
-	this.toCookie = function(row, col, wdth, hght) {
-		var cook = {};
-		cook[KEY_CHART] = this.id;
-		cook[KEY_ROW] = row;
-		cook[KEY_COL] = col;
-		cook[KEY_WDTH] = wdth;
-		cook[KEY_HGHT] = hght;
+	var superToCookie = this.toCookie;
+	this.toCookie = function(row, col, wdth, hght, intv) {
+		var cook = superToCookie.call(this, row, col, wdth, hght, intv);
 		cook["selected"] = this.selected;
 		return cook;
 	};
