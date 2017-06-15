@@ -90,7 +90,7 @@ var buildUi = function(html, msg, user, yr, mn, dt, step, node, state, succ, fai
 				.replace(/%%%anchorVerify%%%/g, mnuVrfy)
 				.replace(/%%%returnLink%%%/g, vsbLink)
 				.replace(/%%%formButton%%%/g, vsbBttn)
-				.replace(/%%%nodeServer%%%/g, "192.168.14.130") //"localhost"
+				.replace(/%%%nodeServer%%%/g, "localhost") //"192.168.14.130"
 				.replace(/%%%urlChain%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain')
 				.replace(/%%%urlBlock%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain/blocks/')
 				.replace(/%%%urlPeers%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/network/peers'));
@@ -387,10 +387,10 @@ http.createServer(function(req, res) {
 
 				case '/ws/temp1': // ************ TEMP - block ***************
 					if (times.length < 1) {
-						var mill = now.getTime() - 3540000;
-						for (var i = 0; i < 60; i ++) {
-						times[i] = { "time": Math.round(mill/60000)*60, "count": 0 }; //Math.floor(Math.random()*80 + 20) };
-							mill += 60000;
+						var mill = now.getTime() - 60000; // The previous minute
+						for (var i = 0; i < 20; i ++) {
+						times[i] = { "time": Math.round(mill/3000)*3, "count": 0 }; //Math.floor(Math.random()*80 + 20) };
+							mill += 3000;
 						}
 					}
 
@@ -407,10 +407,10 @@ http.createServer(function(req, res) {
 					depth += latst.length;
 					var hash = crypto.createHash('sha256').update(depth.toString()).digest('base64');
 
-					var curr = Math.round(now.getTime()/60000)*60;
+					var curr = Math.round(now.getTime()/3000)*3;
 					if (curr > times[times.length-1].time) {
 						times.push({"time": curr, "count": latst.length});
-						if (times.length > 60) times.shift();
+						if (times.length > 20) times.shift();
 					} else {
 						times[times.length-1].count += latst.length;
 					}

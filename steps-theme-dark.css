@@ -6,6 +6,20 @@
     pointer-events: none;
 }
 
+.axis path, .axis line {
+	stroke: white;
+	fill: none;
+	shape-rendering: crispEdges;
+}
+
+text.ctxt, .tick text {
+	font-weight: normal;
+	font-size: .7em;
+	font-family: "PT Sans", sans-serif;
+	fill: white;
+	text-rendering: optimizeLegibility;
+}
+
 .block-rect {
 	fill: none;
 	stroke: #C0C0C0;
