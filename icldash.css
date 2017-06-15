@@ -148,7 +148,7 @@ a:active, a:link, a:visited {
 
 text.ctxt, .tick text {
 	font-weight: normal;
-	font-size: .8em;
+	font-size: .7em;
 	font-family: "PT Sans", sans-serif;
 	text-rendering: optimizeLegibility;
 }

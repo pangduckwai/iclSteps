@@ -1193,9 +1193,9 @@ DateTimeWidget = function(chartId) {
 
 	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
 
-	this.source = "Server"; // 'Local' - PC time, 'Server' - Server time, require URL 
+	this.source = "Local"; // 'Local' - PC time, 'Server' - Server time, require URL 
 	this.format = "12"; // '12' - 12 hour format with am/pm, '24' - 24 hour format from 00 to 23
-	this.url = "https://[dashboard]/time";
+	this.url = "";
 
 	this.start = function() {
 		this.refresh();

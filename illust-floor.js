@@ -82,16 +82,13 @@ FloorIllustrator = function(chartId) {
 		var x1 = gridSizeX * 10;
 		var dx = gridSizeX * 2;
 		var y0 = gridSizeY * 2 + 10;
-		var tmp = 0;
 		while ((x0 - dx) < x1) {
 			grph.append("line").attr("class", "floor-desk")
 				.attr("x1", x0).attr("y1", y0).attr("x2", x0 - dx).attr("y2", 20);
 			x0 += 15;
-			tmp++;
 		}
 		grph.append("rect").attr("class", "floor-fill")
 			.attr("x", x1).attr("y", 20).attr("width", 21).attr("height", y0);
-		console.log("Drew " + tmp + " lines for the shade");
 
 		// Draw floor
 		grph.append("polygon").attr("class", "floor-fill")
@@ -145,8 +142,8 @@ FloorIllustrator = function(chartId) {
 		for (var i = 0; i < rspn.records.length; i ++) {
 			grph.select("."+rspn.records[i]).select("text")
 				.transition().duration(500)
-				.attr('font-size', '2em')
-				.transition().duration(2100)
+				.attr('font-size', '2.5em')
+				.transition().duration(3000)
 				.attr('font-size', '0.8em');
 		}
 	};

@@ -56,8 +56,7 @@ TimesIllustrator = function(chartId) {
 			grph.select(".cvert.axis")
 				.append("text").attr("class", "ctxt").text("Count")
 				.attr("text-anchor", "end")
-				.attr("x", -paddTop+3).attr("y", txtHght)
-				.attr("transform", "rotate(-90, 0, 0)");
+				.attr("x", paddLft+5).attr("y", paddTop-2);
 		}
 		grph.select(".cvert.axis").transition().duration(durationY).call(axisY);
 
@@ -72,25 +71,23 @@ TimesIllustrator = function(chartId) {
 			.selectAll("text")
 			.attr("transform", "rotate(-40)")
 			.style("text-anchor", "end");
-		//grph.select(".bline").moveToFront();
 
 		var bars = grph.selectAll(".bars").data(rspn.times, function(d) { return d.time; });
 		var bar = bars.enter()
 			.append("g").attr("class", "bars")
 			.attr("transform", function(d) { return "translate(" + (tickLastpos + tickSpacing) + ", 0)"; });
-		bar.append("rect").style("fill", "#ffffff");
+		bar.append("rect").style("fill", "#b8dbe5");
 		bars.exit().remove();
 		bars.transition().duration(durationX).ease("linear")
 			.attr("transform", function(d) { return "translate(" + scaleX(d.time) + ", 0)"; });
 		bars.select("rect").transition().duration(durationY)
 			.attr("x", 0).attr("y", function(d) { return scaleY(d.count); }).attr("width", 10)
 			.attr("height", function(d) { return zero - scaleY(d.count); });
-
 	};
 
 	// *** API functions ***
 	this.buildUi = function(func) {
-		func('<div class="chart-title">Number of transactions by time</div><svg class="chart-viz" />');
+		func('<div class="chart-title" style="color:#b8dbe5">Number of transactions by time</div><svg class="chart-viz" />');
 	};
 
 	var superFromCookie = this.fromCookie;
