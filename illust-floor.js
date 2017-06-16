@@ -134,18 +134,27 @@ FloorIllustrator = function(chartId) {
 			.attr("transform", "translate(10, 10)");
 	}
 
-	this.render = function(rspn) {
+	var store = new Set();
+	this.render = function(rspn, elapse) {
 		if (!rspn || !rspn.records || (rspn.records.length <= 0)) {
 			return;
 		}
 
 		for (var i = 0; i < rspn.records.length; i ++) {
-			grph.select("."+rspn.records[i]).select("text")
+			store.add(rspn.records[i]);
+		}
+
+		if (!this.shouldRun(elapse)) return;
+
+		var values = Array.from(store);
+		for (var i = 0; i < values.length; i ++) {
+			grph.select("."+values[i]).select("text")
 				.transition().duration(500)
 				.attr('font-size', '2.5em')
 				.transition().duration(3000)
 				.attr('font-size', '0.8em');
 		}
+		store = new Set();
 	};
 
 };

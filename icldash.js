@@ -235,14 +235,14 @@ function init() {
 function start() {
 	intervalId = setInterval(function() {
 			for (var i = 0; i < cfgdCharts.length; i ++) {
-				if (cfgdCharts[i] && (typeof cfgdCharts[i].refresh === "function") && cfgdCharts[i].shouldRun()) {
-					cfgdCharts[i].refresh();
+				if (cfgdCharts[i] && (typeof cfgdCharts[i].refresh === "function")) {
+					cfgdCharts[i].refresh(RUN_INTERVAL); // For charts do not get data from channel
 				}
 			}
 
 			for (var j = 0; j < channels.length; j ++) {
 				if (channels[j] && (typeof channels[j].run === "function")) {
-					channels[j].run();
+					channels[j].run(RUN_INTERVAL);
 				}
 			}
 	}, RUN_INTERVAL);
@@ -305,7 +305,7 @@ addEventListener('click', function(event) {
 
 						// Add available channels to the channel drop-down list
 						d3.selectAll(".chnl-optn").remove();
-						var optn = d3.select("#channel-list");
+						var optn = d3.select("#setting-channel");
 						var cid = '';
 						for (var i = 0; i < channels.length; i ++) {
 							optn.append("option").attr("class", "chnl-optn").attr("value", channels[i].id).html(channels[i].name);
@@ -316,8 +316,8 @@ addEventListener('click', function(event) {
 								}
 							}
 						}
-						if (cid != '') d3.select("#channel-list").node().value = cid;
-						d3.select("#updt-intv").node().value = cfgdCharts[idx].updateInterval;
+						if (cid != '') d3.select("#setting-channel").node().value = cid;
+						d3.select("#setting-intv").node().value = cfgdCharts[idx].updateInterval;
 					}
 				}
 				break;
@@ -374,6 +374,7 @@ addEventListener('click', function(event) {
 					addChannel(cid, nmn, url, itv);
 				}
 				showChannels();
+				alert('Channel info updated');
 				break;
 
 			case "channel-cancel":
@@ -421,6 +422,13 @@ addEventListener('click', function(event) {
 				break;
 
 			case "setting-remove":
+				var rid = d3.select("#setting-charts").node().value;
+				idx = getCfgdCharts(rid);
+				if (idx >= 0) {
+					if (typeof cfgdCharts[idx].configCancel === "function") {
+						cfgdCharts[idx].configCancel(rid);
+					}
+				}
 				removeChart(d3.select("#setting-charts").node().value);
 				d3.select("#setting-dialog").style("display", "none");
 				d3.select("#disable-bg").style("display", "none");
@@ -432,12 +440,12 @@ addEventListener('click', function(event) {
 				idx = getCfgdCharts(rid);
 				if (idx >= 0) {
 					// Defult setting(s)
-					var intv = parseInt(d3.select("#updt-intv").node().value);
+					var intv = parseInt(d3.select("#setting-intv").node().value);
 					if (!isNaN(intv)) {
 						cfgdCharts[idx].updateInterval = intv;
 					}
 
-					var chnl = d3.select("#channel-list").node().value;
+					var chnl = d3.select("#setting-channel").node().value;
 					var count;
 					for (var i = 0; i < channels.length; i ++) {
 						if (channels[i].id == chnl) {
@@ -837,10 +845,10 @@ function buildFramework() {
 	trow.append("td").append("textarea").attr("class", "channel-url-0").style("width", "300px");
 	trow = tabl.append("tr");
 	trow.append("td")
-	var tcll = trow.append("td").attr("colspan", "2");
+	var tcll = trow.append("td").attr("colspan", "3");
 	tcll.append("input").attr("type", "button").attr("name", "channel-clear").attr("value", "Remove all channels").style("margin-right", "2px");
 	tcll.append("input").attr("type", "button").attr("name", "channel-delete").attr("value", "Delete selected");
-	tcll = trow.append("td").attr("colspan", "2").style("text-align", "right").style("padding-right", "10px");
+	tcll = trow.append("td").style("text-align", "right").style("padding-right", "10px");
 	tcll.append("input").attr("type", "button").attr("name", "channel-okay").attr("value", "Apply").style("margin-right", "2px");
 	tcll.append("input").attr("type", "button").attr("name", "channel-cancel").attr("value", "Close");
 
@@ -853,10 +861,15 @@ function buildFramework() {
 	trow.append("td")
 		.append("select").attr("id", "charts-list").attr("name", "charts-list")
 		.append("option").attr("value", "-").html("-- Select --");
+//	trow = tabl.append("tr");
+//	trow.append("td").style("text-align", "right").html("Channel:");
+//	trow.append("td")
+//		.append("select").attr("id", "charts-channel").attr("name", "charts-channel")
+//		.append("option").attr("value", "-").html("-- Select --");
 	trow = tabl.append("tr");
-	trow.append("td").style("text-align", "right").html("Update interval:");
+	trow.append("td").style("text-align", "right").html("Refresh (ms):");
 	trow.append("td").style("padding-left", "15px")
-		.append("input").attr("type", "text").attr("id", "charts-intv").attr("name", "charts-intv");
+		.append("input").attr("type", "text").attr("id", "charts-intv").attr("name", "charts-intv").style("width", "80px");
 	trow = tabl.append("tr");
 	trow.append("td").style("text-align", "right").html("Row:");
 	trow.append("td").style("padding-left", "15px")
@@ -896,12 +909,12 @@ function buildFramework() {
 	tcll = tbdy.append("tr").attr("class", "chnllist").append("td").attr("colspan", "2").style("text-align", "right");
 	tcll.append("span").html("Channel:");
 	tcll.append("span").html("&nbsp;");
-	tcll.append("select").attr("id", "channel-list").attr("name", "channel-list")
+	tcll.append("select").attr("id", "setting-channel").attr("name", "setting-channel")
 		.append("option").attr("value", "-").html("-- Select --");
 	tcll = tbdy.append("tr").append("td").attr("class", "sttttl").attr("colspan", "2").style("text-align", "right");
 	tcll.append("span").html("Refresh (ms)");
 	tcll.append("span").html("&nbsp;");
-	tcll.append("input").attr("type", "text").attr("id", "updt-intv").attr("name", "updt-intv").style("width", "80px");
+	tcll.append("input").attr("type", "text").attr("id", "setting-intv").attr("name", "setting-intv").style("width", "80px");
 	tabl.append("tbody").attr("id", "setting-custom");
 	tcll = tabl.append("tr").append("td").attr("colspan", "2").style("text-align", "right");
 	tcll.append("input").attr("type", "button").attr("name", "setting-okay").attr("id", "setting-okay").attr("value", "Okay")
@@ -957,24 +970,20 @@ function Chart(chartId) {
 		if (typeof this.start === "function") {
 			this.start();
 		}
-
-		/*if (typeof this.render === "function") {
-			this.render();
-		}*/
 	};
 
-	var elapse = this.updateInterval;
-	this.shouldRun = function(runInterval) {
-		elapse -= runInterval;
-		if (elapse <= 0) {
-			elapse = this.updateInterval;
+	var countDown = this.updateInterval;
+	this.shouldRun = function(elapse) {
+		countDown -= elapse;
+		if (countDown <= 0) {
+			countDown = this.updateInterval;
 			return true;
 		} else {
 			return false;
 		}
 	};
 	this.runNow = function() {
-		elapse = 0;
+		countDown = 0;
 	};
 
 	this.fromCookie = function(cook) {
@@ -997,8 +1006,8 @@ function Chart(chartId) {
 
 	/*
 	this.start = function() { };
-	this.render = function(rspn) { };
-	this.refresh = function() { };
+	this.render = function(rspn, elapse) { };
+	this.refresh = function(elapse) { };
 	this.config = function(element) { };
 	this.configed = function(domId, func) { };
 	this.configCancel = function(domId) { };
@@ -1079,11 +1088,11 @@ function Channel(id, name, url, interval) {
 
 	this.subscribedCharts = [];
 
-	var elapse = this.runInterval;
-	this.shouldRun = function() {
-		elapse -= RUN_INTERVAL;
-		if (elapse <= 0) {
-			elapse = this.runInterval;
+	var countDown = this.runInterval;
+	this.shouldRun = function(elapse) {
+		countDown -= elapse;
+		if (countDown <= 0) {
+			countDown = this.runInterval;
 			return true;
 		} else {
 			return false;
@@ -1091,8 +1100,8 @@ function Channel(id, name, url, interval) {
 	};
 
 	var _this = this;
-	this.run = function() {
-		if (!this.shouldRun()) {
+	this.run = function(elapse) {
+		if (!this.shouldRun(elapse)) {
 			return;
 		}
 
@@ -1105,8 +1114,8 @@ function Channel(id, name, url, interval) {
 				for (var i = 0; i < _this.subscribedCharts.length; i ++) {
 					idx = getCfgdCharts(_this.subscribedCharts[i]);
 					if (idx >= 0) {
-						if (cfgdCharts[idx] && (typeof cfgdCharts[idx].render === "function") && cfgdCharts[idx].shouldRun(_this.runInterval)) {
-							cfgdCharts[idx].render(rspn);
+						if (cfgdCharts[idx] && (typeof cfgdCharts[idx].render === "function")) {
+							cfgdCharts[idx].render(rspn, _this.runInterval);
 						}
 					}
 				}
@@ -1175,6 +1184,27 @@ function removeCookieChannel(id) {
 }
 
 
+// **** Sample chart implementation - channel sniffer ****
+ChannelSniffer = function(chartId) {
+	this.id = "channel-sniffer"; //Chart ID
+	this.name = "Channel Sniffer";
+	this.updateInterval = 1000;
+
+	this.domId = (!chartId) ? this.id : chartId; //Element ID in DOM
+
+	this.render = function(rspn, elapse) {
+		console.log("Channel run interval: ", elapse);
+		console.log(JSON.stringify(rspn));
+	};
+
+	this.buildUi = function(func) {
+		func('<div class="chart-title">Channel Sniffer</div><svg class="chart-viz" />');
+	};
+};
+ChannelSniffer.prototype = new Chart();
+ChannelSniffer.prototype.constructor = ChannelSniffer;
+addAvailableCharts(new ChannelSniffer());
+
 // **** Sample chart implementation - date time widget ****
 var timeFormatSrver = d3.time.format("%Y-%m-%d %H:%M:%S");
 var timeFormatClk12 = d3.time.format("%I:%M");
@@ -1198,21 +1228,12 @@ DateTimeWidget = function(chartId) {
 	this.url = "";
 
 	this.start = function() {
-		this.refresh();
+		this.refresh(this.updateInterval);
 	}
 
-	var elapse = this.updateInterval;
-	this.shouldRun = function() {
-		elapse -= RUN_INTERVAL;
-		if (elapse <= 0) {
-			elapse = this.updateInterval;
-			return true;
-		} else {
-			return false;
-		}
-	};
+	this.refresh = function(elapse) {
+		if (!this.shouldRun(elapse)) return;
 
-	this.refresh = function() {
 		var neti = d3.select("#"+this.domId).select(".chart-indct");
 		if (neti.empty()) {
 			neti = d3.select("#"+this.domId).append("img").attr("src", IMG_NETWORK).attr("class", "chart-indct");

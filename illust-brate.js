@@ -35,7 +35,9 @@ RateIllustrator = function(chartId) {
 		this.gauge.render();
 	};
 
-	this.render = function(rspn) {
+	this.render = function(rspn, elapse) {
+		if (!this.shouldRun(elapse)) return;
+
 		if (!rspn || !rspn.rate) {
 			return;
 		}
@@ -114,7 +116,7 @@ RateIllustrator = function(chartId) {
 					this.start();
 				}
 
-				/*func();*/
+				func();
 			}
 		}
 	};

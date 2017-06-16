@@ -113,6 +113,7 @@ a:active, a:link, a:visited {
 .ronly {
 	background-color: lightgrey;
 	border-color: lightgrey;
+	width: 70px;
 }
 #disable-bg {
 	position: absolute;
@@ -125,7 +126,7 @@ a:active, a:link, a:visited {
 }
 #channel-dialog {
 	margin: 10% auto;
-	width: 900px;
+	width: 790px;
 	display: none;
 }
 #charts-dialog {

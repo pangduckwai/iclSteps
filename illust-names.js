@@ -25,7 +25,9 @@ NamesIllustrator = function(chartId) {
 	};
 
 	// *** Called by dashboard main thread repeatedly ***
-	this.render = function(rspn) {
+	this.render = function(rspn, elapse) {
+		if (!this.shouldRun(elapse)) return;
+
 		if (!rspn || !rspn.names) {
 			return;
 		}
@@ -65,8 +67,6 @@ NamesIllustrator = function(chartId) {
 		if (grph.select(".chorz .axis").empty()) {
 			grph.append("g").attr("class", "chorz")
 				.append("g").attr("class", "axis").attr("transform", "translate(0, " + zero + ")");
-				//.append("line").attr("class", "axis bline").attr("x1", paddLft).attr("y1", 0)
-				//.attr("x2", this.chartWdth - paddRgt).attr("y2", 0);
 		}
 		grph.select(".chorz .axis").transition().duration(durationY).call(axisX);
 		grph.select(".chorz .axis")

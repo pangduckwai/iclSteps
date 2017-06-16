@@ -36,7 +36,13 @@ PeersIllustrator = function(chartId) {
 		grph.attr("viewBox", "0 0 " + this.chartWdth + " " + this.chartHght)
 	};
 
-	this.render = function(rspn) {
+	this.render = function(rspn, elapse) {
+		if (!this.shouldRun(elapse)) return;
+
+		if (!rspn || !rspn.peers || (rspn.peers.length <= 0)) {
+			return;
+		}
+
 		// Make sure all connection lines are drawn first, so the nodes icons are drawn on top of them
 		if (grph.select(".peers").empty()) {
 			grph.append("g").attr("class", "peers")

@@ -73,7 +73,9 @@ BlockIllustrator = function(chartId) {
 	};
 
 	// *** Called by dashboard main thread repeatedly ***
-	this.render = function(rspn) {
+	this.render = function(rspn, elapse) {
+		if (!this.shouldRun(elapse)) return;
+
 		if (catchUp) {
 			//console.log("Catching up, normal run interrupted"); //TODO TEMP
 			return;
