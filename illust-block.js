@@ -232,7 +232,7 @@ BlockIllustrator = function(chartId) {
 			block = blocks.enter().append("g").attr("class", "block");
 		}
 
-		block.attr("transform", function(d, i) { return "translate(" + scaleX(i) + ", -3000)"; }).call(drag); // call 'drag' here because the drag handler should be attached to the element being dragged
+		block.attr("transform", function(d, i) { return "translate(" + scaleX(i) + ", -1500)"; }).call(drag); // call 'drag' here because the drag handler should be attached to the element being dragged
 		block.append("polygon").attr("class", "block-rect")
 			.attr("points", shape1).attr("shape-rendering", "geometricPrecision");
 		block.append("polyline").attr("class", "block-rect")

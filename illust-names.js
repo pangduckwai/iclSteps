@@ -12,7 +12,7 @@ NamesIllustrator = function(chartId) {
 	var grph;
 
 	var paddTop = 35, paddLft = 25, paddRgt = 10, paddBtm = 45, txtHght = 15;
-	var duration = 1000;
+	var durationY = 1000;
 
 	var scaleX, scaleY;
 	var maxCount = 0;
@@ -35,6 +35,13 @@ NamesIllustrator = function(chartId) {
 			names.push({ "name": key, "count": rspn.names[key] });
 			if (rspn.names[key] > maxCount) maxCount = rspn.names[key];
 		}
+		names.sort(function(a, b) {
+				if (a.count > b.count) return -1;
+				if (a.count < b.count) return 1;
+				if (a.name > b.name) return 1;
+				if (a.name < b.name) return -1;
+				return 0;
+		});
 
 		scaleX.domain(names.map(function(d) { return d.name; }));
 		scaleY.domain([0, maxCount]);
@@ -53,7 +60,7 @@ NamesIllustrator = function(chartId) {
 				.attr("text-anchor", "end")
 				.attr("x", paddLft+5).attr("y", paddTop-2);
 		}
-		grph.select(".cvert.axis").transition().duration(duration).call(axisY);
+		grph.select(".cvert.axis").transition().duration(durationY).call(axisY);
 
 		if (grph.select(".chorz .axis").empty()) {
 			grph.append("g").attr("class", "chorz")
@@ -61,22 +68,22 @@ NamesIllustrator = function(chartId) {
 				//.append("line").attr("class", "axis bline").attr("x1", paddLft).attr("y1", 0)
 				//.attr("x2", this.chartWdth - paddRgt).attr("y2", 0);
 		}
-		grph.select(".chorz .axis").call(axisX);
+		grph.select(".chorz .axis").transition().duration(durationY).call(axisX);
 		grph.select(".chorz .axis")
 			.selectAll("text")
 			.attr("transform", "rotate(-40)")
 			.style("text-anchor", "end");
 
 		var bars = grph.selectAll(".bars").data(names, function(d) { return d.name; });
-		bars.enter()
-			.append("rect").attr("class", "bars").style("fill", "#fda45c")
-			.attr("x", function(d) { return scaleX(d.name) - 5; }).attr("width", 10)
-			.attr("y", zero).attr("height", 0);
+		var bar = bars.enter().append("g").attr("class", "bars")
+			.attr("transform", "translate(" + (this.chartWdth + 100) + ", 0)");
+		bar.append("rect").attr("class", "bar").style("fill", "#ffb47c");
 		bars.exit().remove();
-		bars.transition().duration(duration)
+		bars.transition().duration(durationY).attr("transform", function(d) { return "translate(" + (scaleX(d.name) + wdth) + ", 0)"; });
+		bars.select(".bar").transition().duration(durationY)
+			.attr("x", -5).attr("width", 10)
 			.attr("y", function(d) { return scaleY(d.count); })
 			.attr("height", function(d) { return zero - scaleY(d.count); });
-		bars.attr("transform", "translate(" + wdth + ", 0)");
 	};
 
 	// *** API functions ***

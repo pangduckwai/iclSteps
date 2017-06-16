@@ -90,7 +90,7 @@ var buildUi = function(html, msg, user, yr, mn, dt, step, node, state, succ, fai
 				.replace(/%%%anchorVerify%%%/g, mnuVrfy)
 				.replace(/%%%returnLink%%%/g, vsbLink)
 				.replace(/%%%formButton%%%/g, vsbBttn)
-				.replace(/%%%nodeServer%%%/g, "192.168.14.130") //"localhost"
+				.replace(/%%%nodeServer%%%/g, "localhost") //"192.168.14.130"
 				.replace(/%%%urlChain%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain')
 				.replace(/%%%urlBlock%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/chain/blocks/')
 				.replace(/%%%urlPeers%%%/g, protocol + '://' + bcNodes[node].addr + ':' + bcNodes[node].port + '/network/peers'));
@@ -264,6 +264,7 @@ var hosts = ['tp0', 'tp1', 'tp2', 'tp3', 'tp4', 'tp5', 'tp6', 'tp7', 'tp8', 'tp9
 var names =
 	{"alan":0, "alex":0, "andy":0, "bill":0, "carl":0, "cole":0, "dave":0, "dale":0, "dick":0, "eric":0, "gary":0, "gene":0, "greg":0,
 	 "jack":0, "john":0, "josh":0, "kyle":0, "mark":0, "mike":0, "nick":0, "paul":0, "pete":0, "phil":0, "saul":0, "will":0, "zach":0};
+var reals = ["alan","andy","eric","jack","paul"];
 var times = [];
 //!!!!!!!!!!!TEMP*/
 
@@ -395,8 +396,16 @@ http.createServer(function(req, res) {
 					}
 
 					var latst = [];
+					var chance;
 					for (var key in names) {
-						if (Math.random() < 0.1) {
+						chance = 5;
+						for (var i = 0; i < reals.length; i ++) {
+							if (key == reals[i]) {
+								chance = Math.floor(Math.random()*5) + 6;
+								break;
+							}
+						}
+						if (Math.random() < (chance/100)) {
 							names[key] ++;
 							latst.push(key);
 						}
