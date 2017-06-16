@@ -119,8 +119,9 @@ BlockIllustrator = function(chartId) {
 				.attr("x", 10).attr("y", 20).attr("text-anchor", "left").style("font-size", "1em");
 		}
 
-		// *** Selected ***
+		var posx, posy = yPosn * 2;
 		if (_this.selected >= 0) {
+			// *** Selected ***
 			grph.select("#txt-hght").text("Current chain depth: " + chainDepth);
 			accessBlock(urlBlock + _this.selected, function(rspnBlock) {
 					//console.log(JSON.stringify(rspnBlock));//TODO TEMP
@@ -130,25 +131,23 @@ BlockIllustrator = function(chartId) {
 					time.setUTCSeconds(rspnBlock.nonHashData.localLedgerCommitTimestamp.seconds);
 
 					var blk = grph.append("text").attr("class", "dtls-text")
-						.attr("x", 10).attr("y", _this.chartHght - 80).attr("text-anchor", "left")
+						.attr("x", 10).attr("y", posy).attr("text-anchor", "left")
 						.text("Block " + _this.selected + " selected.");
-
 					grph.append("text").attr("class", "dtls-text")
-						.attr("x", 15 + blk.node().getBBox().width).attr("y", _this.chartHght - 80).attr("text-anchor", "left")
+						.attr("x", 15 + blk.node().getBBox().width).attr("y", posy).attr("text-anchor", "left")
 						.text("Added on " + timeFormatSrver(time));
 					if (rspnBlock.previousBlockHash) {
 						grph.append("text").attr("class", "dtls-text")
-							.attr("x", 10).attr("y", _this.chartHght - 60).attr("text-anchor", "left")
+							.attr("x", 10).attr("y", posy).attr("dy", "20").attr("text-anchor", "left")
 							.style("font-family", "monospace").style("font-size", "1em")
 							.text(rspnBlock.previousBlockHash);
 					}
 			});
 		} else {
+			posx = _this.chartWdth / 2;
 			accessBlock(urlBlock + (chainDepth-1), function(rspnBlock) {
 					var time = new Date(0);
 					time.setUTCSeconds(rspnBlock.nonHashData.localLedgerCommitTimestamp.seconds);
-					var posx = _this.chartWdth / 2;
-					var posy = _this.chartHght - 60;
 
 					var blk = grph.append("text").attr("class", "dtls-text")
 						.text("Latest block: " + (chainDepth-1) + ".")
@@ -161,7 +160,7 @@ BlockIllustrator = function(chartId) {
 								if (_this.selected < 0) {
 									if (rspnBlock.previousBlockHash) {
 										var hsh = grph.append("text").attr("class", "dtls-text")
-											.attr("x", posx).attr("y", posy).attr("text-anchor", "left")
+											.attr("x", posx).attr("y", posy).attr("dy", "20").attr("text-anchor", "left")
 											.style("font-family", "monospace").style("font-size", "1em")
 											.text(rspnBlock.previousBlockHash);
 										posx = _this.chartWdth - hsh.node().getBBox().width - 35;
@@ -169,13 +168,13 @@ BlockIllustrator = function(chartId) {
 									}
 
 									grph.append("text").attr("class", "dtls-text")
-										.attr("x", posx).attr("y", posy).attr("dy", "-20")
+										.attr("x", posx).attr("y", posy)
 										.attr("text-anchor", "left")
 										.text("Latest block: " + (chainDepth-1) + ".");
 
 									grph.append("text").attr("class", "dtls-text")
 										.attr("x", posx).attr("y", posy)
-										.attr("dx", 5 + blk).attr("dy", "-20")
+										.attr("dx", 5 + blk)
 										.attr("text-anchor", "left")
 										.text("Added on " + timeFormatSrver(time));
 								}

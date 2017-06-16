@@ -97,13 +97,6 @@ FloorIllustrator = function(chartId) {
 
 		// Draw seats
 		for (var key in fplan) {
-			grph.append("g").attr("class", "seat " + key)
-				.attr("transform", "translate(" + ((fplan[key][0]-1) * gridSizeX + 10) + ", " + ((fplan[key][1]-1) * gridSizeY + 10) + ")")
-				.append("text").attr("class", "floor-text").attr("font-size", "0.8em").text(key)
-				.attr("text-anchor", "middle").attr("dominant-baseline", "middle")
-				.attr("dx", (fplan[key][2] <= 1) ? gridSizeX - gridHalfX : gridHalfX)
-				.attr("dy", ((fplan[key][2] == 1) || (fplan[key][2] == 2)) ? gridSizeY - gridHalfY : gridHalfY);
-
 			switch (fplan[key][2]) {
 			case 0:
 				grph.append("polygon").attr("class", "floor-desk")
@@ -126,6 +119,13 @@ FloorIllustrator = function(chartId) {
 					.attr("transform", "translate(" + ((fplan[key][0]-1) * gridSizeX + 10) + ", " + ((fplan[key][1]-1) * gridSizeY + 10) + ")");
 				break;
 			}
+
+			grph.append("g").attr("class", "seat " + key)
+				.attr("transform", "translate(" + ((fplan[key][0]-1) * gridSizeX + 10) + ", " + ((fplan[key][1]-1) * gridSizeY + 10) + ")")
+				.append("text").attr("class", "floor-text").attr("font-size", "0.8em").text(key)
+				.attr("text-anchor", "middle").attr("dominant-baseline", "middle")
+				.attr("dx", (fplan[key][2] <= 1) ? gridSizeX - gridHalfX : gridHalfX)
+				.attr("dy", ((fplan[key][2] == 1) || (fplan[key][2] == 2)) ? gridSizeY - gridHalfY : gridHalfY);
 		}
 
 		// Draw walls
