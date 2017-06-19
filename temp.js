@@ -9,16 +9,16 @@ const crypto = require('crypto');
 const protocol = 'http';
 const mimeMap = {
 	'.ico' : 'image/x-icon',
-    '.html': 'text/html',
-    '.js'  : 'text/javascript',
-    '.json': 'application/json',
-    '.css' : 'text/css',
-    '.png' : 'image/png',
-    '.jpg' : 'image/jpeg',
-    '.svg' : 'image/svg+xml',
-    '.pdf' : 'application/pdf',
-    '.txt' : 'text/plain',
-    '.log' : 'text/plain'
+	'.html': 'text/html',
+	'.js'  : 'text/javascript',
+	'.json': 'application/json',
+	'.css' : 'text/css',
+	'.png' : 'image/png',
+	'.jpg' : 'image/jpeg',
+	'.svg' : 'image/svg+xml',
+	'.pdf' : 'application/pdf',
+	'.txt' : 'text/plain',
+	'.log' : 'text/plain'
 };
 
 var responseNormal = function(resObj, resBdy, cntTyp) {
