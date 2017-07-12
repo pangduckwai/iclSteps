@@ -107,36 +107,17 @@ TimesIllustrator = function(chartId) {
 		return cook;
 	};
 
-	var snapshot;
-	this.saveSnapshot = function(rspn) {
-		if (!rspn) {
-			// Save snapshot
-			if (!isIE) {
-				var a = document.createElement('a');
-				var b = new Blob([snapshot], {type : 'text/csv'});
-				a.href = window.URL.createObjectURL(b);
-				a.download = this.id + ".csv";
-				if ((document.createEvent) && (!isEdge)) {
-					console.log("Firefox"); // TODO TEMP
-					var e = document.createEvent("MouseEvents");
-					e.initEvent('click', true, true);
-					a.dispatchEvent(e);
-				} else {
-					console.log("Else"); // TODO TEMP
-					a.click();
-				}
-			} else {
-				console.log("IE?!"); // TODO TEMP
-				//window.open("data:application/octet-stream," + encodeURIComponent(snapshot), "Download");
-				location.href = "data:application/octet-stream," + encodeURIComponent(snapshot);
-			}
-		} else {
+	this.buildExport = function() {
+		var snap = this.getSnapshot();
+		if (snap != null) {
 			// Take snapshot
-			snapshot = '"time","count"\r\n';
-			for (var i = 0; i < rspn.times.length; i ++) {
-				snapshot += rspn.times[i].time + "," + rspn.times[i].count + "\r\n";
+			var rtn = '"time","count"\r\n';
+			for (var i = 0; i < snap.times.length; i ++) {
+				rtn += timeFormat(new Date(snap.times[i].time * 1000)) + "," + snap.times[i].count + "\r\n";
 			}
+			return rtn;
 		}
+		return null;
 	}
 };
 TimesIllustrator.prototype = new Chart();

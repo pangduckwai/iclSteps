@@ -126,6 +126,16 @@ function getChannels(id) {
 	}
 	return -1;
 }
+function searchChannels(chartId) {
+	for (var i = 0; i < channels.length; i ++) {
+		for (var j = 0; j < channels[i].subscribedCharts.length; j ++) {
+			if (channels[i].subscribedCharts[j] == chartId) {
+				return i;
+			}
+		}
+	}
+	return -1;
+}
 
 var cfgdCookie = [];
 
@@ -296,9 +306,7 @@ addEventListener('click', function(event) {
 					idx = getCfgdCharts(elem.id);
 					if (idx >= 0) {
 						if (typeof cfgdCharts[idx].config === "function") {
-							// Show chart setup dialog
-							cfgdCharts[idx].config(d3.select("#setting-custom"));
-							//d3.select("#setting-okay").style("display", null);
+							cfgdCharts[idx].config(d3.select("#setting-custom")); // Show chart setup dialog
 						}
 						d3.select("#setting-name").html(cfgdCharts[idx].name);
 						d3.select("#setting-charts").node().value = cfgdCharts[idx].domId;
@@ -308,20 +316,18 @@ addEventListener('click', function(event) {
 						// Add available channels to the channel drop-down list
 						d3.selectAll(".chnl-optn").remove();
 						var optn = d3.select("#setting-channel");
+						var jdx = searchChannels(cfgdCharts[idx].domId);
 						var cid = '';
+						if (jdx >= 0) {
+							cid = channels[jdx].id;
+						}
 						for (var i = 0; i < channels.length; i ++) {
 							optn.append("option").attr("class", "chnl-optn").attr("value", channels[i].id).html(channels[i].name);
-							for (var j = 0; j < channels[i].subscribedCharts.length; j ++) {
-								if (channels[i].subscribedCharts[j] == cfgdCharts[idx].domId) {
-									cid = channels[i].id;
-									break;
-								}
-							}
 						}
 						if (cid != '') d3.select("#setting-channel").node().value = cid;
 						d3.select("#setting-intv").node().value = cfgdCharts[idx].updateInterval;
 
-						if (typeof cfgdCharts[idx].saveSnapshot === "function") {
+						if (typeof cfgdCharts[idx].buildExport === "function") {
 							d3.select("#setting-save").style("display", null);
 						}
 					}
@@ -509,8 +515,8 @@ addEventListener('click', function(event) {
 				var id2 = d3.select("#setting-charts").node().value;
 				idx = getCfgdCharts(id2);
 				if (idx >= 0) {
-					if (typeof cfgdCharts[idx].saveSnapshot === "function") {
-						cfgdCharts[idx].saveSnapshot();
+					if (typeof cfgdCharts[idx].buildExport === "function") {
+						cfgdCharts[idx].export();
 					}
 				}
 				break;
@@ -937,7 +943,7 @@ function buildFramework() {
 	tcll.append("input").attr("type", "text").attr("id", "setting-intv").attr("name", "setting-intv").style("width", "80px");
 	tabl.append("tbody").attr("id", "setting-custom");
 	tcll = tabl.append("tr").append("td").attr("colspan", "2").style("text-align", "right");
-	tcll.append("input").attr("type", "button").attr("name", "setting-save").attr("id", "setting-save").attr("value", "Download")
+	tcll.append("input").attr("type", "button").attr("name", "setting-save").attr("id", "setting-save").attr("value", "Export")
 		.style("display", "none");
 	tcll.append("span").html("&nbsp;&nbsp;");
 	tcll.append("input").attr("type", "button").attr("name", "setting-okay").attr("id", "setting-okay").attr("value", "Okay")
@@ -1027,6 +1033,38 @@ function Chart(chartId) {
 		return cook;
 	};
 
+	this.getSnapshot = function() {
+		var idx = searchChannels(this.domId);
+		if (idx >= 0) {
+			return channels[idx].snapshot;
+		}
+		return null;
+	}
+
+	this.export = function() {
+		if (typeof this.buildExport === "function") {
+			var snapshot = this.buildExport();
+
+			// Save snapshot
+			if (!isIE) {
+				var a = document.createElement('a');
+				var b = new Blob([snapshot], {type : 'text/csv'});
+				a.href = window.URL.createObjectURL(b);
+				a.download = this.id + ".csv";
+				if ((document.createEvent) && (!isEdge)) {
+					var e = document.createEvent("MouseEvents");
+					e.initEvent('click', true, true);
+					a.dispatchEvent(e);
+				} else {
+					a.click();
+				}
+			} else {
+				// IE!?!
+				location.href = "data:application/octet-stream," + encodeURIComponent(snapshot);
+			}
+		}
+	};
+
 	/*
 	this.start = function() { };
 	this.render = function(rspn, elapse) { };
@@ -1035,7 +1073,7 @@ function Chart(chartId) {
 	this.configed = function(domId, func) { };
 	this.configCancel = function(domId) { };
 	this.buildUi = function(func) { };
-	this.saveSnapshot = function() { };
+	this.buildExport = function(rspn) { };
 	*/
 };
 
@@ -1112,6 +1150,8 @@ function Channel(id, name, url, interval) {
 
 	this.subscribedCharts = [];
 
+	this.snapshot;
+
 	var countDown = this.runInterval;
 	this.shouldRun = function(elapse) {
 		countDown -= elapse;
@@ -1139,7 +1179,7 @@ function Channel(id, name, url, interval) {
 					idx = getCfgdCharts(_this.subscribedCharts[i]);
 					if (idx >= 0) {
 						if (cfgdCharts[idx]) {
-							if (typeof cfgdCharts[idx].saveSnapshot === "function") cfgdCharts[idx].saveSnapshot(rspn);
+							if (typeof cfgdCharts[idx].buildExport === "function") _this.snapshot = rspn;
 							if (typeof cfgdCharts[idx].render === "function") cfgdCharts[idx].render(rspn, _this.runInterval);
 						}
 					}
