@@ -8,15 +8,15 @@ TimesIllustrator = function(chartId) {
 	this.minGridHght = 2;
 	this.updateInterval = 2000;
 
-	var _this = this;
-	var grph;
+	let _this = this;
+	let grph;
 
-	var timeFormat = d3.time.format("%H:%M:%S");
-	var paddTop = 35, paddLft = 25, paddRgt = 10, paddBtm = 45, txtHght = 15;
-	var durationX = 1500, durationY = 1000;
+	let timeFormat = d3.time.format("%H:%M:%S");
+	let paddTop = 35, paddLft = 25, paddRgt = 10, paddBtm = 45, txtHght = 15;
+	let durationX = 1500, durationY = 1000;
 
-	var scaleX, scaleY;
-	var maxCount = 0;
+	let scaleX, scaleY;
+	let maxCount = 0;
 
 	// *** Called by dashboard main thread once at the begining ***
 	this.start = function() {
@@ -37,20 +37,20 @@ TimesIllustrator = function(chartId) {
 			return; // Not enough data, wait for next round
 		}
 
-		for (var i = 0; i < rspn.times.length; i ++) {
+		for (let i = 0; i < rspn.times.length; i ++) {
 			if (rspn.times[i].count > maxCount) maxCount = rspn.times[i].count;
 		}
 
 		scaleX.domain([rspn.times[0].time, rspn.times[rspn.times.length - 1].time]);
 		scaleY.domain([0, maxCount]);
 
-		var axisX = d3.svg.axis().scale(scaleX).orient("bottom").innerTickSize(-1 * (this.chartHght - paddBtm - paddTop)).outerTickSize(0)
+		let axisX = d3.svg.axis().scale(scaleX).orient("bottom").innerTickSize(-1 * (this.chartHght - paddBtm - paddTop)).outerTickSize(0)
 			.ticks(20).tickFormat(function(d) { return timeFormat(new Date(d * 1000)); });
-		var axisY = d3.svg.axis().scale(scaleY).orient("left").innerTickSize(-1 * (this.chartWdth - paddRgt - paddLft)).outerTickSize(0).ticks(7);
+		let axisY = d3.svg.axis().scale(scaleY).orient("left").innerTickSize(-1 * (this.chartWdth - paddRgt - paddLft)).outerTickSize(0).ticks(7);
 
-		var tickLastpos = scaleX(rspn.times[rspn.times.length - 1].time);
-		var tickSpacing = tickLastpos - scaleX(rspn.times[rspn.times.length - 2].time);
-		var zero = scaleY(0);
+		let tickLastpos = scaleX(rspn.times[rspn.times.length - 1].time);
+		let tickSpacing = tickLastpos - scaleX(rspn.times[rspn.times.length - 2].time);
+		let zero = scaleY(0);
 
 		if (grph.select(".cvert.axis").empty()) {
 			grph.append("g").attr("class", "cvert axis")
@@ -74,8 +74,8 @@ TimesIllustrator = function(chartId) {
 			.attr("transform", "rotate(-40)")
 			.style("text-anchor", "end");
 
-		var bars = grph.selectAll(".bars").data(rspn.times, function(d) { return d.time; });
-		var bar = bars.enter()
+		let bars = grph.selectAll(".bars").data(rspn.times, function(d) { return d.time; });
+		let bar = bars.enter()
 			.append("g").attr("class", "bars")
 			.attr("transform", function(d) { return "translate(" + (tickLastpos + tickSpacing) + ", 0)"; });
 		bar.append("rect").style("fill", "#b8dbe5");
@@ -92,7 +92,7 @@ TimesIllustrator = function(chartId) {
 		func('<div class="chart-title" style="color:#b8dbe5">Number of transactions by time</div><svg class="chart-viz" />');
 	};
 
-	var superFromCookie = this.fromCookie;
+	let superFromCookie = this.fromCookie;
 	this.fromCookie = function(cook) {
 		superFromCookie.call(this, cook);
 		if (cook) {
@@ -100,13 +100,30 @@ TimesIllustrator = function(chartId) {
 		}
 	};
 
-	var superToCookie = this.toCookie;
+	let superToCookie = this.toCookie;
 	this.toCookie = function(row, col, wdth, hght, intv) {
-		var cook = superToCookie.call(this, row, col, wdth, hght, intv);
+		let cook = superToCookie.call(this, row, col, wdth, hght, intv);
 		//cook["selected"] = this.selected;
 		return cook;
 	};
 
+	let snapshot;
+	this.saveSnapshot = function(rspn) {
+		if (!rspn) {
+			// Save snapshot
+			let a = document.createElement('a');
+			let b = new Blob([snapshot], {type : 'text/csv'});
+			a.href = window.URL.createObjectURL(b);
+			a.download = this.id + ".csv";
+			a.click();
+		} else {
+			// Take snapshot
+			snapshot = '"time","count"\r\n';
+			for (let time of rspn.times) {
+				snapshot += time.time + "," + time.count + "\r\n";
+			}
+		}
+	}
 };
 TimesIllustrator.prototype = new Chart();
 TimesIllustrator.prototype.constructor = TimesIllustrator;
