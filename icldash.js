@@ -38,14 +38,16 @@ const regex = new RegExp("^(?=.*[\\s]*r([0-9]+))(?=.*[\\s]*c([0-9]+))(?=.*[\\s]*
 
 const colors = ["#ffcc00", "#fda45c", "#f07d76", "#b8dbe5", "#aaa9d6", "#ab88b8", "#ab68ab"];
 
-let MAX_ROW = 5; // Number of rows available in the dashboard grid
-let MAX_COL = 7; // Number of columns available in the dashboard grid
-let DRAG_CHART_ENABLED = true;
+var MAX_ROW = 5; // Number of rows available in the dashboard grid
+var MAX_COL = 7; // Number of columns available in the dashboard grid
+var DRAG_CHART_ENABLED = true;
 
-let isIE = false;
+var isIE = false;
 if ((/*@cc_on ! @*/ false) || navigator.userAgent.match(/Trident/g)) {
 	isIE = true;
 }
+
+var isEdge = (window.navigator.userAgent.indexOf("Edge") > -1);
 
 d3.selection.prototype.first = function() {
 	return d3.select(this[0][0]);
@@ -54,10 +56,10 @@ d3.selection.prototype.last = function() {
 	return d3.select(this[0][this.size() - 1]);
 };
 
-let avlbPosition = [];
+var avlbPosition = [];
 function hasEnoughRoom(row, col, wdth, hght) {
-	let endc = col + wdth - 1;
-	let endr = row + hght - 1;
+	var endc = col + wdth - 1;
+	var endr = row + hght - 1;
 
 	if (avlbPosition[row-1][col-1] > 0) {
 		return 4;
@@ -66,9 +68,9 @@ function hasEnoughRoom(row, col, wdth, hght) {
 	} else if (endr > MAX_ROW) {
 		return 2;
 	} else {
-		let okay = true;
-		for (let i = row-1; i < endr; i ++) {
-			for (let j = col-1; j < endc; j ++) {
+		var okay = true;
+		for (var i = row-1; i < endr; i ++) {
+			for (var j = col-1; j < endc; j ++) {
 				if (avlbPosition[i][j] > 0) {
 					okay = false;
 					i = endc;
@@ -84,15 +86,15 @@ function hasEnoughRoom(row, col, wdth, hght) {
 	}
 }
 function setPositions(row, col, wdth, hght, value, updateUi) {
-	let ulist = null;
+	var ulist = null;
 	if (updateUi) {
 		ulist = d3.select(".charts");
 	}
 
-	for (let c = col; c < (col + wdth); c ++) {
-		for (let r = row; r < (row + hght); r ++) {
+	for (var c = col; c < (col + wdth); c ++) {
+		for (var r = row; r < (row + hght); r ++) {
 			if (updateUi) {
-				let elem = ulist.selectAll(".phr.r" + r + ".c" + c + ".w1.h1");
+				var elem = ulist.selectAll(".phr.r" + r + ".c" + c + ".w1.h1");
 				elem.style("display", (value > 0) ? "none" : null);
 			}
 			avlbPosition[r-1][c-1] = (value > 0) ? 1 : ((value < 0) ? -1 : 0);
@@ -100,14 +102,14 @@ function setPositions(row, col, wdth, hght, value, updateUi) {
 	}
 }
 
-let avlbCharts = {};
+var avlbCharts = {};
 function addAvailableCharts(obj) {
 	avlbCharts[obj.id] = obj;
 }
 
-let cfgdCharts = [];
+var cfgdCharts = [];
 function getCfgdCharts(elmId) {
-	for (let i = 0; i < cfgdCharts.length; i ++) {
+	for (var i = 0; i < cfgdCharts.length; i ++) {
 		if (elmId == cfgdCharts[i].domId) {
 			return i;
 		}
@@ -115,9 +117,9 @@ function getCfgdCharts(elmId) {
 	return -1;
 }
 
-let channels = [];
+var channels = [];
 function getChannels(id) {
-	for (let i = 0; i < channels.length; i ++) {
+	for (var i = 0; i < channels.length; i ++) {
 		if (id == channels[i].id) {
 			return i;
 		}
@@ -125,9 +127,9 @@ function getChannels(id) {
 	return -1;
 }
 
-let cfgdCookie = [];
+var cfgdCookie = [];
 
-let intervalId = null;
+var intervalId = null;
 
 function init() {
 	if (typeof DFLT_ROW != 'undefined') MAX_ROW = DFLT_ROW;
@@ -136,9 +138,9 @@ function init() {
 
 	// Initialize the 2-d array marking available space on the grid
 	avlbPosition = new Array(MAX_ROW);
-	for (let i = 0; i < MAX_ROW; i ++) {
+	for (var i = 0; i < MAX_ROW; i ++) {
 		avlbPosition[i] = new Array(MAX_COL);
-		for (let j = 0; j < MAX_COL; j ++) {
+		for (var j = 0; j < MAX_COL; j ++) {
 			avlbPosition[i][j] = 0;
 		}
 	}
@@ -147,9 +149,9 @@ function init() {
 	buildFramework();
 
 	// Draw chart grid place holders
-	let l1st = d3.select(".charts");
-	for (let i = 1; i <= MAX_ROW; i ++) {
-		for (let j = 1; j <= MAX_COL; j ++) {
+	var l1st = d3.select(".charts");
+	for (var i = 1; i <= MAX_ROW; i ++) {
+		for (var j = 1; j <= MAX_COL; j ++) {
 			l1st.append("li")
 				.attr("class", "chart phr r" + i + " c" + j + " w1 h1")
 				.attr("ondragover", "allowDrop(event)")
@@ -159,7 +161,7 @@ function init() {
 
 	// Add available charts to the charts drop-down list
 	l1st = d3.select("#charts-list");
-	for (let key in avlbCharts) {
+	for (var key in avlbCharts) {
 		if (avlbCharts[key].id && avlbCharts[key].name) {
 			l1st.append("option").attr("value", avlbCharts[key].id).html(avlbCharts[key].name);
 		}
@@ -167,8 +169,8 @@ function init() {
 
 	// Add options of no. of rows to drop down boxes.
 	l1st = d3.select("#charts-row");
-	let l2st = d3.select("#charts-height");
-	for (let i = 1; i <= MAX_ROW; i ++) {
+	var l2st = d3.select("#charts-height");
+	for (var i = 1; i <= MAX_ROW; i ++) {
 		l1st.append("option").attr("value", i).html(i);
 		l2st.append("option").attr("value", i).html(i);
 	}
@@ -176,17 +178,17 @@ function init() {
 	// Add options of no. of column to drop down boxes.
 	l1st = d3.select("#charts-col");
 	l2st = d3.select("#charts-width");
-	for (let i = 1; i <= MAX_COL; i ++) {
+	for (var i = 1; i <= MAX_COL; i ++) {
 		l1st.append("option").attr("value", i).html(i);
 		l2st.append("option").attr("value", i).html(i);
 	}
 
 	// Start configured charts
-	let cooks = document.cookie.split(";");
-	let confg = "";
-	for (let idx = 0; idx < cooks.length; idx ++) {
-		let cok = cooks[idx].trim();
-		let pos = cok.indexOf(COOK_PFX);
+	var cooks = document.cookie.split(";");
+	var confg = "";
+	for (var idx = 0; idx < cooks.length; idx ++) {
+		var cok = cooks[idx].trim();
+		var pos = cok.indexOf(COOK_PFX);
 		if (pos >= 0) {
 			confg = cok.substring(pos + COOK_PFX.length, cok.length);
 			break;
@@ -204,10 +206,10 @@ function init() {
 	}
 
 	// Build channels and charts from cookie
-	let startDelay = 1;
+	var startDelay = 1;
 	if (confg.trim() != "") {
-		let last = JSON.parse(confg);
-		for (let idx = 0; idx < last.length; idx ++) {
+		var last = JSON.parse(confg);
+		for (var idx = 0; idx < last.length; idx ++) {
 			if (last[idx].channelId) {
 				setTimeout(function(obj) {
 						if (obj.interval) {
@@ -234,13 +236,13 @@ function init() {
 
 function start() {
 	intervalId = setInterval(function() {
-			for (let i = 0; i < cfgdCharts.length; i ++) {
+			for (var i = 0; i < cfgdCharts.length; i ++) {
 				if (cfgdCharts[i] && (typeof cfgdCharts[i].refresh === "function")) {
 					cfgdCharts[i].refresh(RUN_INTERVAL); // For charts do not get data from channel
 				}
 			}
 
-			for (let j = 0; j < channels.length; j ++) {
+			for (var j = 0; j < channels.length; j ++) {
 				if (channels[j] && (typeof channels[j].run === "function")) {
 					channels[j].run(RUN_INTERVAL);
 				}
@@ -254,7 +256,7 @@ function stop() {
 }
 
 addEventListener('click', function(event) {
-		let idx;
+		var idx;
 		switch (event.target.tagName) {
 		case "IMG":
 			event.preventDefault();
@@ -290,7 +292,7 @@ addEventListener('click', function(event) {
 
 			default:
 				if (event.target.parentElement && event.target.parentElement.parentElement) {
-					let elem = event.target.parentElement.parentElement;
+					var elem = event.target.parentElement.parentElement;
 					idx = getCfgdCharts(elem.id);
 					if (idx >= 0) {
 						if (typeof cfgdCharts[idx].config === "function") {
@@ -305,11 +307,11 @@ addEventListener('click', function(event) {
 
 						// Add available channels to the channel drop-down list
 						d3.selectAll(".chnl-optn").remove();
-						let optn = d3.select("#setting-channel");
-						let cid = '';
-						for (let i = 0; i < channels.length; i ++) {
+						var optn = d3.select("#setting-channel");
+						var cid = '';
+						for (var i = 0; i < channels.length; i ++) {
 							optn.append("option").attr("class", "chnl-optn").attr("value", channels[i].id).html(channels[i].name);
-							for (let j = 0; j < channels[i].subscribedCharts.length; j ++) {
+							for (var j = 0; j < channels[i].subscribedCharts.length; j ++) {
 								if (channels[i].subscribedCharts[j] == cfgdCharts[idx].domId) {
 									cid = channels[i].id;
 									break;
@@ -357,7 +359,7 @@ addEventListener('click', function(event) {
 				break;
 
 			case "channel-okay":
-				let cid, nmn, itv, url, val, max = 0;
+				var cid, nmn, itv, url, val, max = 0;
 				for (idx = 0; idx < channels.length; idx ++) {
 					cid = d3.select(".channel-id-" + (idx+1)).node().value;
 					val = parseInt(cid.slice(-3));
@@ -400,17 +402,17 @@ addEventListener('click', function(event) {
 				break;
 
 			case "charts-okay":
-				let ivr = parseInt(d3.select("#charts-intv").node().value);
-				let row = parseInt(d3.select("#charts-row").node().value);
-				let col = parseInt(d3.select("#charts-col").node().value);
-				let wdt = parseInt(d3.select("#charts-width").node().value);
-				let hgt = parseInt(d3.select("#charts-height").node().value);
-				let eid = d3.select("#charts-list").node().value; // This is the chart's id, not the DOM id.
+				var ivr = parseInt(d3.select("#charts-intv").node().value);
+				var row = parseInt(d3.select("#charts-row").node().value);
+				var col = parseInt(d3.select("#charts-col").node().value);
+				var wdt = parseInt(d3.select("#charts-width").node().value);
+				var hgt = parseInt(d3.select("#charts-height").node().value);
+				var eid = d3.select("#charts-list").node().value; // This is the chart's id, not the DOM id.
 
 				if (eid != "-") {
 					if (typeof avlbCharts[eid].configed === "function") {
 						avlbCharts[eid].configed(eid, function() {
-								let cook = avlbCharts[eid].toCookie(row, col, wdt, hgt, ivr);
+								var cook = avlbCharts[eid].toCookie(row, col, wdt, hgt, ivr);
 								showChart(eid, row, col, wdt, hgt, ivr, cook);
 						});
 					} else {
@@ -426,7 +428,7 @@ addEventListener('click', function(event) {
 				break;
 
 			case "setting-remove":
-				let id0 = d3.select("#setting-charts").node().value;
+				var id0 = d3.select("#setting-charts").node().value;
 				idx = getCfgdCharts(id0);
 				if (idx >= 0) {
 					if (typeof cfgdCharts[idx].configCancel === "function") {
@@ -440,22 +442,22 @@ addEventListener('click', function(event) {
 				break;
 
 			case "setting-okay":
-				let rid = d3.select("#setting-charts").node().value;
+				var rid = d3.select("#setting-charts").node().value;
 				idx = getCfgdCharts(rid);
 				if (idx >= 0) {
 					// Defult setting(s)
-					let intv = parseInt(d3.select("#setting-intv").node().value);
+					var intv = parseInt(d3.select("#setting-intv").node().value);
 					if (!isNaN(intv)) {
 						cfgdCharts[idx].updateInterval = intv;
 					}
 
-					let chnl = d3.select("#setting-channel").node().value;
-					let count;
-					for (let i = 0; i < channels.length; i ++) {
+					var chnl = d3.select("#setting-channel").node().value;
+					var count;
+					for (var i = 0; i < channels.length; i ++) {
 						if (channels[i].id == chnl) {
 							// Chart 'rid' subscribed to channel 'chnl' just now
 							count = 0;
-							for (let j = 0; j < channels[i].subscribedCharts.length; j ++) {
+							for (var j = 0; j < channels[i].subscribedCharts.length; j ++) {
 								if (channels[i].subscribedCharts[j] == rid) count ++;
 							}
 							if (count == 0) {
@@ -464,7 +466,7 @@ addEventListener('click', function(event) {
 							}
 						} else {
 							// Remove 'rid' from any previously subscribed channels
-							for (let j = 0; j < channels[i].subscribedCharts.length; j ++) {
+							for (var j = 0; j < channels[i].subscribedCharts.length; j ++) {
 								if (channels[i].subscribedCharts[j] == rid) {
 									channels[i].subscribedCharts.splice(j, 1);
 									updateCookieChannel(channels[i].id);
@@ -490,7 +492,7 @@ addEventListener('click', function(event) {
 				d3.select("#disable-bg").style("display", "none");
 				d3.select("#setting-custom").html("");
 
-				let id1 = d3.select("#setting-charts").node().value;
+				var id1 = d3.select("#setting-charts").node().value;
 				idx = getCfgdCharts(id1);
 				if (idx >= 0) {
 					if (typeof cfgdCharts[idx].configCancel === "function") {
@@ -500,7 +502,11 @@ addEventListener('click', function(event) {
 				break;
 
 			case "setting-save":
-				let id2 = d3.select("#setting-charts").node().value;
+				d3.select("#setting-dialog").style("display", "none");
+				d3.select("#disable-bg").style("display", "none");
+				d3.select("#setting-custom").html("");
+
+				var id2 = d3.select("#setting-charts").node().value;
 				idx = getCfgdCharts(id2);
 				if (idx >= 0) {
 					if (typeof cfgdCharts[idx].saveSnapshot === "function") {
@@ -516,7 +522,7 @@ addEventListener('click', function(event) {
 
 addEventListener('dblclick', function(event) {
 		// No chart setup at this position yet, show add charts dialog
-		let grid = getGrid(event.target);
+		var grid = getGrid(event.target);
 		if (grid) {
 			d3.select("#charts-dialog").style("display", "block");
 			d3.select("#disable-bg").style("display", "block");
@@ -559,7 +565,7 @@ addEventListener('change', function(event) {
  * elmId - Unique ID of the chart object, not the ID used in DOM.
  */
 function showChart(elmId, row, col, wdth, hght, intv, cook) {
-	let domId = elmId + row + col;
+	var domId = elmId + row + col;
 	if (getCfgdCharts(domId) < 0) {
 		switch (hasEnoughRoom(row, col, wdth, hght)) {
 		case 4:
@@ -575,9 +581,9 @@ function showChart(elmId, row, col, wdth, hght, intv, cook) {
 			alert("There is not enough room to fit the chart '" + avlbCharts[elmId].name + "'");
 			break;
 		case 0:
-			let objt = new avlbCharts[elmId].constructor(domId);
+			var objt = new avlbCharts[elmId].constructor(domId);
 			objt.updateInterval = intv;
-			let cntr = d3.select(".charts")
+			var cntr = d3.select(".charts")
 				.append("li")
 					.attr("id", domId).attr("class", "chart tbl r" + row + " c" + col + " w" + wdth + " h" + hght)
 					.attr("ondragstart", "drag(event)").attr("ondragend", "dragEnded(event)");
@@ -624,11 +630,11 @@ function showChart(elmId, row, col, wdth, hght, intv, cook) {
 }
 
 function removeChart(rid) {
-	let chart = d3.select("#"+rid);
+	var chart = d3.select("#"+rid);
 	if (chart) {
-		let grid = getGrid(chart.node());
+		var grid = getGrid(chart.node());
 		if (grid) {
-			let idx = getCfgdCharts(rid);
+			var idx = getCfgdCharts(rid);
 			if (idx >= 0) {
 				removeCookieCharts(cfgdCharts[idx].id, grid.row, grid.column);
 				cfgdCharts.splice(idx, 1);
@@ -640,14 +646,14 @@ function removeChart(rid) {
 }
 
 function addCookieCharts(domId, elmId, row, col, wdth, hght, intv) {
-	let cook = {};
-	let idx = getCfgdCharts(domId);
+	var cook = {};
+	var idx = getCfgdCharts(domId);
 	if (idx >= 0) {
 		cook = cfgdCharts[idx].toCookie(row, col, wdth, hght, intv);
 	}
 	cfgdCookie[cfgdCookie.length] = cook;
 
-	let expr = new Date();
+	var expr = new Date();
 	expr.setYear(expr.getFullYear() + 1);
 	document.cookie = COOK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
 
@@ -655,19 +661,19 @@ function addCookieCharts(domId, elmId, row, col, wdth, hght, intv) {
 }
 
 function updateCookieCharts(domId) {
-	let cook = {};
-	let i = getCfgdCharts(domId);
+	var cook = {};
+	var i = getCfgdCharts(domId);
 	if (i >= 0) {
-		for (let j = 0; j < cfgdCookie.length; j ++) {
-			let row = cfgdCookie[j].row;
-			let col = cfgdCookie[j].column;
-			let wdth = cfgdCookie[j].width;
-			let hght = cfgdCookie[j].height;
-			let intv = cfgdCookie[j].interval;
+		for (var j = 0; j < cfgdCookie.length; j ++) {
+			var row = cfgdCookie[j].row;
+			var col = cfgdCookie[j].column;
+			var wdth = cfgdCookie[j].width;
+			var hght = cfgdCookie[j].height;
+			var intv = cfgdCookie[j].interval;
 			if ((cfgdCookie[j].chartId + row + col) == domId) {
 				cfgdCookie[j] = cfgdCharts[i].toCookie(row, col, wdth, hght, intv);
 
-				let expr = new Date();
+				var expr = new Date();
 				expr.setYear(expr.getFullYear() + 1);
 				document.cookie = COOK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
 				break;
@@ -677,8 +683,8 @@ function updateCookieCharts(domId) {
 }
 
 function removeCookieCharts(elmId, row, col) {
-	let cook = {};
-	for (let idx = 0; idx < cfgdCookie.length; idx ++) {
+	var cook = {};
+	for (var idx = 0; idx < cfgdCookie.length; idx ++) {
 		if ((cfgdCookie[idx].chartId == elmId) && (cfgdCookie[idx].row == row) && (cfgdCookie[idx].column == col)) {
 			cook = cfgdCookie[idx];
 			cfgdCookie.splice(idx, 1);
@@ -686,7 +692,7 @@ function removeCookieCharts(elmId, row, col) {
 		}
 	}
 
-	let expr = new Date();
+	var expr = new Date();
 	expr.setYear(expr.getFullYear() + 1);
 	document.cookie = COOK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
 
@@ -695,16 +701,16 @@ function removeCookieCharts(elmId, row, col) {
 
 function getGrid(element) {
 	regex.lastIndex = 0;
-	let matches = regex.exec(element.className);
+	var matches = regex.exec(element.className);
 
 	if (matches) {
-		let r = parseInt(matches[1]);
-		let c = parseInt(matches[2]);
-		let w = parseInt(matches[3]);
-		let h = parseInt(matches[4]);
+		var r = parseInt(matches[1]);
+		var c = parseInt(matches[2]);
+		var w = parseInt(matches[3]);
+		var h = parseInt(matches[4]);
 
 		if ((r > 0) && (r <= MAX_ROW) && (c > 0) && (c <= MAX_COL) && (w > 0) && (w <= MAX_COL) && (h > 0) && (h <= MAX_ROW)) {
-			let rtn = {};
+			var rtn = {};
 			rtn[KEY_ROW] = r;
 			rtn[KEY_COL] = c;
 			rtn[KEY_WDTH] = w;
@@ -719,10 +725,10 @@ function getGrid(element) {
 // **** Drag & Drop functions ****
 // TODO: After drag/drop, need to update the channel subscription list with new domId!!!
 function drag(event) {
-	let domId = event.target.id;
-	let idx = getCfgdCharts(domId);
+	var domId = event.target.id;
+	var idx = getCfgdCharts(domId);
 	if (idx >= 0) {
-		let obj = getGrid(event.target);
+		var obj = getGrid(event.target);
 		obj.idx = idx;
 		obj.id = cfgdCharts[idx].id;
 		obj.domId = cfgdCharts[idx].domId;
@@ -742,10 +748,10 @@ function allowDrop(event) {
 
 function drop(event) {
 	event.preventDefault();
-	let obj = JSON.parse(event.dataTransfer.getData("text"));
-	let grd = getGrid(event.target);
+	var obj = JSON.parse(event.dataTransfer.getData("text"));
+	var grd = getGrid(event.target);
 	if (hasEnoughRoom(grd[KEY_ROW], grd[KEY_COL], obj[KEY_WDTH], obj[KEY_HGHT]) == 0) {
-		let cook = removeCookieCharts(obj.id, obj.row, obj.column);
+		var cook = removeCookieCharts(obj.id, obj.row, obj.column);
 		cook.row = grd.row;
 		cook.column = grd.column;
 		removeChart(obj.domId);
@@ -758,10 +764,10 @@ function drop(event) {
 function dragEnded(event) {
 	event.preventDefault();
 	if (event.dataTransfer.dropEffect == "none") {
-		let domId = event.target.id;
-		let idx = getCfgdCharts(domId);
+		var domId = event.target.id;
+		var idx = getCfgdCharts(domId);
 		if (idx >= 0) {
-			let obj = getGrid(event.target);
+			var obj = getGrid(event.target);
 			dragCanceled(domId, obj[KEY_ROW], obj[KEY_COL], obj[KEY_WDTH], obj[KEY_HGHT]);
 		}
 	}
@@ -774,7 +780,7 @@ function dragCanceled(domId, row, col, wdth, hght) {
 
 // **** Util functions ****
 function accessData(url, callBack, cnt) {
-	let xmlhttp = new XMLHttpRequest();
+	var xmlhttp = new XMLHttpRequest();
 
 	if (!cnt) cnt = 0;
 	xmlhttp.onreadystatechange = function() {
@@ -804,12 +810,12 @@ function accessData(url, callBack, cnt) {
 function buildCss(headerHeight) {
 	if (!headerHeight) headerHeight = topMargin;
 
-	let buff = '';
-	for (let i = 1; i <= MAX_ROW; i ++) {
+	var buff = '';
+	for (var i = 1; i <= MAX_ROW; i ++) {
 		buff += '.h' + i + ' { height: calc(((100% - ' + (headerHeight + btmMargin) + 'px) / ' + MAX_ROW + ') * ' + i + ' - ' + (cellGap * 2) + 'px); }\n';
 		buff += '.r' + i + ' { top: calc(((100% - ' + (headerHeight + btmMargin) + 'px) / ' + MAX_ROW + ') * ' + (i - 1) + ' + ' + (cellGap + headerHeight) + 'px); }\n';
 	}
-	for (let i = 1; i <= MAX_COL; i ++) {
+	for (var i = 1; i <= MAX_COL; i ++) {
 		buff += '.w' + i + ' { width: calc(((100% - ' + (lftMargin + rgtMargin) + 'px) / ' + MAX_COL + ') * ' + i + ' - ' + (cellGap * 2) + 'px); }\n';
 		buff += '.c' + i + ' { left: calc(((100% - ' + (lftMargin + rgtMargin) + 'px) / ' + MAX_COL + ') * ' + (i - 1) + ' + ' + (cellGap + lftMargin) + 'px); }\n';
 	}
@@ -818,19 +824,19 @@ function buildCss(headerHeight) {
 }
 
 function buildFramework() {
-	let body = d3.select("body");
+	var body = d3.select("body");
 
-	let list = body.select(".charts");
+	var list = body.select(".charts");
 	if (list.empty()) {
 		list = body.append("ul").attr("class", "charts");
 	}
 	list.style("list-style", "none");
 
-	let dimen = list.node().getBoundingClientRect(); // Get height of header
+	var dimen = list.node().getBoundingClientRect(); // Get height of header
 	buildCss(dimen.top);
 
 	// Controls
-	let ctrl = body.append("div").attr("class", "tbl master-cntrl");
+	var ctrl = body.append("div").attr("class", "tbl master-cntrl");
 	ctrl.append("a").attr("href", "javascript:;").append("img").attr("id", "doc-refresh").attr("src", IMG_REFRESH);
 	ctrl.append("span").html("&nbsp;");
 	ctrl.append("a").attr("href", "javascript:;").append("img").attr("id", "doc-control").attr("src", IMG_PAUSE);
@@ -842,7 +848,7 @@ function buildFramework() {
 	body.append("div").attr("id", "disable-bg"); // Transparent dark background when dialog boxes displayed
 
 	// Channel dialog
-	let tabl = body.append("div").attr("id", "channel-dialog")
+	var tabl = body.append("div").attr("id", "channel-dialog")
 		.append("form").attr("id", "channel-form").attr("name", "channel-form")
 		.append("table").attr("id", "channel-tbl").attr("class", "dialog");
 	tabl.append("th").html("");
@@ -850,7 +856,7 @@ function buildFramework() {
 	tabl.append("th").html("Channel");
 	tabl.append("th").html("Run Interval");
 	tabl.append("th").html("URL");
-	let trow = tabl.append("tr").attr("id", "channel-insertHere");
+	var trow = tabl.append("tr").attr("id", "channel-insertHere");
 	trow.append("td").attr("valign", "top").append("input").attr("type", "checkbox").attr("class", "channel-slct-0").attr("name", "channel-slct-0");
 	trow.append("td").attr("valign", "top").append("input").attr("type", "text").attr("class", "channel-id-0 ronly").attr("name", "channel-id-0")
 		.attr("readonly", "").attr("tabindex", "-1");
@@ -859,7 +865,7 @@ function buildFramework() {
 	trow.append("td").append("textarea").attr("class", "channel-url-0").style("width", "300px");
 	trow = tabl.append("tr");
 	trow.append("td")
-	let tcll = trow.append("td").attr("colspan", "3");
+	var tcll = trow.append("td").attr("colspan", "3");
 	tcll.append("input").attr("type", "button").attr("name", "channel-clear").attr("value", "Remove all channels").style("margin-right", "2px");
 	tcll.append("input").attr("type", "button").attr("name", "channel-delete").attr("value", "Delete selected");
 	tcll = trow.append("td").style("text-align", "right").style("padding-right", "10px");
@@ -915,7 +921,7 @@ function buildFramework() {
 	tabl = body.append("div").attr("id", "setting-dialog")
 		.append("form").attr("id", "setting-form").attr("name", "setting-form")
 		.append("table").attr("class", "dialog");
-	let tbdy = tabl.append("tbody");
+	var tbdy = tabl.append("tbody");
 	tcll = tbdy.append("tr").append("td").attr("class", "sttttl").attr("colspan", "2").style("text-align", "right");
 	tcll.append("span").attr("id", "setting-name");
 	tcll.append("span").html("&nbsp;");
@@ -967,13 +973,13 @@ function Chart(chartId) {
 
 	// Interface
 	this.init = function() {
-		let elmId = "#"+this.domId;
-		let size = d3.select(elmId).node().getBoundingClientRect(); //'node()' get the actual DOM object
-		let ttld = d3.select(elmId).select(".chart-title");
+		var elmId = "#"+this.domId;
+		var size = d3.select(elmId).node().getBoundingClientRect(); //'node()' get the actual DOM object
+		var ttld = d3.select(elmId).select(".chart-title");
 
 		this.chartWdth = size.width - 5;
 		this.chartHght = size.height - 3;
-		let grph = d3.select(elmId).select(".chart-viz");
+		var grph = d3.select(elmId).select(".chart-viz");
 		if (grph.empty()) {
 			grph = d3.select(elmId + "Container").append("svg").attr("class", "chart-viz");
 		}
@@ -989,7 +995,7 @@ function Chart(chartId) {
 		}
 	};
 
-	let countDown = this.updateInterval;
+	var countDown = this.updateInterval;
 	this.shouldRun = function(elapse) {
 		countDown -= elapse;
 		if (countDown <= 0) {
@@ -1005,13 +1011,13 @@ function Chart(chartId) {
 
 	this.fromCookie = function(cook) {
 		if (cook) {
-			let v = parseInt(cook[KEY_INTV]);
+			var v = parseInt(cook[KEY_INTV]);
 			if (!isNaN(v)) this.updateInterval = v;
 		}
 	};
 
 	this.toCookie = function(row, col, wdth, hght, intv) {
-		let cook = {};
+		var cook = {};
 		cook[KEY_CHART] = this.id;
 		cook[KEY_ROW] = row;
 		cook[KEY_COL] = col;
@@ -1036,8 +1042,8 @@ function Chart(chartId) {
 // *****************
 // **** Channel ****
 function addChannel(id, name, url, interval, subscribed) {
-	let len = channels.length;
-	for (let i = 0; i < len; i ++) {
+	var len = channels.length;
+	for (var i = 0; i < len; i ++) {
 		if ((id == channels[i].id) || (name == channels[i].name) || (url == channels[i].url)) {
 			console.log("Channel", id, name, url, "already exists");
 			return;
@@ -1049,7 +1055,7 @@ function addChannel(id, name, url, interval, subscribed) {
 	addCookieChannel(id);
 };
 function updateChannel(id, name, url, interval) {
-	let idx = getChannels(id);
+	var idx = getChannels(id);
 	if (idx >= 0) {
 		channels[idx].name = name;
 		channels[idx].url = url;
@@ -1058,7 +1064,7 @@ function updateChannel(id, name, url, interval) {
 	}
 }
 function removeChannel(id) {
-	let idx = getChannels(id);
+	var idx = getChannels(id);
 	if (idx >= 0) {
 		removeCookieChannel(channels[idx].id);
 		channels.splice(idx, 1);
@@ -1066,7 +1072,7 @@ function removeChannel(id) {
 };
 
 function showChannels() {
-	let insrt = d3.select("#channel-tbl");
+	var insrt = d3.select("#channel-tbl");
 
 	insrt.selectAll(".channels").remove();
 	insrt.select(".channel-slct-0").node().checked = false;
@@ -1075,8 +1081,8 @@ function showChannels() {
 	insrt.select(".channel-intv-0").node().value = "";
 	insrt.select(".channel-url-0").node().value = ""
 
-	let trow;
-	for (let i = 0; i < channels.length; i ++) {
+	var trow;
+	for (var i = 0; i < channels.length; i ++) {
 		trow = insrt.insert("tr", "#channel-insertHere").attr("class", "channels");
 		trow.append("td").attr("valign", "top").append("input").attr("type", "checkbox")
 			.attr("class", "channel-slct-" + (i+1)).attr("name", "channel-slct-" + (i+1));
@@ -1106,7 +1112,7 @@ function Channel(id, name, url, interval) {
 
 	this.subscribedCharts = [];
 
-	let countDown = this.runInterval;
+	var countDown = this.runInterval;
 	this.shouldRun = function(elapse) {
 		countDown -= elapse;
 		if (countDown <= 0) {
@@ -1117,7 +1123,7 @@ function Channel(id, name, url, interval) {
 		}
 	};
 
-	let _this = this;
+	var _this = this;
 	this.run = function(elapse) {
 		if (!this.shouldRun(elapse)) {
 			return;
@@ -1128,8 +1134,8 @@ function Channel(id, name, url, interval) {
 					return;
 				}
 
-				let idx;
-				for (let i = 0; i < _this.subscribedCharts.length; i ++) {
+				var idx;
+				for (var i = 0; i < _this.subscribedCharts.length; i ++) {
 					idx = getCfgdCharts(_this.subscribedCharts[i]);
 					if (idx >= 0) {
 						if (cfgdCharts[idx]) {
@@ -1143,8 +1149,8 @@ function Channel(id, name, url, interval) {
 };
 
 function addCookieChannel(id) {
-	let cook = {};
-	let idx = getChannels(id);
+	var cook = {};
+	var idx = getChannels(id);
 
 	if (idx >= 0) {
 		cook[KEY_CHNLID] = channels[idx].id;
@@ -1154,7 +1160,7 @@ function addCookieChannel(id) {
 		cook[KEY_CHNLSUB] = channels[idx].subscribedCharts;
 		cfgdCookie[cfgdCookie.length] = cook;
 
-		let expr = new Date();
+		var expr = new Date();
 		expr.setYear(expr.getFullYear() + 1);
 		document.cookie = COOK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
 	}
@@ -1163,8 +1169,8 @@ function addCookieChannel(id) {
 }
 
 function updateCookieChannel(id) {
-	let cook = {};
-	let idx = getChannels(id);
+	var cook = {};
+	var idx = getChannels(id);
 
 	if (idx >= 0) {
 		cook[KEY_CHNLID] = channels[idx].id;
@@ -1172,11 +1178,11 @@ function updateCookieChannel(id) {
 		cook[KEY_INTV] = channels[idx].runInterval;
 		cook[KEY_CHNLURL] = channels[idx].url;
 		cook[KEY_CHNLSUB] = channels[idx].subscribedCharts;
-		for (let j = 0; j < cfgdCookie.length; j ++) {
+		for (var j = 0; j < cfgdCookie.length; j ++) {
 			if (cfgdCookie[j].channelId == id) {
 				cfgdCookie[j] = cook;
 
-				let expr = new Date();
+				var expr = new Date();
 				expr.setYear(expr.getFullYear() + 1);
 				document.cookie = COOK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
 				break;
@@ -1186,8 +1192,8 @@ function updateCookieChannel(id) {
 }
 
 function removeCookieChannel(id) {
-	let cook = {};
-	for (let idx = 0; idx < cfgdCookie.length; idx ++) {
+	var cook = {};
+	for (var idx = 0; idx < cfgdCookie.length; idx ++) {
 		if ((cfgdCookie[idx].channelId == id)) {
 			cook = cfgdCookie[idx];
 			cfgdCookie.splice(idx, 1);
@@ -1195,7 +1201,7 @@ function removeCookieChannel(id) {
 		}
 	}
 
-	let expr = new Date();
+	var expr = new Date();
 	expr.setYear(expr.getFullYear() + 1);
 	document.cookie = COOK_PFX + JSON.stringify(cfgdCookie) + "; expires=" + expr.toUTCString();
 
@@ -1225,13 +1231,13 @@ ChannelSniffer.prototype.constructor = ChannelSniffer;
 addAvailableCharts(new ChannelSniffer());
 
 // **** Sample chart implementation - date time widget ****
-let timeFormatSrver = d3.time.format("%Y-%m-%d %H:%M:%S");
-let timeFormatClk12 = d3.time.format("%I:%M");
-let timeFormatClk13 = d3.time.format("%p");
-let timeFormatClk24 = d3.time.format("%H:%M");
-let timeFormatScond = d3.time.format("%S");
-let timeFormatClndr = d3.time.format("%d %b %Y");
-let timeFormatWeekn = d3.time.format("%A");
+var timeFormatSrver = d3.time.format("%Y-%m-%d %H:%M:%S");
+var timeFormatClk12 = d3.time.format("%I:%M");
+var timeFormatClk13 = d3.time.format("%p");
+var timeFormatClk24 = d3.time.format("%H:%M");
+var timeFormatScond = d3.time.format("%S");
+var timeFormatClndr = d3.time.format("%d %b %Y");
+var timeFormatWeekn = d3.time.format("%A");
 
 DateTimeWidget = function(chartId) {
 	Chart.call(this);
@@ -1253,7 +1259,7 @@ DateTimeWidget = function(chartId) {
 	this.refresh = function(elapse) {
 		if (!this.shouldRun(elapse)) return;
 
-		let neti = d3.select("#"+this.domId).select(".chart-indct");
+		var neti = d3.select("#"+this.domId).select(".chart-indct");
 		if (neti.empty()) {
 			neti = d3.select("#"+this.domId).append("img").attr("src", IMG_NETWORK).attr("class", "chart-indct");
 		}
@@ -1263,7 +1269,7 @@ DateTimeWidget = function(chartId) {
 			this.redraw(new Date());
 		} else {
 			neti.style("display", null);
-			let obj = this;
+			var obj = this;
 			accessData(this.url, function(rspn) {
 					if (rspn) {
 						obj.redraw(timeFormatSrver.parse(rspn["time"]));
@@ -1273,8 +1279,8 @@ DateTimeWidget = function(chartId) {
 	};
 
 	this.redraw = function(now) {
-		let grph = d3.select("#"+this.domId).select(".chart-viz");
-		let bbx1, bbx3;
+		var grph = d3.select("#"+this.domId).select(".chart-viz");
+		var bbx1, bbx3;
 
 		if (grph.select(".clock.clockBig").empty()) {
 			grph.append("text")
@@ -1311,9 +1317,9 @@ DateTimeWidget = function(chartId) {
 		grph.select(".clock.calendar").text(timeFormatClndr(now));
 
 		if (bbx1 && bbx3) {
-			let bbx2 = grph.select(".clock.clockSmall").node().getBBox();
-			let xfactor = (this.chartWdth - 20) / (bbx1.width + bbx2.width + 5);
-			let yfactor = (this.chartHght / 2) / bbx1.height * .85;
+			var bbx2 = grph.select(".clock.clockSmall").node().getBBox();
+			var xfactor = (this.chartWdth - 20) / (bbx1.width + bbx2.width + 5);
+			var yfactor = (this.chartHght / 2) / bbx1.height * .85;
 
 			grph.select(".clock.clockBig").attr("transform", "scale(" + xfactor + ", " + yfactor + ")").attr("y", bbx1.height);
 			grph.select(".clock.clockSmall").attr("transform", "scale(" + xfactor + ", " + yfactor + ")").attr("y", bbx1.height);
@@ -1322,7 +1328,7 @@ DateTimeWidget = function(chartId) {
 		}
 	};
 
-	let superFromCookie = this.fromCookie;
+	var superFromCookie = this.fromCookie;
 	this.fromCookie = function(cook) {
 		superFromCookie.call(this, cook);
 		if (cook) {
@@ -1332,9 +1338,9 @@ DateTimeWidget = function(chartId) {
 		}
 	};
 
-	let superToCookie = this.toCookie;
+	var superToCookie = this.toCookie;
 	this.toCookie = function(row, col, wdth, hght, intv) {
-		let cook = superToCookie.call(this, row, col, wdth, hght, intv);
+		var cook = superToCookie.call(this, row, col, wdth, hght, intv);
 		cook["source"] = this.source;
 		cook["format"] = this.format;
 		cook["url"] = this.url;
@@ -1346,7 +1352,7 @@ DateTimeWidget = function(chartId) {
 		d3.selectAll(".chnllist").style("display", "none");
 		d3.selectAll(".sttttl").style("text-align", "left");
 
-		let trow = element.append("tr");
+		var trow = element.append("tr");
 		trow.append("td").attr("class", "cfgDateTimeWidget").style("text-align", "right")
 			.append("input").attr("type", "checkbox").attr("class", "cfgFormat").attr("name", "setting-format");
 		trow.append("td").html("Use 24-hour format");
@@ -1361,9 +1367,9 @@ DateTimeWidget = function(chartId) {
 		element.append("tr").append("td").attr("class", "cfgDateTimeWidget").attr("colspan", "2").style("text-align", "right")
 			.append("textarea").attr("class", "cfgUrl").style("width", "300px");
 
-		let obj = this;
+		var obj = this;
 		setTimeout(function() {
-				let ctrls = d3.selectAll(".cfgDateTimeWidget");
+				var ctrls = d3.selectAll(".cfgDateTimeWidget");
 				if (obj.format == "24")
 					ctrls.select(".cfgFormat").node().checked = true;
 				else
@@ -1380,7 +1386,7 @@ DateTimeWidget = function(chartId) {
 		if (domId == this.domId) {
 			d3.selectAll(".chnllist").style("display", null);
 			d3.selectAll(".sttttl").style("text-align", "right");
-			let ctrls = d3.selectAll(".cfgDateTimeWidget");
+			var ctrls = d3.selectAll(".cfgDateTimeWidget");
 
 			if (ctrls.select(".cfgFormat").node().checked) {
 				this.format = "24";
