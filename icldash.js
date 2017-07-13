@@ -794,7 +794,9 @@ function accessData(url, callBack, cnt) {
 			try {
 				callBack(JSON.parse(xmlhttp.responseText));
 			} catch (e) {
-				if (e.message.startsWith("Unexpected end of input") && (cnt < 3)) {
+				if ((typeof e.message.startsWith === "function") &&
+					e.message.startsWith("Unexpected end of input") && 
+					(cnt < 3)) {
 					setTimeout(function() { accessData(url, callBack, cnt+1); }, 100);
 					return;
 				} else if (cnt >= 3) {
@@ -1043,15 +1045,16 @@ function Chart(chartId) {
 
 	this.export = function() {
 		if (typeof this.buildExport === "function") {
-			var snapshot = this.buildExport();
+			var snap = this.buildExport();
+			var blob = new Blob(snap, {type : 'text/csv'});
+			var name = this.id + ".csv";
 
 			// Save snapshot
-			if (!isIE) {
+			if (!isIE && !isEdge) {
 				var a = document.createElement('a');
-				var b = new Blob([snapshot], {type : 'text/csv'});
-				a.href = window.URL.createObjectURL(b);
-				a.download = this.id + ".csv";
-				if ((document.createEvent) && (!isEdge)) {
+				a.href = window.URL.createObjectURL(blob);
+				a.download = name;
+				if (document.createEvent) {
 					var e = document.createEvent("MouseEvents");
 					e.initEvent('click', true, true);
 					a.dispatchEvent(e);
@@ -1059,8 +1062,7 @@ function Chart(chartId) {
 					a.click();
 				}
 			} else {
-				// IE!?!
-				location.href = "data:application/octet-stream," + encodeURIComponent(snapshot);
+				window.navigator.msSaveBlob(blob, name);
 			}
 		}
 	};

@@ -110,10 +110,10 @@ TimesIllustrator = function(chartId) {
 	this.buildExport = function() {
 		var snap = this.getSnapshot();
 		if (snap != null) {
-			// Take snapshot
-			var rtn = '"time","count"\r\n';
+			var rtn = [];
+			rtn.push('"time","count"\r\n');
 			for (var i = 0; i < snap.times.length; i ++) {
-				rtn += timeFormat(new Date(snap.times[i].time * 1000)) + "," + snap.times[i].count + "\r\n";
+				rtn.push(timeFormat(new Date(snap.times[i].time * 1000)) + "," + snap.times[i].count + "\r\n");
 			}
 			return rtn;
 		}
